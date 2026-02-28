@@ -213,6 +213,7 @@ const Pedidos = () => {
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
                 <TableHead className="text-xs font-bold text-primary uppercase">Cliente</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Cédula</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Produto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase text-right">Valor</TableHead>
@@ -240,8 +241,8 @@ const Pedidos = () => {
                         {p.nome}
                         {overdue && <span className="ml-2 text-xs text-destructive">⚠ Atraso</span>}
                       </div>
-                      <div className="text-xs text-muted-foreground">{p.cedula}</div>
                     </TableCell>
+                    <TableCell className="text-sm font-medium font-mono">{p.cedula}</TableCell>
                     <TableCell className="text-sm font-medium">{p.telefone}</TableCell>
                     <TableCell className="text-sm font-medium">
                       <div>{p.produto}</div>
@@ -299,7 +300,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
