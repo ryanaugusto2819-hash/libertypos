@@ -103,7 +103,15 @@ serve(async (req) => {
     const spreadsheetId = Deno.env.get("GOOGLE_SHEETS_SPREADSHEET_ID");
     if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID not configured");
 
-    const credentials = JSON.parse(credentialsStr);
+    let credentials;
+    try {
+      // Handle cases where the secret might be double-encoded or have extra whitespace
+      const cleaned = credentialsStr.trim();
+      credentials = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("Failed to parse credentials. Length:", credentialsStr.length, "First 100 chars:", credentialsStr.substring(0, 100));
+      throw new Error("GOOGLE_SHEETS_CREDENTIALS contains invalid JSON. Please re-enter the service account JSON key.");
+    }
     const accessToken = await getAccessToken(credentials);
 
     const { action, pedido } = await req.json();
