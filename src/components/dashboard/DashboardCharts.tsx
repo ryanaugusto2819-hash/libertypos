@@ -46,10 +46,11 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const total = pedidos.length || 0;
   const pagos = pedidos.filter((p) => p.status_pagamento === "pago").length;
-  const entregues = pedidos.filter((p) => p.status_pagamento === "entregue").length;
-  const enviados = pedidos.filter((p) => p.status_pagamento === "enviado").length;
+  const pendentes = pedidos.filter((p) => p.status_pagamento === "pendente").length;
   const inadimplentes = pedidos.filter((p) => p.status_pagamento === "inadimplente").length;
-  const naoEnviados = total - pagos - entregues - enviados - inadimplentes;
+  const entregues = pedidos.filter((p) => p.status_envio === "entregue").length;
+  const enviados = pedidos.filter((p) => p.status_envio === "enviado").length;
+  const naoEnviados = pedidos.filter((p) => p.status_envio === "não enviado").length;
 
   const entreguesERetirados = entregues + inadimplentes + pagos;
   const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
