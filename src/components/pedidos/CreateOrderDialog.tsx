@@ -33,23 +33,37 @@ const produtos = [
 ];
 
 const departamentos = [
-  "Cundinamarca",
-  "Antioquia",
-  "Valle del Cauca",
-  "Atlántico",
-  "Bolívar",
-  "Santander",
-  "Risaralda",
-  "Caldas",
+  "Artigas",
+  "Canelones",
+  "Cerro Largo",
+  "Colonia",
+  "Durazno",
+  "Flores",
+  "Florida",
+  "Lavalleja",
+  "Maldonado",
+  "Montevideo",
+  "Paysandú",
+  "Río Negro",
+  "Rivera",
+  "Rocha",
+  "Salto",
+  "San José",
+  "Soriano",
+  "Tacuarembó",
+  "Treinta y Tres",
 ];
 
 export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDialogProps) {
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
+    cedula: "",
     produto: "",
     quantidade: "1",
     valor: "",
+    cidade: "",
+    departamento: "",
     vendedor: "",
     criativo: "",
   });
@@ -65,12 +79,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     onSave({
       nome: form.nome,
       telefone: form.telefone,
-      cedula: "",
+      cedula: form.cedula,
       produto: form.produto,
       quantidade: parseInt(form.quantidade) || 1,
       valor: parseFloat(form.valor) || 0,
-      cidade: "",
-      departamento: "",
+      cidade: form.cidade,
+      departamento: form.departamento,
       codigo_rastreamento: "",
       status_pagamento: "enviado",
       data_entrada: now.toISOString().split("T")[0],
@@ -86,9 +100,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     setForm({
       nome: "",
       telefone: "",
+      cedula: "",
       produto: "",
       quantidade: "1",
       valor: "",
+      cidade: "",
+      departamento: "",
       vendedor: "",
       criativo: "",
     });
@@ -116,7 +133,15 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             <Input
               value={form.telefone}
               onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-              placeholder="+57 300 000 0000"
+              placeholder="+598 99 000 000"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Cédula</Label>
+            <Input
+              value={form.cedula}
+              onChange={(e) => setForm({ ...form, cedula: e.target.value })}
+              placeholder="Número da cédula"
             />
           </div>
           <div className="space-y-2">
@@ -142,13 +167,34 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             />
           </div>
           <div className="space-y-2">
-            <Label>Valor (COP) *</Label>
+            <Label>Valor (UYU) *</Label>
             <Input
               type="number"
               value={form.valor}
               onChange={(e) => setForm({ ...form, valor: e.target.value })}
               placeholder="0"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Cidade</Label>
+            <Input
+              value={form.cidade}
+              onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+              placeholder="Cidade"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Departamento</Label>
+            <Select value={form.departamento} onValueChange={(v) => setForm({ ...form, departamento: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {departamentos.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Vendedor</Label>
