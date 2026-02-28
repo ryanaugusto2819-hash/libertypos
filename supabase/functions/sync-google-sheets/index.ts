@@ -5,11 +5,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Base64url encoding (no padding, URL-safe chars)
+function base64url(input: string | ArrayBuffer): string {
+  let b64: string;
+  if (typeof input === "string") {
+    b64 = btoa(input);
+  } else {
+    b64 = btoa(String.fromCharCode(...new Uint8Array(input)));
+  }
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 // Google Sheets API helpers
 async function getAccessToken(credentials: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = btoa(JSON.stringify({
+  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64url(JSON.stringify({
     iss: credentials.client_email,
     scope: "https://www.googleapis.com/auth/spreadsheets",
     aud: "https://oauth2.googleapis.com/token",
@@ -18,9 +29,9 @@ async function getAccessToken(credentials: any): Promise<string> {
   }));
 
   const key = credentials.private_key;
-  const pemContent = key.replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\n/g, '');
+  const pemContent = key.replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
 
   const binaryKey = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
 
@@ -34,9 +45,9 @@ async function getAccessToken(credentials: any): Promise<string> {
 
   const signatureInput = new TextEncoder().encode(`${header}.${payload}`);
   const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, signatureInput);
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const signatureB64url = base64url(signature);
 
-  const jwt = `${header}.${payload}.${signatureB64}`;
+  const jwt = `${header}.${payload}.${signatureB64url}`;
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
