@@ -223,7 +223,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Rastreamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Entrada</TableHead>
+                
                 <TableHead className="text-xs font-bold text-primary uppercase">Dt. Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>
@@ -245,6 +245,7 @@ const Pedidos = () => {
                         {p.nome}
                         {overdue && <span className="ml-2 text-xs text-destructive">⚠ Atraso</span>}
                       </div>
+                      <div className="text-xs text-muted-foreground">{formatDate(p.data_entrada)}</div>
                     </TableCell>
                     <TableCell className="text-sm font-medium font-mono">{p.cedula}</TableCell>
                     <TableCell className="text-sm font-medium">{p.telefone}</TableCell>
@@ -293,9 +294,6 @@ const Pedidos = () => {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-sm font-medium text-muted-foreground">
-                      {formatDate(p.data_entrada)}
-                    </TableCell>
                     <TableCell className="text-sm font-medium">
                       {p.data_pagamento ? (
                         <div>
@@ -333,7 +331,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
