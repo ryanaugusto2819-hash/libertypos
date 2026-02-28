@@ -224,7 +224,6 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 
-                <TableHead className="text-xs font-bold text-primary uppercase">Dt. Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>
               </TableRow>
@@ -294,26 +293,23 @@ const Pedidos = () => {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {p.data_pagamento ? (
-                        <div>
-                          <div>{formatDate(p.data_pagamento)}</div>
-                          <div className="text-xs text-muted-foreground">{p.hora_pagamento}</div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
                     <TableCell>
-                      <ImageUploadCell
-                        url={p.comprovante_url}
-                        label="Comprovante de Pagamento"
-                        onChange={(url) => {
-                          setPedidos(pedidos.map((ped) =>
-                            ped.id === p.id ? { ...ped, comprovante_url: url || null } : ped
-                          ));
-                        }}
-                      />
+                      <div>
+                        <ImageUploadCell
+                          url={p.comprovante_url}
+                          label="Comprovante de Pagamento"
+                          onChange={(url) => {
+                            setPedidos(pedidos.map((ped) =>
+                              ped.id === p.id ? { ...ped, comprovante_url: url || null } : ped
+                            ));
+                          }}
+                        />
+                        {p.data_pagamento && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {formatDate(p.data_pagamento)} {p.hora_pagamento}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <ImageUploadCell
@@ -331,7 +327,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
