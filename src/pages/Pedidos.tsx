@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { syncOrderToSheets, updateOrderStatusInSheets } from "@/lib/googleSheets";
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
-import { ComprovanteCell } from "@/components/pedidos/ComprovanteCell";
+import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>(mockPedidos);
@@ -226,6 +226,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Entrada</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Dt. Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -306,11 +307,23 @@ const Pedidos = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <ComprovanteCell
+                      <ImageUploadCell
                         url={p.comprovante_url}
+                        label="Comprovante de Pagamento"
                         onChange={(url) => {
                           setPedidos(pedidos.map((ped) =>
                             ped.id === p.id ? { ...ped, comprovante_url: url || null } : ped
+                          ));
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ImageUploadCell
+                        url={p.etiqueta_envio_url}
+                        label="Etiqueta de Envio"
+                        onChange={(url) => {
+                          setPedidos(pedidos.map((ped) =>
+                            ped.id === p.id ? { ...ped, etiqueta_envio_url: url || null } : ped
                           ));
                         }}
                       />
@@ -320,7 +333,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>

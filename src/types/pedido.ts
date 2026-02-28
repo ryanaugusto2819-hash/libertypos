@@ -19,6 +19,7 @@ export interface Pedido {
   data_pagamento: string | null;
   hora_pagamento: string | null;
   comprovante_url: string | null;
+  etiqueta_envio_url: string | null;
   observacoes: string;
   vendedor?: string;
   criativo?: string;
