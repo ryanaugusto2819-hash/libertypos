@@ -4,18 +4,27 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
 import { mockPedidos } from "@/data/mockData";
-import { CheckCircle2, Truck, Package } from "lucide-react";
+import { CheckCircle2, Truck, Package, PackageX, BarChart3 } from "lucide-react";
 
 const total = mockPedidos.length;
 const pagos = mockPedidos.filter((p) => p.status_pagamento === "pago").length;
 const entregues = mockPedidos.filter((p) => p.status_pagamento === "entregue").length;
 const enviados = mockPedidos.filter((p) => p.status_pagamento === "enviado").length;
 const inadimplentes = mockPedidos.filter((p) => p.status_pagamento === "inadimplente").length;
+const naoEnviados = total - pagos - entregues - enviados - inadimplentes;
 
 // "Retirados" = entregues (foram retirados/recebidos pelo cliente)
-const entreguesERetirados = entregues + inadimplentes + pagos; // pedidos que já chegaram
+const entreguesERetirados = entregues + inadimplentes + pagos;
 const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
 const percPagosVsRetirados = (entregues + pagos) > 0 ? Math.round((pagos / (entregues + pagos)) * 100) : 0;
+
+// Novo: % Pagamento vs Entregues + Retirados juntos
+const entreguesRetiradosJuntos = entregues + pagos + inadimplentes;
+const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
+
+// Novo: % Pagamento vs Entregues + Enviados + Retirados
+const totalEntEnvRet = entregues + enviados + pagos + inadimplentes;
+const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
 
 const paymentRateData = [
   { name: `Pagos (${Math.round((pagos / total) * 100)}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
@@ -58,17 +67,17 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 export function DashboardCharts() {
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Payment Rate Highlight Card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Payment Rate Highlight Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         <Card className="glass-card animate-fade-in border-emerald-500/30 bg-emerald-500/5" style={{ animationDelay: "350ms" }}>
           <CardContent className="p-6 flex items-center gap-5">
             <div className="h-16 w-16 rounded-2xl bg-emerald-500/15 flex items-center justify-center shrink-0">
               <Truck className="h-8 w-8 text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Pedidos Entregues</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues</p>
               <p className="text-3xl font-bold text-emerald-400">{percPagosVsEntregues}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesERetirados} entregues/retirados</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesERetirados} entregues</p>
             </div>
           </CardContent>
         </Card>
@@ -78,13 +87,39 @@ export function DashboardCharts() {
               <Package className="h-8 w-8 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Pedidos Retirados</p>
-              <p className="text-3xl font-bold text-blue-400">{percPagosVsRetirados}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entregues + pagos} retirados</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues + Retirados</p>
+              <p className="text-3xl font-bold text-blue-400">{percPagosVsEntreguesRetirados}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} entregues/retirados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card animate-fade-in border-violet-500/30 bg-violet-500/5" style={{ animationDelay: "450ms" }}>
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="h-16 w-16 rounded-2xl bg-violet-500/15 flex items-center justify-center shrink-0">
+              <BarChart3 className="h-8 w-8 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues + Enviados + Retirados</p>
+              <p className="text-3xl font-bold text-violet-400">{percPagosVsTodos}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {totalEntEnvRet} total</p>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Card Pedidos Não Enviados */}
+      <Card className="glass-card animate-fade-in border-orange-500/30 bg-orange-500/5" style={{ animationDelay: "500ms" }}>
+        <CardContent className="p-6 flex items-center gap-5">
+          <div className="h-16 w-16 rounded-2xl bg-orange-500/15 flex items-center justify-center shrink-0">
+            <PackageX className="h-8 w-8 text-orange-400" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground font-medium">Pedidos Não Enviados</p>
+            <p className="text-3xl font-bold text-orange-400">{naoEnviados}</p>
+            <p className="text-xs text-muted-foreground mt-1">{total > 0 ? Math.round((naoEnviados / total) * 100) : 0}% do total de pedidos</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
