@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
 import {
   CheckCircle2,
   Truck,
@@ -7,7 +8,7 @@ import {
   DollarSign,
   Wallet,
   CalendarClock,
-  Calendar,
+  CalendarIcon,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
@@ -15,8 +16,9 @@ import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { mockPedidos } from "@/data/mockData";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type FilterOption = "hoje" | "7" | "15" | "30" | "custom";
 
@@ -30,8 +32,8 @@ const filterLabels: Record<FilterOption, string> = {
 
 const Dashboard = () => {
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
+  const [customStart, setCustomStart] = useState<Date | undefined>();
+  const [customEnd, setCustomEnd] = useState<Date | undefined>();
 
   const filteredPedidos = useMemo(() => {
     const now = new Date();
@@ -104,27 +106,28 @@ const Dashboard = () => {
                 onClick={() => setActiveFilter("custom")}
                 className="text-xs gap-1"
               >
-                <Calendar className="h-3 w-3" />
-                Personalizado
+                <CalendarIcon className="h-3 w-3" />
+                {activeFilter === "custom" && customStart && customEnd
+                  ? `${format(customStart, "dd/MM")} - ${format(customEnd, "dd/MM")}`
+                  : "Personalizado"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-4 space-y-3" align="end">
-              <p className="text-xs font-medium text-muted-foreground">Selecione o período</p>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => { setCustomStart(e.target.value); setActiveFilter("custom"); }}
-                  className="text-xs h-8"
-                />
-                <span className="text-xs text-muted-foreground">até</span>
-                <Input
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => { setCustomEnd(e.target.value); setActiveFilter("custom"); }}
-                  className="text-xs h-8"
-                />
-              </div>
+              <p className="text-xs font-medium text-muted-foreground">Data Início</p>
+              <Calendar
+                mode="single"
+                selected={customStart}
+                onSelect={(date) => { setCustomStart(date); setActiveFilter("custom"); }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              <p className="text-xs font-medium text-muted-foreground">Data Fim</p>
+              <Calendar
+                mode="single"
+                selected={customEnd}
+                onSelect={(date) => { setCustomEnd(date); setActiveFilter("custom"); }}
+                className={cn("p-3 pointer-events-auto")}
+              />
             </PopoverContent>
           </Popover>
         </div>
