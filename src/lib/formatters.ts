@@ -1,4 +1,4 @@
-import { StatusPagamento } from "@/types/pedido";
+import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("es-CO", {
@@ -18,9 +18,17 @@ export function formatDate(date: string | null): string {
   }).format(new Date(date));
 }
 
-export const statusConfig: Record<StatusPagamento, { label: string; className: string }> = {
+export const statusPagamentoConfig: Record<StatusPagamento, { label: string; className: string }> = {
   pago: { label: "Pago", className: "status-paid" },
-  entregue: { label: "Entregue", className: "status-pending" },
-  enviado: { label: "Enviado", className: "status-sent" },
+  pendente: { label: "Pendente", className: "status-pending" },
   inadimplente: { label: "Inadimplente", className: "status-overdue" },
 };
+
+export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: string }> = {
+  "não enviado": { label: "Não Enviado", className: "status-overdue" },
+  enviado: { label: "Enviado", className: "status-sent" },
+  entregue: { label: "Entregue", className: "status-paid" },
+};
+
+// Keep backward compat alias
+export const statusConfig = statusPagamentoConfig;

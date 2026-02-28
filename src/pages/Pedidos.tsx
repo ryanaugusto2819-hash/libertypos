@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { mockPedidos } from "@/data/mockData";
-import { Pedido, StatusPagamento } from "@/types/pedido";
-import { formatCurrency, formatDate, statusConfig } from "@/lib/formatters";
+import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
+import { formatCurrency, formatDate, statusPagamentoConfig, statusEnvioConfig } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -191,8 +191,7 @@ const Pedidos = () => {
           <SelectContent>
             <SelectItem value="todos">Todos os Status</SelectItem>
             <SelectItem value="pago">Pago</SelectItem>
-            <SelectItem value="entregue">Entregue</SelectItem>
-            <SelectItem value="enviado">Enviado</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
             <SelectItem value="inadimplente">Inadimplente</SelectItem>
           </SelectContent>
         </Select>
@@ -210,7 +209,8 @@ const Pedidos = () => {
                 <TableHead className="text-xs text-right">Valor</TableHead>
                 <TableHead className="text-xs">Cidade</TableHead>
                 <TableHead className="text-xs">Rastreamento</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs">Status Pagamento</TableHead>
+                <TableHead className="text-xs">Status Envio</TableHead>
                 <TableHead className="text-xs">Entrada</TableHead>
                 <TableHead className="text-xs">Pagamento</TableHead>
                 <TableHead className="text-xs text-right">Ação</TableHead>
@@ -218,7 +218,8 @@ const Pedidos = () => {
             </TableHeader>
             <TableBody>
               {filtered.map((p) => {
-                const status = statusConfig[p.status_pagamento];
+                const statusPag = statusPagamentoConfig[p.status_pagamento];
+                const statusEnv = statusEnvioConfig[p.status_envio];
                 const overdue = isOverdue(p);
                 return (
                   <TableRow
@@ -255,9 +256,17 @@ const Pedidos = () => {
                     <TableCell>
                       <Badge
                         variant="secondary"
-                        className={cn("text-xs font-medium", status.className)}
+                        className={cn("text-xs font-medium", statusPag.className)}
                       >
-                        {status.label}
+                        {statusPag.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={cn("text-xs font-medium", statusEnv.className)}
+                      >
+                        {statusEnv.label}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -290,7 +299,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>

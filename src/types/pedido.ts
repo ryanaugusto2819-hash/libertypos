@@ -1,4 +1,5 @@
-export type StatusPagamento = "pago" | "entregue" | "enviado" | "inadimplente";
+export type StatusPagamento = "pago" | "pendente" | "inadimplente";
+export type StatusEnvio = "não enviado" | "enviado" | "entregue";
 
 export interface Pedido {
   id: string;
@@ -12,6 +13,7 @@ export interface Pedido {
   departamento: string;
   codigo_rastreamento: string;
   status_pagamento: StatusPagamento;
+  status_envio: StatusEnvio;
   data_entrada: string;
   data_envio: string | null;
   data_pagamento: string | null;

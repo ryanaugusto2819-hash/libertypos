@@ -66,16 +66,17 @@ const Dashboard = () => {
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
-  const entregues = filteredPedidos.filter((p) => p.status_pagamento === "entregue");
-  const enviados = filteredPedidos.filter((p) => p.status_pagamento === "enviado");
+  const pendentes = filteredPedidos.filter((p) => p.status_pagamento === "pendente");
   const inadimplentes = filteredPedidos.filter((p) => p.status_pagamento === "inadimplente");
+  const entregues = filteredPedidos.filter((p) => p.status_envio === "entregue");
+  const enviados = filteredPedidos.filter((p) => p.status_envio === "enviado");
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
-  const totalAReceber = [...entregues, ...enviados, ...inadimplentes].reduce(
+  const totalAReceber = [...pendentes, ...inadimplentes].reduce(
     (sum, p) => sum + p.valor,
     0
   );
-  const totalAgendado = entregues.reduce((sum, p) => sum + p.valor, 0);
+  const totalAgendado = pendentes.reduce((sum, p) => sum + p.valor, 0);
 
   return (
     <div className="space-y-6">
