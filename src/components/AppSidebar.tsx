@@ -1,0 +1,73 @@
+import { LayoutDashboard, ShoppingCart, Menu } from "lucide-react";
+import { NavLink } from "@/components/NavLink";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+const navItems = [
+  { title: "Cobrança", url: "/", icon: LayoutDashboard },
+  { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
+];
+
+export function AppSidebar() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  return (
+    <Sidebar collapsible="icon" className="border-r-0">
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <span className="text-primary-foreground font-bold text-sm">GC</span>
+          </div>
+          {!collapsed && (
+            <div className="overflow-hidden">
+              <h1 className="text-sm font-bold text-sidebar-foreground truncate">
+                Gestão COD
+              </h1>
+              <p className="text-xs text-sidebar-muted truncate">
+                Sistema de Cobranças
+              </p>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">
+            Menu
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      end
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
