@@ -1,5 +1,7 @@
-import { LayoutDashboard, ShoppingCart, Menu } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { NavLink } from "@/components/NavLink";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -21,6 +24,7 @@ const navItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { theme, setTheme } = useTheme();
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -68,6 +72,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-3">
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "sm"}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        >
+          {theme === "dark" ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
+          {!collapsed && <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
