@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
 import { syncOrderToSheets, updateOrderStatusInSheets } from "@/lib/googleSheets";
 import { toast } from "sonner";
+import { TrackingCell } from "@/components/pedidos/TrackingCell";
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>(mockPedidos);
@@ -255,8 +256,15 @@ const Pedidos = () => {
                       <div>{p.cidade}</div>
                       <div className="text-xs text-muted-foreground">{p.departamento}</div>
                     </TableCell>
-                    <TableCell className="text-sm font-medium font-mono text-xs">
-                      {p.codigo_rastreamento}
+                    <TableCell>
+                      <TrackingCell
+                        value={p.codigo_rastreamento}
+                        onChange={(code) => {
+                          setPedidos(pedidos.map((ped) =>
+                            ped.id === p.id ? { ...ped, codigo_rastreamento: code } : ped
+                          ));
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
                       <Select value={p.status_pagamento} onValueChange={(v: StatusPagamento) => handleStatusPagChange(p.id, v)}>
