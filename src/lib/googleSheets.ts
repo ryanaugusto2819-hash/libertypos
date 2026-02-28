@@ -31,6 +31,7 @@ export async function syncOrderToSheets(pedido: {
   data_envio: string;
   vendedor?: string;
   criativo?: string;
+  status_envio?: string;
 }) {
   const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
     body: { action: "create", pedido },
@@ -64,6 +65,7 @@ export async function updateOrderStatusInSheets(pedido: {
   comprovante_url?: string;
   vendedor?: string;
   criativo?: string;
+  status_envio?: string;
 }) {
   const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
     body: { action: "update_status", pedido },
