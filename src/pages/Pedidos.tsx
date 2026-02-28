@@ -192,7 +192,6 @@ const Pedidos = () => {
             <SelectItem value="todos">Todos os Status</SelectItem>
             <SelectItem value="pago">Pago</SelectItem>
             <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="inadimplente">Inadimplente</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -254,20 +253,53 @@ const Pedidos = () => {
                       {p.codigo_rastreamento}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={cn("text-xs font-medium", statusPag.className)}
+                      <Select
+                        value={p.status_pagamento}
+                        onValueChange={(value: StatusPagamento) => {
+                          setPedidos(pedidos.map((ped) =>
+                            ped.id === p.id
+                              ? {
+                                  ...ped,
+                                  status_pagamento: value,
+                                  ...(value === "pago" ? {
+                                    data_pagamento: new Date().toISOString().split("T")[0],
+                                    hora_pagamento: new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
+                                  } : {}),
+                                }
+                              : ped
+                          ));
+                          toast.success(`Status de pagamento alterado para "${statusPagamentoConfig[value].label}"`);
+                        }}
                       >
-                        {statusPag.label}
-                      </Badge>
+                        <SelectTrigger className={cn("h-7 text-xs font-medium border-0 w-28", statusPagamentoConfig[p.status_pagamento].className)}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="pago">Pago</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={cn("text-xs font-medium", statusEnv.className)}
+                      <Select
+                        value={p.status_envio}
+                        onValueChange={(value: StatusEnvio) => {
+                          setPedidos(pedidos.map((ped) =>
+                            ped.id === p.id ? { ...ped, status_envio: value } : ped
+                          ));
+                          toast.success(`Status de envio alterado para "${statusEnvioConfig[value].label}"`);
+                        }}
                       >
-                        {statusEnv.label}
-                      </Badge>
+                        <SelectTrigger className={cn("h-7 text-xs font-medium border-0 w-32", statusEnvioConfig[p.status_envio].className)}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="não enviado">Não Enviado</SelectItem>
+                          <SelectItem value="enviado">Enviado</SelectItem>
+                          <SelectItem value="a retirar">A Retirar</SelectItem>
+                          <SelectItem value="retirado">Retirado</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(p.data_entrada)}
@@ -283,16 +315,6 @@ const Pedidos = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {p.status_pagamento !== "pago" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7"
-                          onClick={() => openPaymentDialog(p.id, p.nome)}
-                        >
-                          Marcar Pago
-                        </Button>
-                      )}
                     </TableCell>
                   </TableRow>
                 );

@@ -1,5 +1,5 @@
-export type StatusPagamento = "pago" | "pendente" | "inadimplente";
-export type StatusEnvio = "não enviado" | "enviado" | "entregue";
+export type StatusPagamento = "pago" | "pendente";
+export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
 
 export interface Pedido {
   id: string;

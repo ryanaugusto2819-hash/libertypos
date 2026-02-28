@@ -67,15 +67,12 @@ const Dashboard = () => {
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
   const pendentes = filteredPedidos.filter((p) => p.status_pagamento === "pendente");
-  const inadimplentes = filteredPedidos.filter((p) => p.status_pagamento === "inadimplente");
-  const entregues = filteredPedidos.filter((p) => p.status_envio === "entregue");
+  const retirados = filteredPedidos.filter((p) => p.status_envio === "retirado");
+  const aRetirar = filteredPedidos.filter((p) => p.status_envio === "a retirar");
   const enviados = filteredPedidos.filter((p) => p.status_envio === "enviado");
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
-  const totalAReceber = [...pendentes, ...inadimplentes].reduce(
-    (sum, p) => sum + p.valor,
-    0
-  );
+  const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
   const totalAgendado = pendentes.reduce((sum, p) => sum + p.valor, 0);
 
   return (
@@ -146,9 +143,9 @@ const Dashboard = () => {
           delay={0}
         />
         <KpiCard
-          title="Pedidos Entregues"
-          value={entregues.length}
-          percentage={Math.round((entregues.length / total) * 100)}
+          title="Pedidos Retirados"
+          value={retirados.length}
+          percentage={Math.round((retirados.length / total) * 100)}
           icon={Truck}
           variant="warning"
           trend="neutral"
@@ -164,9 +161,9 @@ const Dashboard = () => {
           delay={200}
         />
         <KpiCard
-          title="Inadimplentes"
-          value={inadimplentes.length}
-          percentage={Math.round((inadimplentes.length / total) * 100)}
+          title="A Retirar"
+          value={aRetirar.length}
+          percentage={Math.round((aRetirar.length / total) * 100)}
           icon={AlertTriangle}
           variant="danger"
           trend="down"
@@ -195,7 +192,7 @@ const Dashboard = () => {
         <FinanceCard
           title="Agendado para Hoje"
           value={formatCurrency(totalAgendado)}
-          subtitle={`${entregues.length} pedidos entregues`}
+          subtitle={`${retirados.length} pedidos retirados`}
           icon={CalendarClock}
           variant="scheduled"
           delay={400}

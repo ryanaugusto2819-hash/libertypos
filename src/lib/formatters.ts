@@ -21,13 +21,13 @@ export function formatDate(date: string | null): string {
 export const statusPagamentoConfig: Record<StatusPagamento, { label: string; className: string }> = {
   pago: { label: "Pago", className: "status-paid" },
   pendente: { label: "Pendente", className: "status-pending" },
-  inadimplente: { label: "Inadimplente", className: "status-overdue" },
 };
 
 export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: string }> = {
   "não enviado": { label: "Não Enviado", className: "status-overdue" },
   enviado: { label: "Enviado", className: "status-sent" },
-  entregue: { label: "Entregue", className: "status-paid" },
+  "a retirar": { label: "A Retirar", className: "status-pending" },
+  retirado: { label: "Retirado", className: "status-paid" },
 };
 
 // Keep backward compat alias

@@ -47,25 +47,25 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const total = pedidos.length || 0;
   const pagos = pedidos.filter((p) => p.status_pagamento === "pago").length;
   const pendentes = pedidos.filter((p) => p.status_pagamento === "pendente").length;
-  const inadimplentes = pedidos.filter((p) => p.status_pagamento === "inadimplente").length;
-  const entregues = pedidos.filter((p) => p.status_envio === "entregue").length;
+  const retirados = pedidos.filter((p) => p.status_envio === "retirado").length;
+  const aRetirar = pedidos.filter((p) => p.status_envio === "a retirar").length;
   const enviados = pedidos.filter((p) => p.status_envio === "enviado").length;
   const naoEnviados = pedidos.filter((p) => p.status_envio === "não enviado").length;
 
-  const entreguesERetirados = entregues + inadimplentes + pagos;
+  const entreguesERetirados = retirados + pagos;
   const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
 
-  const entreguesRetiradosJuntos = entregues + pagos + inadimplentes;
+  const entreguesRetiradosJuntos = retirados + aRetirar + pagos;
   const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
 
-  const totalEntEnvRet = entregues + enviados + pagos + inadimplentes;
+  const totalEntEnvRet = retirados + enviados + aRetirar + pagos;
   const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
 
   const paymentRateData = [
     { name: `Pagos (${total > 0 ? Math.round((pagos / total) * 100) : 0}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
-    { name: `Entregues (${total > 0 ? Math.round((entregues / total) * 100) : 0}%)`, value: entregues, fill: "hsl(38, 92%, 50%)" },
+    { name: `Retirados (${total > 0 ? Math.round((retirados / total) * 100) : 0}%)`, value: retirados, fill: "hsl(38, 92%, 50%)" },
     { name: `Enviados (${total > 0 ? Math.round((enviados / total) * 100) : 0}%)`, value: enviados, fill: "hsl(217, 91%, 60%)" },
-    { name: `Inadimplentes (${total > 0 ? Math.round((inadimplentes / total) * 100) : 0}%)`, value: inadimplentes, fill: "hsl(0, 72%, 51%)" },
+    { name: `A Retirar (${total > 0 ? Math.round((aRetirar / total) * 100) : 0}%)`, value: aRetirar, fill: "hsl(280, 60%, 55%)" },
   ];
 
   return (
