@@ -211,15 +211,17 @@ serve(async (req) => {
         );
       }
 
-      // Update K:status_pagamento, N:data_pagamento, O:hora_pagamento, Q:ultima_atualizacao
-      await updateRow(accessToken, spreadsheetId, `K${rowIndex}`, [[
+      // Update J:rastreamento, K:status_pagamento, N:data_pagamento, O:hora_pagamento, P:comprovante, Q:ultima_atualizacao
+      await updateRow(accessToken, spreadsheetId, `J${rowIndex}:K${rowIndex}`, [[
+        pedido.codigo_rastreamento || "",
         pedido.status_pagamento,
       ]]);
-      await updateRow(accessToken, spreadsheetId, `N${rowIndex}:O${rowIndex}`, [[
+      await updateRow(accessToken, spreadsheetId, `N${rowIndex}:Q${rowIndex}`, [[
         pedido.data_pagamento || "",
         pedido.hora_pagamento || "",
+        pedido.comprovante_url || "",
+        now,
       ]]);
-      await updateRow(accessToken, spreadsheetId, `Q${rowIndex}`, [[now]]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Status atualizado na planilha" }),

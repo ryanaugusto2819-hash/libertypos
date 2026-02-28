@@ -98,27 +98,57 @@ const Pedidos = () => {
     return diffDays > 7;
   };
 
-  const handleStatusPagChange = (pedidoId: string, value: StatusPagamento) => {
-    setPedidos(pedidos.map((ped) =>
-      ped.id === pedidoId
-        ? {
-            ...ped,
-            status_pagamento: value,
-            ...(value === "pago" ? {
-              data_pagamento: new Date().toISOString().split("T")[0],
-              hora_pagamento: new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
-            } : {}),
-          }
-        : ped
-    ));
+  const handleStatusPagChange = async (pedidoId: string, value: StatusPagamento) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    const now = new Date();
+    const dataPagamento = value === "pago" ? now.toISOString().split("T")[0] : null;
+    const horaPagamento = value === "pago" ? now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : null;
+    const updated = {
+      ...currentOrder,
+      status_pagamento: value,
+      data_pagamento: dataPagamento,
+      hora_pagamento: horaPagamento,
+    };
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId, status_pagamento: value,
+        data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
+        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
+        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
+        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de pagamento:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
   };
 
-  const handleStatusEnvChange = (pedidoId: string, value: StatusEnvio) => {
-    setPedidos(pedidos.map((ped) =>
-      ped.id === pedidoId ? { ...ped, status_envio: value } : ped
-    ));
+  const handleStatusEnvChange = async (pedidoId: string, value: StatusEnvio) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
+        data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
+        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
+        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
+        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de envio:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
   };
 
   const totalPedidos = filtered.length;
