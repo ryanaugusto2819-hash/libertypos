@@ -76,6 +76,8 @@ const Pedidos = () => {
         status_pagamento: order.status_pagamento,
         data_criacao: order.data_entrada,
         data_envio: order.data_envio || "",
+        vendedor: order.vendedor || "",
+        criativo: order.criativo || "",
       });
       toast.success("Pedido sincronizado com Google Sheets!");
     } catch (err) {

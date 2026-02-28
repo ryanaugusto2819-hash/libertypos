@@ -47,50 +47,50 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
-    cedula: "",
     produto: "",
     quantidade: "1",
     valor: "",
-    cidade: "",
-    departamento: "",
-    codigo_rastreamento: "",
+    vendedor: "",
+    criativo: "",
   });
 
   const handleSave = () => {
-    if (!form.nome || !form.telefone || !form.cedula || !form.produto || !form.valor) {
+    if (!form.nome || !form.telefone || !form.produto || !form.valor) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
+    const now = new Date();
+
     onSave({
       nome: form.nome,
       telefone: form.telefone,
-      cedula: form.cedula,
+      cedula: "",
       produto: form.produto,
       quantidade: parseInt(form.quantidade) || 1,
       valor: parseFloat(form.valor) || 0,
-      cidade: form.cidade,
-      departamento: form.departamento,
-      codigo_rastreamento: form.codigo_rastreamento,
+      cidade: "",
+      departamento: "",
+      codigo_rastreamento: "",
       status_pagamento: "enviado",
-      data_entrada: new Date().toISOString().split("T")[0],
-      data_envio: new Date().toISOString().split("T")[0],
+      data_entrada: now.toISOString().split("T")[0],
+      data_envio: now.toISOString().split("T")[0],
       data_pagamento: null,
       hora_pagamento: null,
       comprovante_url: null,
       observacoes: "",
+      vendedor: form.vendedor,
+      criativo: form.criativo,
     });
 
     setForm({
       nome: "",
       telefone: "",
-      cedula: "",
       produto: "",
       quantidade: "1",
       valor: "",
-      cidade: "",
-      departamento: "",
-      codigo_rastreamento: "",
+      vendedor: "",
+      criativo: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
@@ -117,14 +117,6 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               value={form.telefone}
               onChange={(e) => setForm({ ...form, telefone: e.target.value })}
               placeholder="+57 300 000 0000"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Cédula *</Label>
-            <Input
-              value={form.cedula}
-              onChange={(e) => setForm({ ...form, cedula: e.target.value })}
-              placeholder="Número da cédula"
             />
           </div>
           <div className="space-y-2">
@@ -159,32 +151,19 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             />
           </div>
           <div className="space-y-2">
-            <Label>Cidade</Label>
+            <Label>Vendedor</Label>
             <Input
-              value={form.cidade}
-              onChange={(e) => setForm({ ...form, cidade: e.target.value })}
-              placeholder="Cidade"
+              value={form.vendedor}
+              onChange={(e) => setForm({ ...form, vendedor: e.target.value })}
+              placeholder="Nome do vendedor"
             />
           </div>
-          <div className="space-y-2">
-            <Label>Departamento</Label>
-            <Select value={form.departamento} onValueChange={(v) => setForm({ ...form, departamento: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {departamentos.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Código de Rastreamento</Label>
+            <Label>Criativo</Label>
             <Input
-              value={form.codigo_rastreamento}
-              onChange={(e) => setForm({ ...form, codigo_rastreamento: e.target.value })}
-              placeholder="COL-2024-XXX"
+              value={form.criativo}
+              onChange={(e) => setForm({ ...form, criativo: e.target.value })}
+              placeholder="Referência do criativo"
             />
           </div>
         </div>
