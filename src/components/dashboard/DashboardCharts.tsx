@@ -1,37 +1,15 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
-import { mockPedidos } from "@/data/mockData";
-import { CheckCircle2, Truck, Package, PackageX, BarChart3 } from "lucide-react";
+import { Truck, Package, PackageX, BarChart3 } from "lucide-react";
+import { Pedido } from "@/types/pedido";
 
-const total = mockPedidos.length;
-const pagos = mockPedidos.filter((p) => p.status_pagamento === "pago").length;
-const entregues = mockPedidos.filter((p) => p.status_pagamento === "entregue").length;
-const enviados = mockPedidos.filter((p) => p.status_pagamento === "enviado").length;
-const inadimplentes = mockPedidos.filter((p) => p.status_pagamento === "inadimplente").length;
-const naoEnviados = total - pagos - entregues - enviados - inadimplentes;
-
-// "Retirados" = entregues (foram retirados/recebidos pelo cliente)
-const entreguesERetirados = entregues + inadimplentes + pagos;
-const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
-const percPagosVsRetirados = (entregues + pagos) > 0 ? Math.round((pagos / (entregues + pagos)) * 100) : 0;
-
-// Novo: % Pagamento vs Entregues + Retirados juntos
-const entreguesRetiradosJuntos = entregues + pagos + inadimplentes;
-const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
-
-// Novo: % Pagamento vs Entregues + Enviados + Retirados
-const totalEntEnvRet = entregues + enviados + pagos + inadimplentes;
-const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
-
-const paymentRateData = [
-  { name: `Pagos (${Math.round((pagos / total) * 100)}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
-  { name: `Entregues (${Math.round((entregues / total) * 100)}%)`, value: entregues, fill: "hsl(38, 92%, 50%)" },
-  { name: `Enviados (${Math.round((enviados / total) * 100)}%)`, value: enviados, fill: "hsl(217, 91%, 60%)" },
-  { name: `Inadimplentes (${Math.round((inadimplentes / total) * 100)}%)`, value: inadimplentes, fill: "hsl(0, 72%, 51%)" },
-];
+interface DashboardChartsProps {
+  pedidos: Pedido[];
+}
 
 const dailyData = [
   { dia: "Seg", recebido: 120000, meta: 150000 },
@@ -64,7 +42,30 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   );
 };
 
-export function DashboardCharts() {
+export function DashboardCharts({ pedidos }: DashboardChartsProps) {
+  const total = pedidos.length;
+  const pagos = pedidos.filter((p) => p.status_pagamento === "pago").length;
+  const entregues = pedidos.filter((p) => p.status_pagamento === "entregue").length;
+  const enviados = pedidos.filter((p) => p.status_pagamento === "enviado").length;
+  const inadimplentes = pedidos.filter((p) => p.status_pagamento === "inadimplente").length;
+  const naoEnviados = total - pagos - entregues - enviados - inadimplentes;
+
+  const entreguesERetirados = entregues + inadimplentes + pagos;
+  const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
+
+  const entreguesRetiradosJuntos = entregues + pagos + inadimplentes;
+  const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
+
+  const totalEntEnvRet = entregues + enviados + pagos + inadimplentes;
+  const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
+
+  const paymentRateData = [
+    { name: `Pagos (${total > 0 ? Math.round((pagos / total) * 100) : 0}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
+    { name: `Entregues (${total > 0 ? Math.round((entregues / total) * 100) : 0}%)`, value: entregues, fill: "hsl(38, 92%, 50%)" },
+    { name: `Enviados (${total > 0 ? Math.round((enviados / total) * 100) : 0}%)`, value: enviados, fill: "hsl(217, 91%, 60%)" },
+    { name: `Inadimplentes (${total > 0 ? Math.round((inadimplentes / total) * 100) : 0}%)`, value: inadimplentes, fill: "hsl(0, 72%, 51%)" },
+  ];
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Payment Rate Highlight Cards */}
