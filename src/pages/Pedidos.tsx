@@ -24,6 +24,8 @@ import { formatCurrency, formatDate, statusConfig } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
+import { syncOrderToSheets, updateOrderStatusInSheets } from "@/lib/googleSheets";
+import { toast } from "sonner";
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>(mockPedidos);
@@ -50,31 +52,70 @@ const Pedidos = () => {
     });
   }, [pedidos, search, statusFilter]);
 
-  const handleCreateOrder = (newOrder: Omit<Pedido, "id">) => {
+  const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
+    const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const order: Pedido = {
       ...newOrder,
-      id: String(pedidos.length + 1),
+      id: pedidoId,
     };
     setPedidos([order, ...pedidos]);
+
+    // Sync to Google Sheets in background
+    try {
+      await syncOrderToSheets({
+        pedido_id: pedidoId,
+        nome: order.nome,
+        telefone: order.telefone,
+        cedula: order.cedula,
+        produto: order.produto,
+        quantidade: order.quantidade,
+        valor: order.valor,
+        cidade: order.cidade,
+        departamento: order.departamento,
+        status_pagamento: order.status_pagamento,
+        data_criacao: order.data_entrada,
+      });
+      toast.success("Pedido sincronizado com Google Sheets!");
+    } catch (err) {
+      console.error("Falha ao sincronizar:", err);
+      toast.error("Pedido criado, mas falhou ao sincronizar com Google Sheets");
+    }
   };
 
-  const handlePayment = (orderId: string) => {
+  const handlePayment = async (orderId: string) => {
     const now = new Date();
+    const dataPagamento = now.toISOString().split("T")[0];
+    const horaPagamento = now.toLocaleTimeString("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     setPedidos(
       pedidos.map((p) =>
         p.id === orderId
           ? {
               ...p,
               status_pagamento: "pago" as StatusPagamento,
-              data_pagamento: now.toISOString().split("T")[0],
-              hora_pagamento: now.toLocaleTimeString("es-CO", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
+              data_pagamento: dataPagamento,
+              hora_pagamento: horaPagamento,
             }
           : p
       )
     );
+
+    // Sync status update to Google Sheets
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: orderId,
+        status_pagamento: "pago",
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      });
+      toast.success("Status atualizado no Google Sheets!");
+    } catch (err) {
+      console.error("Falha ao atualizar status:", err);
+      toast.error("Status alterado localmente, mas falhou ao sincronizar");
+    }
   };
 
   const openPaymentDialog = (id: string, nome: string) => {
