@@ -72,8 +72,10 @@ const Pedidos = () => {
         valor: order.valor,
         cidade: order.cidade,
         departamento: order.departamento,
+        codigo_rastreamento: order.codigo_rastreamento,
         status_pagamento: order.status_pagamento,
         data_criacao: order.data_entrada,
+        data_envio: order.data_envio || "",
       });
       toast.success("Pedido sincronizado com Google Sheets!");
     } catch (err) {
