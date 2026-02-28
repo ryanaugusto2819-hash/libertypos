@@ -1,5 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 
+type SheetsFunctionResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
+function assertSheetsSuccess(data: unknown) {
+  if (data && typeof data === "object" && "success" in data) {
+    const result = data as SheetsFunctionResponse;
+    if (result.success === false) {
+      throw new Error(result.error || "Falha ao sincronizar com Google Sheets");
+    }
+  }
+}
+
 export async function syncOrderToSheets(pedido: {
   pedido_id: string;
   nome: string;
@@ -25,6 +40,8 @@ export async function syncOrderToSheets(pedido: {
     console.error("Erro ao sincronizar com Google Sheets:", error);
     throw error;
   }
+
+  assertSheetsSuccess(data);
   return data;
 }
 
@@ -33,6 +50,20 @@ export async function updateOrderStatusInSheets(pedido: {
   status_pagamento: string;
   data_pagamento: string | null;
   hora_pagamento: string | null;
+  nome?: string;
+  telefone?: string;
+  cedula?: string;
+  produto?: string;
+  quantidade?: number;
+  valor?: number;
+  cidade?: string;
+  departamento?: string;
+  codigo_rastreamento?: string;
+  data_criacao?: string;
+  data_envio?: string;
+  comprovante_url?: string;
+  vendedor?: string;
+  criativo?: string;
 }) {
   const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
     body: { action: "update_status", pedido },
@@ -42,5 +73,7 @@ export async function updateOrderStatusInSheets(pedido: {
     console.error("Erro ao atualizar status no Google Sheets:", error);
     throw error;
   }
+
+  assertSheetsSuccess(data);
   return data;
 }
