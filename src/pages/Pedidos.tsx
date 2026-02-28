@@ -55,6 +55,7 @@ const Pedidos = () => {
         codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
         data_criacao: order.data_entrada, data_envio: order.data_envio || "",
         vendedor: order.vendedor || "", criativo: order.criativo || "",
+        status_envio: order.status_envio,
       });
       toast.success("Pedido sincronizado com Google Sheets!");
     } catch (err) {
@@ -79,6 +80,7 @@ const Pedidos = () => {
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: currentOrder.status_envio,
       });
       toast.success("Status atualizado no Google Sheets!");
     } catch (err) {
@@ -122,6 +124,7 @@ const Pedidos = () => {
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: currentOrder.status_pagamento === value ? currentOrder.status_envio : currentOrder.status_envio,
       });
     } catch (err) {
       console.error("Falha ao sincronizar status de pagamento:", err);
@@ -144,6 +147,7 @@ const Pedidos = () => {
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: value,
       });
     } catch (err) {
       console.error("Falha ao sincronizar status de envio:", err);
