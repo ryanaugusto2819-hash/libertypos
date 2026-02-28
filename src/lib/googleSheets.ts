@@ -10,8 +10,12 @@ export async function syncOrderToSheets(pedido: {
   valor: number;
   cidade: string;
   departamento: string;
+  codigo_rastreamento: string;
   status_pagamento: string;
   data_criacao: string;
+  data_envio: string;
+  vendedor?: string;
+  criativo?: string;
 }) {
   const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
     body: { action: "create", pedido },

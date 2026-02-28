@@ -120,6 +120,11 @@ serve(async (req) => {
         );
       }
 
+      // Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
+      // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
+      // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
+      // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo
+      const now = new Date().toISOString();
       const row = [
         pedido.pedido_id,
         pedido.nome,
@@ -130,13 +135,19 @@ serve(async (req) => {
         pedido.valor,
         pedido.cidade,
         pedido.departamento,
+        pedido.codigo_rastreamento || "",
         pedido.status_pagamento,
         pedido.data_criacao,
+        pedido.data_envio || "",
         "", // data_pagamento
         "", // hora_pagamento
+        "", // comprovante_url
+        now, // ultima_atualizacao
+        pedido.vendedor || "",
+        pedido.criativo || "",
       ];
 
-      await appendRow(accessToken, spreadsheetId, "A:M", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:S", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -146,7 +157,7 @@ serve(async (req) => {
 
     if (action === "update_status") {
       // Find the row by pedido_id
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:M");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:S");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -163,13 +174,17 @@ serve(async (req) => {
         );
       }
 
-      // Update columns J (status), K stays, L (data_pagamento), M (hora_pagamento)
-      await updateRow(accessToken, spreadsheetId, `J${rowIndex}:M${rowIndex}`, [[
+      const now = new Date().toISOString();
+      // Update K:status_pagamento, N:data_pagamento, O:hora_pagamento, Q:ultima_atualizacao
+      // We update K individually, then N:O, then Q
+      await updateRow(accessToken, spreadsheetId, `K${rowIndex}`, [[
         pedido.status_pagamento,
-        allData[rowIndex - 1][10] || "", // keep data_criacao
+      ]]);
+      await updateRow(accessToken, spreadsheetId, `N${rowIndex}:O${rowIndex}`, [[
         pedido.data_pagamento || "",
         pedido.hora_pagamento || "",
       ]]);
+      await updateRow(accessToken, spreadsheetId, `Q${rowIndex}`, [[now]]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Status atualizado na planilha" }),
