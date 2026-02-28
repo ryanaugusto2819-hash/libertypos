@@ -43,8 +43,8 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   );
 };
 
-export function DashboardCharts({ pedidos }: DashboardChartsProps) {
-  const total = pedidos.length;
+export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
+  const total = pedidos.length || 0;
   const pagos = pedidos.filter((p) => p.status_pagamento === "pago").length;
   const entregues = pedidos.filter((p) => p.status_pagamento === "entregue").length;
   const enviados = pedidos.filter((p) => p.status_pagamento === "enviado").length;
