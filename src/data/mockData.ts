@@ -26,6 +26,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: daysAgo(2),
     hora_pagamento: "14:30",
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "Cliente recorrente",
   },
   {
@@ -46,6 +47,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "",
   },
   {
@@ -66,6 +68,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "Envio expresso",
   },
   {
@@ -86,6 +89,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "Tentativa de contato sem resposta",
   },
   {
@@ -106,6 +110,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: daysAgo(1),
     hora_pagamento: "09:15",
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "",
   },
   {
@@ -126,6 +131,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "",
   },
   {
@@ -146,6 +152,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: daysAgo(5),
     hora_pagamento: "16:45",
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "Pagamento via Nequi",
   },
   {
@@ -166,6 +173,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "Segunda tentativa de cobrança",
   },
   {
@@ -186,6 +194,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: null,
     hora_pagamento: null,
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "",
   },
   {
@@ -206,6 +215,7 @@ export const mockPedidos: Pedido[] = [
     data_pagamento: daysAgo(3),
     hora_pagamento: "11:20",
     comprovante_url: null,
+    etiqueta_envio_url: null,
     observacoes: "",
   },
 ];

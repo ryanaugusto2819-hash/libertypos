@@ -93,6 +93,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       data_pagamento: null,
       hora_pagamento: null,
       comprovante_url: null,
+      etiqueta_envio_url: null,
       observacoes: "",
       vendedor: form.vendedor,
       criativo: form.criativo,

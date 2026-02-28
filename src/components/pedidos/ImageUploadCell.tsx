@@ -13,9 +13,10 @@ import { toast } from "sonner";
 interface Props {
   url: string | null;
   onChange: (url: string) => void;
+  label?: string;
 }
 
-export function ComprovanteCell({ url, onChange }: Props) {
+export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -30,7 +31,7 @@ export function ComprovanteCell({ url, onChange }: Props) {
 
     const objectUrl = URL.createObjectURL(file);
     onChange(objectUrl);
-    toast.success("Comprovante anexado!");
+    toast.success(`${label} anexado!`);
     e.target.value = "";
   };
 
@@ -65,7 +66,7 @@ export function ComprovanteCell({ url, onChange }: Props) {
         <button
           onClick={() => setPreviewOpen(true)}
           className="p-1 rounded-md hover:bg-muted transition-colors"
-          title="Visualizar comprovante"
+          title={`Visualizar ${label.toLowerCase()}`}
         >
           <Eye className="h-4 w-4 text-primary" />
         </button>
@@ -74,12 +75,12 @@ export function ComprovanteCell({ url, onChange }: Props) {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Comprovante de Pagamento</DialogTitle>
+            <DialogTitle>{label}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-2">
             <img
               src={url}
-              alt="Comprovante de pagamento"
+              alt={label}
               className="max-h-[70vh] rounded-xl border-2 border-primary/20 object-contain"
             />
           </div>
@@ -91,10 +92,10 @@ export function ComprovanteCell({ url, onChange }: Props) {
               onClick={() => {
                 onChange("");
                 setPreviewOpen(false);
-                toast.success("Comprovante removido");
+                toast.success(`${label} removido`);
               }}
             >
-              Remover comprovante
+              Remover
             </Button>
           </div>
         </DialogContent>
