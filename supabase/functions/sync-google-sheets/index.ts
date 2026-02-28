@@ -102,6 +102,30 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
   return data;
 }
 
+function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
+  return [
+    pedido.pedido_id,
+    pedido.nome || "",
+    pedido.telefone || "",
+    pedido.cedula || "",
+    pedido.produto || "",
+    pedido.quantidade ?? "",
+    pedido.valor ?? "",
+    pedido.cidade || "",
+    pedido.departamento || "",
+    pedido.codigo_rastreamento || "",
+    pedido.status_pagamento || "",
+    pedido.data_criacao || "",
+    pedido.data_envio || "",
+    includePaymentFields ? pedido.data_pagamento || "" : "",
+    includePaymentFields ? pedido.hora_pagamento || "" : "",
+    pedido.comprovante_url || "",
+    now,
+    pedido.vendedor || "",
+    pedido.criativo || "",
+  ];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -144,27 +168,7 @@ serve(async (req) => {
       // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
       // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo
       const now = new Date().toISOString();
-      const row = [
-        pedido.pedido_id,
-        pedido.nome,
-        pedido.telefone,
-        pedido.cedula,
-        pedido.produto,
-        pedido.quantidade,
-        pedido.valor,
-        pedido.cidade,
-        pedido.departamento,
-        pedido.codigo_rastreamento || "",
-        pedido.status_pagamento,
-        pedido.data_criacao,
-        pedido.data_envio || "",
-        "", // data_pagamento
-        "", // hora_pagamento
-        "", // comprovante_url
-        now, // ultima_atualizacao
-        pedido.vendedor || "",
-        pedido.criativo || "",
-      ];
+      const row = buildSheetRow(pedido, now);
 
       await appendRow(accessToken, spreadsheetId, "A:S", [row]);
 
@@ -186,16 +190,28 @@ serve(async (req) => {
         }
       }
 
+      const now = new Date().toISOString();
+
       if (rowIndex === -1) {
+        const hasRequiredFallbackData = pedido.nome && pedido.telefone && pedido.produto;
+
+        if (!hasRequiredFallbackData) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Pedido não encontrado na planilha e faltam dados para criar automaticamente" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const row = buildSheetRow(pedido, now, true);
+        await appendRow(accessToken, spreadsheetId, "A:S", [row]);
+
         return new Response(
-          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const now = new Date().toISOString();
       // Update K:status_pagamento, N:data_pagamento, O:hora_pagamento, Q:ultima_atualizacao
-      // We update K individually, then N:O, then Q
       await updateRow(accessToken, spreadsheetId, `K${rowIndex}`, [[
         pedido.status_pagamento,
       ]]);

@@ -87,6 +87,13 @@ const Pedidos = () => {
   };
 
   const handlePayment = async (orderId: string) => {
+    const currentOrder = pedidos.find((p) => p.id === orderId);
+
+    if (!currentOrder) {
+      toast.error("Pedido não encontrado para sincronização");
+      return;
+    }
+
     const now = new Date();
     const dataPagamento = now.toISOString().split("T")[0];
     const horaPagamento = now.toLocaleTimeString("es-CO", {
@@ -114,6 +121,20 @@ const Pedidos = () => {
         status_pagamento: "pago",
         data_pagamento: dataPagamento,
         hora_pagamento: horaPagamento,
+        nome: currentOrder.nome,
+        telefone: currentOrder.telefone,
+        cedula: currentOrder.cedula,
+        produto: currentOrder.produto,
+        quantidade: currentOrder.quantidade,
+        valor: currentOrder.valor,
+        cidade: currentOrder.cidade,
+        departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento,
+        data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "",
+        comprovante_url: currentOrder.comprovante_url || "",
+        vendedor: currentOrder.vendedor || "",
+        criativo: currentOrder.criativo || "",
       });
       toast.success("Status atualizado no Google Sheets!");
     } catch (err) {
