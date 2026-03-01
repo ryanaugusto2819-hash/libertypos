@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
@@ -9,16 +9,19 @@ import {
   Wallet,
   CalendarClock,
   CalendarIcon,
+  Loader2,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { mockPedidos } from "@/data/mockData";
+import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Pedido } from "@/types/pedido";
+import { toast } from "sonner";
 
 type FilterOption = "hoje" | "7" | "15" | "30" | "custom";
 
@@ -31,9 +34,27 @@ const filterLabels: Record<FilterOption, string> = {
 };
 
 const Dashboard = () => {
+  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const orders = await fetchOrdersFromSheets();
+        setAllPedidos(orders);
+      } catch (err) {
+        console.error("Erro ao carregar pedidos:", err);
+        toast.error("Falha ao carregar dados do Google Sheets");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const filteredPedidos = useMemo(() => {
     const now = new Date();
@@ -44,13 +65,13 @@ const Dashboard = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
-      return mockPedidos.filter((p) => {
+      return allPedidos.filter((p) => {
         const d = new Date(p.data_entrada);
         return d >= start && d <= end;
       });
     }
 
-    if (activeFilter === "custom") return mockPedidos;
+    if (activeFilter === "custom") return allPedidos;
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
@@ -58,11 +79,11 @@ const Dashboard = () => {
     start.setDate(start.getDate() - days);
     start.setHours(0, 0, 0, 0);
 
-    return mockPedidos.filter((p) => {
+    return allPedidos.filter((p) => {
       const d = new Date(p.data_entrada);
       return d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd]);
+  }, [activeFilter, customStart, customEnd, allPedidos]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -74,6 +95,15 @@ const Dashboard = () => {
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
   const totalAgendado = pendentes.reduce((sum, p) => sum + p.valor, 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground font-medium">Carregando dados...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
