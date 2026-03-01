@@ -232,6 +232,60 @@ serve(async (req) => {
       );
     }
 
+    if (action === "delete") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:A");
+      let rowIndex = -1;
+
+      for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === pedido.pedido_id) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return new Response(
+          JSON.stringify({ success: true, message: "Pedido não encontrado na planilha (já removido)" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get spreadsheet metadata to find sheet ID
+      const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const metaData = await metaRes.json();
+      const sheetId = metaData.sheets?.[0]?.properties?.sheetId ?? 0;
+
+      // Delete the row using batchUpdate
+      const deleteRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: "ROWS",
+                startIndex: rowIndex - 1,
+                endIndex: rowIndex,
+              },
+            },
+          }],
+        }),
+      });
+      const deleteData = await deleteRes.json();
+      if (!deleteRes.ok) throw new Error(`Sheets delete error: ${JSON.stringify(deleteData)}`);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Pedido excluído da planilha" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: "Ação inválida" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
