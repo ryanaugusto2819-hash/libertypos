@@ -157,29 +157,36 @@ serve(async (req) => {
       // Skip header row if present
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
-      const pedidos = rows.map((row: string[]) => ({
-        id: row[0] || "",
-        nome: row[1] || "",
-        telefone: row[2] || "",
-        cedula: row[3] || "",
-        produto: row[4] || "",
-        quantidade: Number(row[5]) || 0,
-        valor: Number(row[6]) || 0,
-        cidade: row[7] || "",
-        departamento: row[8] || "",
-        codigo_rastreamento: row[9] || "",
-        status_pagamento: row[10] || "pendente",
-        data_entrada: row[11] || "",
-        data_envio: row[12] || null,
-        data_pagamento: row[13] || null,
-        hora_pagamento: row[14] || null,
-        comprovante_url: row[15] || null,
-        vendedor: row[17] || "",
-        criativo: row[18] || "",
-        status_envio: row[19] || "não enviado",
-        etiqueta_envio_url: null,
-        observacoes: "",
-      }));
+      const validStatusPag = ["pago", "pendente"];
+      const validStatusEnv = ["não enviado", "enviado", "a retirar", "retirado"];
+
+      const pedidos = rows.filter((row: string[]) => row[0]).map((row: string[]) => {
+        const rawStatusPag = (row[10] || "").toLowerCase().trim();
+        const rawStatusEnv = (row[19] || "").toLowerCase().trim();
+        return {
+          id: row[0] || "",
+          nome: row[1] || "",
+          telefone: row[2] || "",
+          cedula: row[3] || "",
+          produto: row[4] || "",
+          quantidade: Number(row[5]) || 0,
+          valor: Number(row[6]) || 0,
+          cidade: row[7] || "",
+          departamento: row[8] || "",
+          codigo_rastreamento: row[9] || "",
+          status_pagamento: validStatusPag.includes(rawStatusPag) ? rawStatusPag : "pendente",
+          data_entrada: row[11] || "",
+          data_envio: row[12] || null,
+          data_pagamento: row[13] || null,
+          hora_pagamento: row[14] || null,
+          comprovante_url: row[15] || null,
+          vendedor: row[17] || "",
+          criativo: row[18] || "",
+          status_envio: validStatusEnv.includes(rawStatusEnv) ? rawStatusEnv : "não enviado",
+          etiqueta_envio_url: null,
+          observacoes: "",
+        };
+      });
 
       return new Response(
         JSON.stringify({ success: true, pedidos }),

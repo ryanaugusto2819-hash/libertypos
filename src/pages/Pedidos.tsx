@@ -342,7 +342,7 @@ const Pedidos = () => {
                     </TableCell>
                     <TableCell>
                       <Select value={p.status_pagamento} onValueChange={(v: StatusPagamento) => handleStatusPagChange(p.id, v)}>
-                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm", statusPagamentoConfig[p.status_pagamento].className)}>
+                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm", statusPagamentoConfig[p.status_pagamento]?.className)}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -353,7 +353,7 @@ const Pedidos = () => {
                     </TableCell>
                     <TableCell>
                       <Select value={p.status_envio} onValueChange={(v: StatusEnvio) => handleStatusEnvChange(p.id, v)}>
-                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio].className)}>
+                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio]?.className)}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
