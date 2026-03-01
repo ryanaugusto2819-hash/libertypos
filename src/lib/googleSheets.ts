@@ -1,9 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Pedido } from "@/types/pedido";
 
 type SheetsFunctionResponse = {
   success?: boolean;
   error?: string;
   message?: string;
+  pedidos?: Pedido[];
 };
 
 function assertSheetsSuccess(data: unknown) {
@@ -13,6 +15,20 @@ function assertSheetsSuccess(data: unknown) {
       throw new Error(result.error || "Falha ao sincronizar com Google Sheets");
     }
   }
+}
+
+export async function fetchOrdersFromSheets(): Promise<Pedido[]> {
+  const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
+    body: { action: "read" },
+  });
+
+  if (error) {
+    console.error("Erro ao buscar pedidos do Google Sheets:", error);
+    throw error;
+  }
+
+  assertSheetsSuccess(data);
+  return (data as SheetsFunctionResponse).pedidos || [];
 }
 
 export async function syncOrderToSheets(pedido: {

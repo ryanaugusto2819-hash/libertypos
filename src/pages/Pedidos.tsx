@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2 } from "lucide-react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,24 +9,41 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { mockPedidos } from "@/data/mockData";
 import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
 import { formatCurrency, formatDate, statusPagamentoConfig, statusEnvioConfig } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
-import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets } from "@/lib/googleSheets";
+import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets, fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 
 const Pedidos = () => {
-  const [pedidos, setPedidos] = useState<Pedido[]>(mockPedidos);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const orders = await fetchOrdersFromSheets();
+      setPedidos(orders);
+    } catch (err) {
+      console.error("Erro ao carregar pedidos:", err);
+      toast.error("Falha ao carregar pedidos do Google Sheets");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return pedidos.filter((p) => {
@@ -256,6 +273,12 @@ const Pedidos = () => {
       </div>
 
       {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground font-medium">Carregando pedidos...</span>
+        </div>
+      ) : (
       <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -394,6 +417,7 @@ const Pedidos = () => {
           </Table>
         </div>
       </div>
+      )}
 
       <CreateOrderDialog open={createOpen} onOpenChange={setCreateOpen} onSave={handleCreateOrder} />
       <PaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} orderId={selectedOrder?.id ?? null} orderName={selectedOrder?.nome ?? ""} onConfirm={handlePayment} />
