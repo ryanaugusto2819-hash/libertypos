@@ -26,10 +26,9 @@ interface CreateOrderDialogProps {
 }
 
 const produtos = [
-  "Kit Skincare Premium",
-  "Creme Anti-idade",
-  "Sérum Vitamina C",
-  "Protetor Solar FPS 50",
+  "Gota Cavalo",
+  "Gota Prosta",
+  "Gota Memo",
 ];
 
 const departamentos = [
