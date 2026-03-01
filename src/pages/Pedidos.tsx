@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot } from "lucide-react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +15,7 @@ import { formatCurrency, formatDate, statusPagamentoConfig, statusEnvioConfig } 
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
-import { syncOrderToSheets, updateOrderStatusInSheets } from "@/lib/googleSheets";
+import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets } from "@/lib/googleSheets";
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
@@ -155,6 +155,19 @@ const Pedidos = () => {
     }
   };
 
+  const handleDeleteOrder = async (pedidoId: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
+    setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+    toast.success("Pedido excluído");
+    try {
+      await deleteOrderFromSheets(pedidoId);
+      toast.success("Pedido excluído da planilha!");
+    } catch (err) {
+      console.error("Falha ao excluir da planilha:", err);
+      toast.error("Pedido removido localmente, mas falhou ao excluir da planilha");
+    }
+  };
+
   const totalPedidos = filtered.length;
   const totalPagos = filtered.filter((p) => p.status_pagamento === "pago").length;
   const totalPendentes = filtered.filter((p) => p.status_pagamento === "pendente").length;
@@ -260,6 +273,7 @@ const Pedidos = () => {
                 
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -356,12 +370,22 @@ const Pedidos = () => {
                         }}
                       />
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                        onClick={() => handleDeleteOrder(p.id, p.nome)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>

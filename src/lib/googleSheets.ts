@@ -79,3 +79,17 @@ export async function updateOrderStatusInSheets(pedido: {
   assertSheetsSuccess(data);
   return data;
 }
+
+export async function deleteOrderFromSheets(pedidoId: string) {
+  const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
+    body: { action: "delete", pedido: { pedido_id: pedidoId } },
+  });
+
+  if (error) {
+    console.error("Erro ao excluir do Google Sheets:", error);
+    throw error;
+  }
+
+  assertSheetsSuccess(data);
+  return data;
+}
