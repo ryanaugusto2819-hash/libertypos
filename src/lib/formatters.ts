@@ -1,7 +1,7 @@
 import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("es-CO", {
+  return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "COP",
     minimumFractionDigits: 0,
@@ -19,10 +19,11 @@ export function parseLocalDate(date: string): Date {
 
 export function formatDate(date: string | null): string {
   if (!date) return "—";
-  return new Intl.DateTimeFormat("es-CO", {
+  return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "America/Sao_Paulo",
   }).format(parseLocalDate(date));
 }
 
