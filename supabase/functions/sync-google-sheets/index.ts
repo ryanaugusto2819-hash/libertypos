@@ -125,6 +125,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.criativo || "",
     pedido.status_envio || "não enviado",
     pedido.etiqueta_envio_url || "",
+    pedido.pais || "UY",
   ];
 }
 
@@ -154,7 +155,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:U");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:V");
       // Skip header row if present
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
@@ -185,6 +186,7 @@ serve(async (req) => {
           criativo: row[18] || "",
           status_envio: validStatusEnv.includes(rawStatusEnv) ? rawStatusEnv : "não enviado",
           etiqueta_envio_url: row[20] || null,
+          pais: row[21] || "UY",
           observacoes: "",
         };
       });
@@ -214,7 +216,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:U", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:V", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -224,7 +226,7 @@ serve(async (req) => {
 
     if (action === "update_status") {
       // Find the row by pedido_id
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:U");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:V");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -247,7 +249,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:U", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:V", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -266,10 +268,11 @@ serve(async (req) => {
         pedido.comprovante_url || "",
         now,
       ]]);
-      // Update T:status_envio and U:etiqueta_envio_url
-      await updateRow(accessToken, spreadsheetId, `T${rowIndex}:U${rowIndex}`, [[
+      // Update T:status_envio, U:etiqueta_envio_url, V:pais
+      await updateRow(accessToken, spreadsheetId, `T${rowIndex}:V${rowIndex}`, [[
         pedido.status_envio || "",
         pedido.etiqueta_envio_url || "",
+        pedido.pais || "UY",
       ]]);
 
       return new Response(

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useCountry } from "@/contexts/CountryContext";
 import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 
 const Pedidos = () => {
+  const { country } = useCountry();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -47,6 +49,7 @@ const Pedidos = () => {
 
   const filtered = useMemo(() => {
     return pedidos.filter((p) => {
+      const matchCountry = p.pais === country;
       const matchSearch =
         !search ||
         p.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,9 +59,9 @@ const Pedidos = () => {
         p.cidade.toLowerCase().includes(search.toLowerCase());
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
-      return matchSearch && matchStatus;
+      return matchCountry && matchSearch && matchStatus;
     });
-  }, [pedidos, search, statusFilter]);
+  }, [pedidos, search, statusFilter, country]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -72,7 +75,7 @@ const Pedidos = () => {
         codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
         data_criacao: order.data_entrada, data_envio: order.data_envio || "",
         vendedor: order.vendedor || "", criativo: order.criativo || "",
-        status_envio: order.status_envio,
+        status_envio: order.status_envio, pais: order.pais,
       });
       toast.success("Pedido sincronizado com Google Sheets!");
     } catch (err) {
@@ -98,7 +101,7 @@ const Pedidos = () => {
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: currentOrder.status_envio,
+        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
       });
       toast.success("Status atualizado no Google Sheets!");
     } catch (err) {
@@ -143,7 +146,7 @@ const Pedidos = () => {
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: currentOrder.status_pagamento === value ? currentOrder.status_envio : currentOrder.status_envio,
+        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
       });
     } catch (err) {
       console.error("Falha ao sincronizar status de pagamento:", err);
@@ -167,7 +170,7 @@ const Pedidos = () => {
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
         etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: value,
+        status_envio: value, pais: currentOrder.pais,
       });
     } catch (err) {
       console.error("Falha ao sincronizar status de envio:", err);
@@ -207,7 +210,7 @@ const Pedidos = () => {
         etiqueta_envio_url: updatedOrder.etiqueta_envio_url || "",
         vendedor: updatedOrder.vendedor || "",
         criativo: updatedOrder.criativo || "",
-        status_envio: updatedOrder.status_envio,
+        status_envio: updatedOrder.status_envio, pais: updatedOrder.pais,
       });
     } catch (err) {
       console.error("Falha ao sincronizar anexo:", err);
