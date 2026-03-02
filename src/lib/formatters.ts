@@ -1,12 +1,15 @@
 import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 
-export function formatCurrency(value: number): string {
+const COTACAO_UYU_BRL = 7.49; // 1 BRL = 7.49 UYU
+
+export function formatCurrency(valueUYU: number): string {
+  const valueBRL = valueUYU / COTACAO_UYU_BRL;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valueBRL);
 }
 
 export function parseLocalDate(date: string): Date {
