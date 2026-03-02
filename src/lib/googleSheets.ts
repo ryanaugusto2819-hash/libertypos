@@ -79,6 +79,7 @@ export async function updateOrderStatusInSheets(pedido: {
   data_criacao?: string;
   data_envio?: string;
   comprovante_url?: string;
+  etiqueta_envio_url?: string;
   vendedor?: string;
   criativo?: string;
   status_envio?: string;
