@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCountry, countryConfig } from "@/contexts/CountryContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,29 +32,15 @@ const produtos = [
   "Gota Memo",
 ];
 
-const departamentos = [
-  "Artigas",
-  "Canelones",
-  "Cerro Largo",
-  "Colonia",
-  "Durazno",
-  "Flores",
-  "Florida",
-  "Lavalleja",
-  "Maldonado",
-  "Montevideo",
-  "Paysandú",
-  "Río Negro",
-  "Rivera",
-  "Rocha",
-  "Salto",
-  "San José",
-  "Soriano",
-  "Tacuarembó",
-  "Treinta y Tres",
-];
+const departamentosPorPais: Record<string, string[]> = {
+  UY: ["Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo", "Paysandú", "Río Negro", "Rivera", "Rocha", "Salto", "San José", "Soriano", "Tacuarembó", "Treinta y Tres"],
+  BR: ["Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"],
+  AR: ["Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"],
+};
 
 export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDialogProps) {
+  const { country, config } = useCountry();
+  const departamentos = departamentosPorPais[country] || [];
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -96,6 +83,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       observacoes: "",
       vendedor: form.vendedor,
       criativo: form.criativo,
+      pais: country,
     });
 
     setForm({
@@ -134,7 +122,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             <Input
               value={form.telefone}
               onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-              placeholder="+598 99 000 000"
+              placeholder={config.phonePrefix + " ..."}
             />
           </div>
           <div className="space-y-2">
@@ -168,7 +156,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             />
           </div>
           <div className="space-y-2">
-            <Label>Valor (UYU) *</Label>
+            <Label>Valor ({config.currency}) *</Label>
             <Input
               type="number"
               value={form.valor}
@@ -185,7 +173,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             />
           </div>
           <div className="space-y-2">
-            <Label>Departamento</Label>
+            <Label>{country === "BR" ? "Estado" : "Departamento"}</Label>
             <Select value={form.departamento} onValueChange={(v) => setForm({ ...form, departamento: v })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecionar" />

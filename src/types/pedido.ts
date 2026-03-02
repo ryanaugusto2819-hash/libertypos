@@ -1,6 +1,8 @@
 export type StatusPagamento = "pago" | "pendente";
 export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
 
+export type PaisCode = "UY" | "BR" | "AR";
+
 export interface Pedido {
   id: string;
   nome: string;
@@ -23,4 +25,5 @@ export interface Pedido {
   observacoes: string;
   vendedor?: string;
   criativo?: string;
+  pais: PaisCode;
 }

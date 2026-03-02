@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/formatters";
+import { useCountry } from "@/contexts/CountryContext";
 import {
   CheckCircle2,
   Truck,
@@ -35,6 +36,7 @@ const filterLabels: Record<FilterOption, string> = {
 };
 
 const Dashboard = () => {
+  const { country } = useCountry();
   const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
@@ -58,6 +60,7 @@ const Dashboard = () => {
   }, []);
 
   const filteredPedidos = useMemo(() => {
+    const countryFiltered = allPedidos.filter((p) => p.pais === country);
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
@@ -66,13 +69,13 @@ const Dashboard = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
-      return allPedidos.filter((p) => {
+      return countryFiltered.filter((p) => {
         const d = parseLocalDate(p.data_entrada);
         return d >= start && d <= end;
       });
     }
 
-    if (activeFilter === "custom") return allPedidos;
+    if (activeFilter === "custom") return countryFiltered;
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
@@ -80,11 +83,11 @@ const Dashboard = () => {
     start.setDate(start.getDate() - days);
     start.setHours(0, 0, 0, 0);
 
-    return allPedidos.filter((p) => {
+    return countryFiltered.filter((p) => {
       const d = parseLocalDate(p.data_entrada);
       return d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
