@@ -3,7 +3,7 @@ import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
-    currency: "COP",
+    currency: "BRL",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
