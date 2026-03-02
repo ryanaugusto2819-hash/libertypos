@@ -9,13 +9,21 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+export function parseLocalDate(date: string): Date {
+  // If the date is just YYYY-MM-DD, parse as local noon to avoid timezone shift
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return new Date(date + "T12:00:00");
+  }
+  return new Date(date);
+}
+
 export function formatDate(date: string | null): string {
   if (!date) return "—";
   return new Intl.DateTimeFormat("es-CO", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(parseLocalDate(date));
 }
 
 export const statusPagamentoConfig: Record<StatusPagamento, { label: string; className: string }> = {

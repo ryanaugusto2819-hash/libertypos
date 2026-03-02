@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/formatters";
 import {
   CheckCircle2,
   Truck,
@@ -66,7 +67,7 @@ const Dashboard = () => {
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
       return allPedidos.filter((p) => {
-        const d = new Date(p.data_entrada);
+        const d = parseLocalDate(p.data_entrada);
         return d >= start && d <= end;
       });
     }
@@ -80,7 +81,7 @@ const Dashboard = () => {
     start.setHours(0, 0, 0, 0);
 
     return allPedidos.filter((p) => {
-      const d = new Date(p.data_entrada);
+      const d = parseLocalDate(p.data_entrada);
       return d >= start && d <= now;
     });
   }, [activeFilter, customStart, customEnd, allPedidos]);

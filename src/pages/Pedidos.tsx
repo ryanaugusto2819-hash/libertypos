@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
-import { formatCurrency, formatDate, statusPagamentoConfig, statusEnvioConfig } from "@/lib/formatters";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,7 @@ const Pedidos = () => {
 
   const isOverdue = (p: Pedido) => {
     if (p.status_pagamento === "pago") return false;
-    const diffDays = Math.floor((Date.now() - new Date(p.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor((Date.now() - parseLocalDate(p.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
     return diffDays > 7;
   };
 
