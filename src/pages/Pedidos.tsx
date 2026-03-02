@@ -85,8 +85,8 @@ const Pedidos = () => {
     const currentOrder = pedidos.find((p) => p.id === orderId);
     if (!currentOrder) { toast.error("Pedido não encontrado"); return; }
     const now = new Date();
-    const dataPagamento = now.toISOString().split("T")[0];
-    const horaPagamento = now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+    const dataPagamento = now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
       await updateOrderStatusInSheets({
