@@ -17,10 +17,16 @@ interface Props {
   label?: string;
 }
 
+function extractFilePath(publicUrl: string): string | null {
+  const match = publicUrl.match(/order-attachments\/(.+)$/);
+  return match ? match[1] : null;
+}
+
 export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   const uploadFile = async (file: File) => {
     const ext = file.name.split(".").pop();
@@ -46,6 +52,54 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
       toast.error("Erro ao fazer upload do arquivo");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const downloadFile = async () => {
+    if (!url) return;
+    const filePath = extractFilePath(url);
+    if (!filePath) {
+      toast.error("Caminho do arquivo inválido");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage
+        .from("order-attachments")
+        .download(filePath);
+      if (error) throw error;
+
+      const blobLink = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = blobLink;
+      a.download = filePath.split("/").pop() || "arquivo";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobLink);
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Erro ao baixar o arquivo");
+    }
+  };
+
+  const openPreview = async () => {
+    if (!url) return;
+    const filePath = extractFilePath(url);
+    if (!filePath) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("order-attachments")
+        .download(filePath);
+      if (error) throw error;
+
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      const newBlobUrl = URL.createObjectURL(data);
+      setBlobUrl(newBlobUrl);
+      setPreviewOpen(true);
+    } catch (err) {
+      console.error("Preview error:", err);
+      toast.error("Erro ao carregar pré-visualização");
     }
   };
 
@@ -107,47 +161,50 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
           Concluído
         </Badge>
         <button
-          onClick={() => setPreviewOpen(true)}
+          onClick={openPreview}
           className="p-1 rounded-md hover:bg-muted transition-colors"
           title={`Visualizar ${label.toLowerCase()}`}
         >
           <Eye className="h-4 w-4 text-primary" />
         </button>
-        <a
-          href={url}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={downloadFile}
           className="p-1 rounded-md hover:bg-muted transition-colors"
           title={`Baixar ${label.toLowerCase()}`}
         >
           <Download className="h-4 w-4 text-muted-foreground" />
-        </a>
+        </button>
       </div>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <Dialog open={previewOpen} onOpenChange={(open) => {
+        setPreviewOpen(open);
+        if (!open && blobUrl) {
+          URL.revokeObjectURL(blobUrl);
+          setBlobUrl(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-2">
-            {isPdf ? (
-              <div className="flex flex-col items-center gap-4 py-8">
-                <p className="text-sm text-muted-foreground">PDFs não podem ser visualizados inline.</p>
-                <Button
-                  size="sm"
-                  onClick={() => window.open(url, '_blank')}
-                  className="rounded-xl"
-                >
-                  Abrir PDF em nova aba
-                </Button>
-              </div>
-            ) : (
+            {blobUrl && isPdf ? (
+              <iframe
+                src={blobUrl}
+                className="w-full h-[70vh] rounded-xl border-2 border-primary/20"
+                title={label}
+              />
+            ) : blobUrl ? (
               <img
-                src={url}
+                src={blobUrl}
                 alt={label}
                 className="max-h-[70vh] rounded-xl border-2 border-primary/20 object-contain"
               />
+            ) : (
+              <div className="flex items-center gap-2 py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Carregando...</span>
+              </div>
             )}
           </div>
           <div className="flex justify-end">
