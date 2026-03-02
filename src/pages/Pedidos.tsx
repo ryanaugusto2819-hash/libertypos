@@ -96,6 +96,7 @@ const Pedidos = () => {
         cidade: currentOrder.cidade, departamento: currentOrder.departamento,
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
         status_envio: currentOrder.status_envio,
       });
@@ -140,6 +141,7 @@ const Pedidos = () => {
         cidade: currentOrder.cidade, departamento: currentOrder.departamento,
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
         status_envio: currentOrder.status_pagamento === value ? currentOrder.status_envio : currentOrder.status_envio,
       });
@@ -163,6 +165,7 @@ const Pedidos = () => {
         cidade: currentOrder.cidade, departamento: currentOrder.departamento,
         codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
         data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
         status_envio: value,
       });
@@ -171,6 +174,46 @@ const Pedidos = () => {
       toast.error("Falhou ao sincronizar com Google Sheets");
     }
   };
+
+  const handleAttachmentChange = useCallback(async (
+    pedidoId: string,
+    field: "comprovante_url" | "etiqueta_envio_url",
+    value: string | null,
+  ) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+
+    const updatedOrder = { ...currentOrder, [field]: value };
+    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
+
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId,
+        status_pagamento: updatedOrder.status_pagamento,
+        data_pagamento: updatedOrder.data_pagamento,
+        hora_pagamento: updatedOrder.hora_pagamento,
+        nome: updatedOrder.nome,
+        telefone: updatedOrder.telefone,
+        cedula: updatedOrder.cedula,
+        produto: updatedOrder.produto,
+        quantidade: updatedOrder.quantidade,
+        valor: updatedOrder.valor,
+        cidade: updatedOrder.cidade,
+        departamento: updatedOrder.departamento,
+        codigo_rastreamento: updatedOrder.codigo_rastreamento,
+        data_criacao: updatedOrder.data_entrada,
+        data_envio: updatedOrder.data_envio || "",
+        comprovante_url: updatedOrder.comprovante_url || "",
+        etiqueta_envio_url: updatedOrder.etiqueta_envio_url || "",
+        vendedor: updatedOrder.vendedor || "",
+        criativo: updatedOrder.criativo || "",
+        status_envio: updatedOrder.status_envio,
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar anexo:", err);
+      toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
+    }
+  }, [pedidos]);
 
   const handleDeleteOrder = async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
@@ -369,11 +412,7 @@ const Pedidos = () => {
                         <ImageUploadCell
                           url={p.comprovante_url}
                           label="Comprovante de Pagamento"
-                          onChange={(url) => {
-                            setPedidos(pedidos.map((ped) =>
-                              ped.id === p.id ? { ...ped, comprovante_url: url || null } : ped
-                            ));
-                          }}
+                          onChange={(url) => handleAttachmentChange(p.id, "comprovante_url", url || null)}
                         />
                         {p.data_pagamento && (
                           <div className="text-xs text-muted-foreground mt-1">
@@ -386,11 +425,7 @@ const Pedidos = () => {
                       <ImageUploadCell
                         url={p.etiqueta_envio_url}
                         label="Etiqueta de Envio"
-                        onChange={(url) => {
-                          setPedidos(pedidos.map((ped) =>
-                            ped.id === p.id ? { ...ped, etiqueta_envio_url: url || null } : ped
-                          ));
-                        }}
+                        onChange={(url) => handleAttachmentChange(p.id, "etiqueta_envio_url", url || null)}
                       />
                     </TableCell>
                     <TableCell className="text-center">

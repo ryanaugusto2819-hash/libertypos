@@ -124,6 +124,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.vendedor || "",
     pedido.criativo || "",
     pedido.status_envio || "não enviado",
+    pedido.etiqueta_envio_url || "",
   ];
 }
 
@@ -153,7 +154,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:T");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:U");
       // Skip header row if present
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
@@ -183,7 +184,7 @@ serve(async (req) => {
           vendedor: row[17] || "",
           criativo: row[18] || "",
           status_envio: validStatusEnv.includes(rawStatusEnv) ? rawStatusEnv : "não enviado",
-          etiqueta_envio_url: null,
+          etiqueta_envio_url: row[20] || null,
           observacoes: "",
         };
       });
@@ -209,11 +210,11 @@ serve(async (req) => {
       // Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
       // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
       // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
-      // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo
+      // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, T:status_envio, U:etiqueta_envio_url
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:T", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:U", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -223,7 +224,7 @@ serve(async (req) => {
 
     if (action === "update_status") {
       // Find the row by pedido_id
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:T");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:U");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -246,7 +247,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:T", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:U", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -265,8 +266,11 @@ serve(async (req) => {
         pedido.comprovante_url || "",
         now,
       ]]);
-      // Update T:status_envio
-      await updateRow(accessToken, spreadsheetId, `T${rowIndex}`, [[pedido.status_envio || ""]]);
+      // Update T:status_envio and U:etiqueta_envio_url
+      await updateRow(accessToken, spreadsheetId, `T${rowIndex}:U${rowIndex}`, [[
+        pedido.status_envio || "",
+        pedido.etiqueta_envio_url || "",
+      ]]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Status atualizado na planilha" }),
