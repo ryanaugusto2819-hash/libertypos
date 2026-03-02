@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Eye, Upload, RefreshCw, Loader2 } from "lucide-react";
+import { Eye, Upload, Download, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,18 +113,16 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
         >
           <Eye className="h-4 w-4 text-primary" />
         </button>
-        <button
-          onClick={() => inputRef.current?.click()}
+        <a
+          href={url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
           className="p-1 rounded-md hover:bg-muted transition-colors"
-          title={`Substituir ${label.toLowerCase()}`}
-          disabled={uploading}
+          title={`Baixar ${label.toLowerCase()}`}
         >
-          {uploading ? (
-            <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
+          <Download className="h-4 w-4 text-muted-foreground" />
+        </a>
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -134,11 +132,16 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
           </DialogHeader>
           <div className="flex justify-center p-2">
             {isPdf ? (
-              <iframe
-                src={url}
-                className="w-full h-[70vh] rounded-xl border-2 border-primary/20"
-                title={label}
-              />
+              <div className="flex flex-col items-center gap-4 py-8">
+                <p className="text-sm text-muted-foreground">PDFs não podem ser visualizados inline.</p>
+                <Button
+                  size="sm"
+                  onClick={() => window.open(url, '_blank')}
+                  className="rounded-xl"
+                >
+                  Abrir PDF em nova aba
+                </Button>
+              </div>
             ) : (
               <img
                 src={url}
