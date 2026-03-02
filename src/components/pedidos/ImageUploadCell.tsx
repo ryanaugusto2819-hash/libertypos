@@ -24,8 +24,8 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecione uma imagem válida");
+    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+      toast.error("Selecione uma imagem ou PDF válido");
       return;
     }
 
@@ -41,7 +41,7 @@ export function ImageUploadCell({ url, onChange, label = "Comprovante" }: Props)
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           className="hidden"
           onChange={handleFileSelect}
         />
