@@ -70,8 +70,8 @@ const Pedidos = () => {
       if (!isAdmin) {
         matchOwner = p.afiliado_id === user?.id;
       } else {
-        if (ownerFilter === "meus") matchOwner = p.afiliado_id === user?.id;
-        else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== user?.id;
+        if (ownerFilter === "meus") matchOwner = !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id;
+        else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
       return matchCountry && matchSearch && matchStatus && matchOwner;
