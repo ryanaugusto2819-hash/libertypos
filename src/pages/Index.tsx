@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
@@ -30,11 +32,13 @@ const filterLabels: Record<FilterOption, string> = {
 
 const Dashboard = () => {
   const { country } = useCountry();
+  const { user, isAdmin } = useAuth();
   const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
 
   useEffect(() => {
     const load = async () => {
@@ -53,7 +57,20 @@ const Dashboard = () => {
   }, []);
 
   const filteredPedidos = useMemo(() => {
-    const countryFiltered = allPedidos.filter((p) => p.pais === country);
+    let list = allPedidos.filter((p) => p.pais === country);
+
+    // Afiliado: only their own orders
+    if (!isAdmin) {
+      list = list.filter((p) => p.afiliado_id === user?.id);
+    } else {
+      // Admin: filter by owner
+      if (ownerFilter === "meus") {
+        list = list.filter((p) => p.afiliado_id === user?.id);
+      } else if (ownerFilter === "afiliados") {
+        list = list.filter((p) => p.afiliado_id && p.afiliado_id !== user?.id);
+      }
+    }
+
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
@@ -62,13 +79,13 @@ const Dashboard = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
-      return countryFiltered.filter((p) => {
+      return list.filter((p) => {
         const d = parseLocalDate(p.data_entrada);
         return d >= start && d <= end;
       });
     }
 
-    if (activeFilter === "custom") return countryFiltered;
+    if (activeFilter === "custom") return list;
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
@@ -76,11 +93,11 @@ const Dashboard = () => {
     start.setDate(start.getDate() - days);
     start.setHours(0, 0, 0, 0);
 
-    return countryFiltered.filter((p) => {
+    return list.filter((p) => {
       const d = parseLocalDate(p.data_entrada);
       return d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos, country]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -112,6 +129,7 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
           {(["hoje", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}

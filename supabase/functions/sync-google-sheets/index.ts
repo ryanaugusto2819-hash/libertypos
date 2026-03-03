@@ -5,7 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Base64url encoding (no padding, URL-safe chars)
 function base64url(input: string | ArrayBuffer): string {
   let b64: string;
   if (typeof input === "string") {
@@ -16,7 +15,6 @@ function base64url(input: string | ArrayBuffer): string {
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-// Google Sheets API helpers
 async function getAccessToken(credentials: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -102,6 +100,11 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
   return data;
 }
 
+// Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
+// G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
+// L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
+// P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -126,6 +129,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.status_envio || "não enviado",
     pedido.etiqueta_envio_url || "",
     pedido.pais || "UY",
+    pedido.afiliado_id || "",
   ];
 }
 
@@ -143,7 +147,6 @@ serve(async (req) => {
 
     let credentials;
     try {
-      // Handle cases where the secret might be double-encoded or have extra whitespace
       const cleaned = credentialsStr.trim();
       credentials = JSON.parse(cleaned);
     } catch (parseErr) {
@@ -155,8 +158,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:V");
-      // Skip header row if present
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
       const validStatusPag = ["pago", "pendente"];
@@ -187,6 +189,7 @@ serve(async (req) => {
           status_envio: validStatusEnv.includes(rawStatusEnv) ? rawStatusEnv : "não enviado",
           etiqueta_envio_url: row[20] || null,
           pais: row[21] || "UY",
+          afiliado_id: row[22] || "",
           observacoes: "",
         };
       });
@@ -198,7 +201,6 @@ serve(async (req) => {
     }
 
     if (action === "create") {
-      // Anti-duplicity: check if pedido_id already exists
       const existingData = await getSheetData(accessToken, spreadsheetId, "A:A");
       const existingIds = existingData.map((row: string[]) => row[0]);
 
@@ -209,14 +211,10 @@ serve(async (req) => {
         );
       }
 
-      // Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
-      // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
-      // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
-      // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, T:status_envio, U:etiqueta_envio_url
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:V", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:W", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -225,13 +223,12 @@ serve(async (req) => {
     }
 
     if (action === "update_status") {
-      // Find the row by pedido_id
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:V");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
         if (allData[i][0] === pedido.pedido_id) {
-          rowIndex = i + 1; // Sheets is 1-indexed
+          rowIndex = i + 1;
           break;
         }
       }
@@ -249,7 +246,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:V", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:W", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -257,7 +254,6 @@ serve(async (req) => {
         );
       }
 
-      // Update J:rastreamento, K:status_pagamento, N:data_pagamento, O:hora_pagamento, P:comprovante, Q:ultima_atualizacao
       await updateRow(accessToken, spreadsheetId, `J${rowIndex}:K${rowIndex}`, [[
         pedido.codigo_rastreamento || "",
         pedido.status_pagamento,
@@ -268,11 +264,11 @@ serve(async (req) => {
         pedido.comprovante_url || "",
         now,
       ]]);
-      // Update T:status_envio, U:etiqueta_envio_url, V:pais
-      await updateRow(accessToken, spreadsheetId, `T${rowIndex}:V${rowIndex}`, [[
+      await updateRow(accessToken, spreadsheetId, `T${rowIndex}:W${rowIndex}`, [[
         pedido.status_envio || "",
         pedido.etiqueta_envio_url || "",
         pedido.pais || "UY",
+        pedido.afiliado_id || "",
       ]]);
 
       return new Response(
@@ -299,14 +295,12 @@ serve(async (req) => {
         );
       }
 
-      // Get spreadsheet metadata to find sheet ID
       const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const metaData = await metaRes.json();
       const sheetId = metaData.sheets?.[0]?.properties?.sheetId ?? 0;
 
-      // Delete the row using batchUpdate
       const deleteRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
         method: "POST",
         headers: {

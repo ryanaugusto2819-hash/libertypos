@@ -27,4 +27,5 @@ export interface Pedido {
   vendedor?: string;
   criativo?: string;
   pais: PaisCode;
+  afiliado_id?: string;
 }

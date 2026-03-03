@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,7 @@ import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 
 const Pedidos = () => {
   const { country } = useCountry();
+  const { user, isAdmin } = useAuth();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -29,6 +32,7 @@ const Pedidos = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
 
   useEffect(() => {
     loadOrders();
@@ -59,13 +63,23 @@ const Pedidos = () => {
         p.cidade.toLowerCase().includes(search.toLowerCase());
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
-      return matchCountry && matchSearch && matchStatus;
+
+      // Owner filter
+      let matchOwner = true;
+      if (!isAdmin) {
+        matchOwner = p.afiliado_id === user?.id;
+      } else {
+        if (ownerFilter === "meus") matchOwner = p.afiliado_id === user?.id;
+        else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== user?.id;
+      }
+
+      return matchCountry && matchSearch && matchStatus && matchOwner;
     });
-  }, [pedidos, search, statusFilter, country]);
+  }, [pedidos, search, statusFilter, country, isAdmin, ownerFilter, user]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    const order: Pedido = { ...newOrder, id: pedidoId };
+    const order: Pedido = { ...newOrder, id: pedidoId, afiliado_id: user?.id };
     setPedidos([order, ...pedidos]);
     try {
       await syncOrderToSheets({
@@ -76,6 +90,7 @@ const Pedidos = () => {
         data_criacao: order.data_entrada, data_envio: order.data_envio || "",
         vendedor: order.vendedor || "", criativo: order.criativo || "",
         status_envio: order.status_envio, pais: order.pais,
+        afiliado_id: user?.id || "",
       });
       toast.success("Pedido sincronizado com Google Sheets!");
     } catch (err) {
@@ -229,10 +244,13 @@ const Pedidos = () => {
               {totalPedidos} pedido{totalPedidos !== 1 ? "s" : ""} encontrado{totalPedidos !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow text-base px-6">
-            <Plus className="h-4 w-4" />
-            Criar Pedido
-          </Button>
+          <div className="flex items-center gap-2">
+            <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
+            <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow text-base px-6">
+              <Plus className="h-4 w-4" />
+              Criar Pedido
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
