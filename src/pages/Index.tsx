@@ -65,9 +65,9 @@ const Dashboard = () => {
     } else {
       // Admin: filter by owner
       if (ownerFilter === "meus") {
-        list = list.filter((p) => p.afiliado_id === user?.id);
+        list = list.filter((p) => !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id);
       } else if (ownerFilter === "afiliados") {
-        list = list.filter((p) => p.afiliado_id && p.afiliado_id !== user?.id);
+        list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
       }
     }
 
