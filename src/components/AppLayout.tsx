@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { displayName, role, signOut } = useAuth();
+  const { displayName, role, isAdmin, signOut } = useAuth();
 
   return (
     <SidebarProvider>
@@ -17,7 +17,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="mr-4" />
             <div className="flex-1" />
             <div className="flex items-center gap-3">
-              <CountrySelector />
+              {isAdmin && <CountrySelector />}
               <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground border-l pl-3">
                 <span className="font-medium text-foreground">{displayName}</span>
                 <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold uppercase">
