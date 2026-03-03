@@ -4,6 +4,7 @@ export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
 export type PaisCode = "UY" | "BR" | "AR";
 
 export interface Pedido {
+  user_id?: string;
   id: string;
   nome: string;
   telefone: string;

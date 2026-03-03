@@ -1,28 +1,22 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePedidos } from "@/hooks/usePedidos";
+import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import {
-  CheckCircle2,
-  Truck,
-  Send,
-  AlertTriangle,
-  DollarSign,
-  Wallet,
-  CalendarClock,
-  CalendarIcon,
-  Loader2,
+  CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
+  CalendarClock, CalendarIcon, Loader2,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
 
 type FilterOption = "hoje" | "7" | "15" | "30" | "custom";
@@ -37,30 +31,25 @@ const filterLabels: Record<FilterOption, string> = {
 
 const Dashboard = () => {
   const { country } = useCountry();
-  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, isAdmin } = useAuth();
+  const { data: allPedidos = [], isLoading: loading } = usePedidos();
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const orders = await fetchOrdersFromSheets();
-        setAllPedidos(orders);
-      } catch (err) {
-        console.error("Erro ao carregar pedidos:", err);
-        toast.error("Falha ao carregar dados do Google Sheets");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
 
   const filteredPedidos = useMemo(() => {
-    const countryFiltered = allPedidos.filter((p) => p.pais === country);
+    let list = allPedidos.filter((p) => p.pais === country);
+
+    // Owner filter for admin
+    if (isAdmin) {
+      if (ownerFilter === "meus") {
+        list = list.filter((p) => p.user_id === user?.id);
+      } else if (ownerFilter === "afiliados") {
+        list = list.filter((p) => p.user_id !== user?.id);
+      }
+    }
+
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
@@ -69,13 +58,13 @@ const Dashboard = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
-      return countryFiltered.filter((p) => {
+      return list.filter((p) => {
         const d = parseLocalDate(p.data_entrada);
         return d >= start && d <= end;
       });
     }
 
-    if (activeFilter === "custom") return countryFiltered;
+    if (activeFilter === "custom") return list;
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
@@ -83,11 +72,11 @@ const Dashboard = () => {
     start.setDate(start.getDate() - days);
     start.setHours(0, 0, 0, 0);
 
-    return countryFiltered.filter((p) => {
+    return list.filter((p) => {
       const d = parseLocalDate(p.data_entrada);
       return d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos, country]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -119,6 +108,7 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
           {(["hoje", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}
@@ -146,20 +136,9 @@ const Dashboard = () => {
             </PopoverTrigger>
             <PopoverContent className="w-auto p-4 space-y-3" align="end">
               <p className="text-xs font-medium text-muted-foreground">Data Início</p>
-              <Calendar
-                mode="single"
-                selected={customStart}
-                onSelect={(date) => { setCustomStart(date); setActiveFilter("custom"); }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
+              <Calendar mode="single" selected={customStart} onSelect={(date) => { setCustomStart(date); setActiveFilter("custom"); }} initialFocus className={cn("p-3 pointer-events-auto")} />
               <p className="text-xs font-medium text-muted-foreground">Data Fim</p>
-              <Calendar
-                mode="single"
-                selected={customEnd}
-                onSelect={(date) => { setCustomEnd(date); setActiveFilter("custom"); }}
-                className={cn("p-3 pointer-events-auto")}
-              />
+              <Calendar mode="single" selected={customEnd} onSelect={(date) => { setCustomEnd(date); setActiveFilter("custom"); }} className={cn("p-3 pointer-events-auto")} />
             </PopoverContent>
           </Popover>
         </div>
@@ -167,70 +146,17 @@ const Dashboard = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard
-          title="Pedidos Pagos"
-          value={pagos.length}
-          percentage={Math.round((pagos.length / total) * 100)}
-          icon={CheckCircle2}
-          variant="success"
-          trend="up"
-          delay={0}
-        />
-        <KpiCard
-          title="Pedidos Retirados"
-          value={retirados.length}
-          percentage={Math.round((retirados.length / total) * 100)}
-          icon={Truck}
-          variant="warning"
-          trend="neutral"
-          delay={100}
-        />
-        <KpiCard
-          title="Pedidos Enviados"
-          value={enviados.length}
-          percentage={Math.round((enviados.length / total) * 100)}
-          icon={Send}
-          variant="info"
-          trend="up"
-          delay={200}
-        />
-        <KpiCard
-          title="A Retirar"
-          value={aRetirar.length}
-          percentage={Math.round((aRetirar.length / total) * 100)}
-          icon={AlertTriangle}
-          variant="danger"
-          trend="down"
-          delay={300}
-        />
+        <KpiCard title="Pedidos Pagos" value={pagos.length} percentage={total ? Math.round((pagos.length / total) * 100) : 0} icon={CheckCircle2} variant="success" trend="up" delay={0} />
+        <KpiCard title="Pedidos Retirados" value={retirados.length} percentage={total ? Math.round((retirados.length / total) * 100) : 0} icon={Truck} variant="warning" trend="neutral" delay={100} />
+        <KpiCard title="Pedidos Enviados" value={enviados.length} percentage={total ? Math.round((enviados.length / total) * 100) : 0} icon={Send} variant="info" trend="up" delay={200} />
+        <KpiCard title="A Retirar" value={aRetirar.length} percentage={total ? Math.round((aRetirar.length / total) * 100) : 0} icon={AlertTriangle} variant="danger" trend="down" delay={300} />
       </div>
 
       {/* Finance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FinanceCard
-          title="Total Recebido"
-          value={formatCurrency(totalRecebido)}
-          subtitle={`${pagos.length} pedidos pagos`}
-          icon={Wallet}
-          variant="received"
-          delay={200}
-        />
-        <FinanceCard
-          title="Total a Receber"
-          value={formatCurrency(totalAReceber)}
-          subtitle={`${total - pagos.length} pedidos pendentes`}
-          icon={DollarSign}
-          variant="pending"
-          delay={300}
-        />
-        <FinanceCard
-          title="Agendado para Hoje"
-          value={formatCurrency(totalAgendado)}
-          subtitle={`${retirados.length} pedidos retirados`}
-          icon={CalendarClock}
-          variant="scheduled"
-          delay={400}
-        />
+        <FinanceCard title="Total Recebido" value={formatCurrency(totalRecebido)} subtitle={`${pagos.length} pedidos pagos`} icon={Wallet} variant="received" delay={200} />
+        <FinanceCard title="Total a Receber" value={formatCurrency(totalAReceber)} subtitle={`${total - pagos.length} pedidos pendentes`} icon={DollarSign} variant="pending" delay={300} />
+        <FinanceCard title="Agendado para Hoje" value={formatCurrency(totalAgendado)} subtitle={`${retirados.length} pedidos retirados`} icon={CalendarClock} variant="scheduled" delay={400} />
       </div>
 
       {/* Charts */}
