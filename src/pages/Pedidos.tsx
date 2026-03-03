@@ -3,6 +3,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -337,7 +338,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>
+                {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -383,28 +384,40 @@ const Pedidos = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Select value={p.status_pagamento} onValueChange={(v: StatusPagamento) => handleStatusPagChange(p.id, v)}>
-                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm", statusPagamentoConfig[p.status_pagamento]?.className)}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="pago">Pago</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {isAdmin ? (
+                        <Select value={p.status_pagamento} onValueChange={(v: StatusPagamento) => handleStatusPagChange(p.id, v)}>
+                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm", statusPagamentoConfig[p.status_pagamento]?.className)}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="pago">Pago</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant={p.status_pagamento === "pago" ? "default" : "secondary"} className={cn("text-xs font-bold", statusPagamentoConfig[p.status_pagamento]?.className)}>
+                          {statusPagamentoConfig[p.status_pagamento]?.label ?? p.status_pagamento}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Select value={p.status_envio} onValueChange={(v: StatusEnvio) => handleStatusEnvChange(p.id, v)}>
-                        <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio]?.className)}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="não enviado">Não Enviado</SelectItem>
-                          <SelectItem value="enviado">Enviado</SelectItem>
-                          <SelectItem value="a retirar">A Retirar</SelectItem>
-                          <SelectItem value="retirado">Retirado</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {isAdmin ? (
+                        <Select value={p.status_envio} onValueChange={(v: StatusEnvio) => handleStatusEnvChange(p.id, v)}>
+                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio]?.className)}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="não enviado">Não Enviado</SelectItem>
+                            <SelectItem value="enviado">Enviado</SelectItem>
+                            <SelectItem value="a retirar">A Retirar</SelectItem>
+                            <SelectItem value="retirado">Retirado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="secondary" className={cn("text-xs font-bold", statusEnvioConfig[p.status_envio]?.className)}>
+                          {statusEnvioConfig[p.status_envio]?.label ?? p.status_envio}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div>
@@ -420,13 +433,15 @@ const Pedidos = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <ImageUploadCell
-                        url={p.etiqueta_envio_url}
-                        label="Etiqueta de Envio"
-                        onChange={(url) => handleAttachmentChange(p.id, "etiqueta_envio_url", url || null)}
-                      />
-                    </TableCell>
+                    {country === "UY" && (
+                      <TableCell>
+                        <ImageUploadCell
+                          url={p.etiqueta_envio_url}
+                          label="Etiqueta de Envio"
+                          onChange={(url) => handleAttachmentChange(p.id, "etiqueta_envio_url", url || null)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -442,7 +457,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={country === "UY" ? 12 : 11} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
