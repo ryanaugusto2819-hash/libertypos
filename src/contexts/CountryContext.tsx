@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type Country = "UY" | "BR" | "AR";
 
@@ -17,12 +18,22 @@ interface CountryContextType {
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export function CountryProvider({ children }: { children: ReactNode }) {
+  const { isAdmin, loading } = useAuth();
+
   const [country, setCountry] = useState<Country>(() => {
     const saved = localStorage.getItem("selected-country") as Country;
     return saved && countryConfig[saved] ? saved : "UY";
   });
 
+  // Lock affiliates to AR
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      setCountry("AR");
+    }
+  }, [loading, isAdmin]);
+
   const handleSetCountry = (c: Country) => {
+    if (!isAdmin) return; // affiliates can't change country
     setCountry(c);
     localStorage.setItem("selected-country", c);
   };
