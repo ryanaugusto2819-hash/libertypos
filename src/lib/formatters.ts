@@ -1,6 +1,8 @@
 import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 
 const COTACAO_UYU_BRL = 7.49; // 1 BRL = 7.49 UYU
+const COTACAO_ARS_BRL = 0.0054; // 1 ARS ≈ 0.0054 BRL
+const COTACAO_ARS_USD = 0.00083; // 1 ARS ≈ 0.00083 USD
 
 export function formatCurrency(valueUYU: number): string {
   const valueBRL = valueUYU / COTACAO_UYU_BRL;
@@ -10,6 +12,39 @@ export function formatCurrency(valueUYU: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(valueBRL);
+}
+
+export function formatARS(value: number): string {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatBRLFromARS(valueARS: number): string {
+  const valueBRL = valueARS * COTACAO_ARS_BRL;
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valueBRL);
+}
+
+export function formatUSD(valueARS: number): string {
+  const valueUSD = valueARS * COTACAO_ARS_USD;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valueUSD);
+}
+
+export function arsToUsd(valueARS: number): number {
+  return valueARS * COTACAO_ARS_USD;
 }
 
 export function parseLocalDate(date: string): Date {

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/lib/formatters";
+import { formatARS, formatBRLFromARS, formatUSD, arsToUsd } from "@/lib/formatters";
 import { Pedido } from "@/types/pedido";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,16 +148,22 @@ const Financeiro = () => {
             <div className="space-y-4 py-2">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Saldo disponível</p>
-                <p className="text-lg font-bold text-success">{formatCurrency(financials.saldoDisponivel)}</p>
+                <p className="text-lg font-bold text-success">{formatUSD(financials.saldoDisponivel)}</p>
+                <p className="text-xs text-muted-foreground">{formatARS(financials.saldoDisponivel)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Valor (UYU)</label>
+                <label className="text-sm font-medium">Valor em ARS (Pesos Argentinos)</label>
                 <Input
                   type="number"
                   placeholder="0.00"
                   value={saqueValor}
                   onChange={(e) => setSaqueValor(e.target.value)}
                 />
+                {saqueValor && !isNaN(parseFloat(saqueValor)) && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ≈ {formatUSD(parseFloat(saqueValor))}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium">Observações</label>
@@ -183,28 +189,32 @@ const Financeiro = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <SummaryCard
           title="Saldo Disponível"
-          value={formatCurrency(financials.saldoDisponivel)}
+          value={formatARS(financials.saldoDisponivel)}
+          subtitle={formatBRLFromARS(financials.saldoDisponivel)}
           icon={Wallet}
           variant="success"
           delay={0}
         />
         <SummaryCard
           title="Total Recebido"
-          value={formatCurrency(financials.totalPago)}
+          value={formatARS(financials.totalPago)}
+          subtitle={formatBRLFromARS(financials.totalPago)}
           icon={CheckCircle2}
           variant="info"
           delay={100}
         />
         <SummaryCard
           title="Pendente de Pagamento"
-          value={formatCurrency(financials.totalPendente)}
+          value={formatARS(financials.totalPendente)}
+          subtitle={formatBRLFromARS(financials.totalPendente)}
           icon={Clock}
           variant="warning"
           delay={200}
         />
         <SummaryCard
           title="Total Sacado"
-          value={formatCurrency(financials.totalSacado)}
+          value={formatARS(financials.totalSacado)}
+          subtitle={formatBRLFromARS(financials.totalSacado)}
           icon={BanknoteIcon}
           variant="muted"
           delay={300}
@@ -220,7 +230,7 @@ const Financeiro = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total em Vendas</p>
-              <p className="text-lg font-bold text-card-foreground">{formatCurrency(financials.totalVendas)}</p>
+              <p className="text-lg font-bold text-card-foreground">{formatARS(financials.totalVendas)} <span className="text-sm text-muted-foreground font-normal">{formatBRLFromARS(financials.totalVendas)}</span></p>
             </div>
           </CardContent>
         </Card>
@@ -279,7 +289,10 @@ const Financeiro = () => {
                       <TableCell className="whitespace-nowrap">
                         {new Date(s.data_solicitacao).toLocaleDateString("pt-BR")}
                       </TableCell>
-                      <TableCell className="font-medium">{formatCurrency(s.valor)}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatUSD(s.valor)}
+                        <span className="block text-xs text-muted-foreground">{formatARS(s.valor)}</span>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={cfg.variant}>{cfg.label}</Badge>
                       </TableCell>
@@ -307,6 +320,7 @@ const Financeiro = () => {
 interface SummaryCardProps {
   title: string;
   value: string;
+  subtitle?: string;
   icon: React.ElementType;
   variant: "success" | "info" | "warning" | "muted";
   delay?: number;
@@ -319,7 +333,7 @@ const variantStyles: Record<string, string> = {
   muted: "bg-muted text-muted-foreground border-border",
 };
 
-function SummaryCard({ title, value, icon: Icon, variant, delay = 0 }: SummaryCardProps) {
+function SummaryCard({ title, value, subtitle, icon: Icon, variant, delay = 0 }: SummaryCardProps) {
   return (
     <Card
       className="glass-card animate-fade-in overflow-hidden"
@@ -333,6 +347,7 @@ function SummaryCard({ title, value, icon: Icon, variant, delay = 0 }: SummaryCa
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
             <p className="text-xl font-bold text-card-foreground truncate">{value}</p>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
         </div>
       </CardContent>
