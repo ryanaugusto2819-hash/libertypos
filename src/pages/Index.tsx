@@ -1,10 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePedidos } from "@/hooks/usePedidos";
-import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
+import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2,
@@ -17,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
 
 type FilterOption = "hoje" | "7" | "15" | "30" | "custom";
@@ -31,25 +30,30 @@ const filterLabels: Record<FilterOption, string> = {
 
 const Dashboard = () => {
   const { country } = useCountry();
-  const { user, isAdmin } = useAuth();
-  const { data: allPedidos = [], isLoading: loading } = usePedidos();
+  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("30");
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
-  const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const orders = await fetchOrdersFromSheets();
+        setAllPedidos(orders);
+      } catch (err) {
+        console.error("Erro ao carregar pedidos:", err);
+        toast.error("Falha ao carregar dados do Google Sheets");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const filteredPedidos = useMemo(() => {
-    let list = allPedidos.filter((p) => p.pais === country);
-
-    // Owner filter for admin
-    if (isAdmin) {
-      if (ownerFilter === "meus") {
-        list = list.filter((p) => p.user_id === user?.id);
-      } else if (ownerFilter === "afiliados") {
-        list = list.filter((p) => p.user_id !== user?.id);
-      }
-    }
-
+    const countryFiltered = allPedidos.filter((p) => p.pais === country);
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
@@ -58,13 +62,13 @@ const Dashboard = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
-      return list.filter((p) => {
+      return countryFiltered.filter((p) => {
         const d = parseLocalDate(p.data_entrada);
         return d >= start && d <= end;
       });
     }
 
-    if (activeFilter === "custom") return list;
+    if (activeFilter === "custom") return countryFiltered;
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
@@ -72,11 +76,11 @@ const Dashboard = () => {
     start.setDate(start.getDate() - days);
     start.setHours(0, 0, 0, 0);
 
-    return list.filter((p) => {
+    return countryFiltered.filter((p) => {
       const d = parseLocalDate(p.data_entrada);
       return d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -108,7 +112,6 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
           {(["hoje", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}
@@ -144,7 +147,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard title="Pedidos Pagos" value={pagos.length} percentage={total ? Math.round((pagos.length / total) * 100) : 0} icon={CheckCircle2} variant="success" trend="up" delay={0} />
         <KpiCard title="Pedidos Retirados" value={retirados.length} percentage={total ? Math.round((retirados.length / total) * 100) : 0} icon={Truck} variant="warning" trend="neutral" delay={100} />
@@ -152,14 +154,12 @@ const Dashboard = () => {
         <KpiCard title="A Retirar" value={aRetirar.length} percentage={total ? Math.round((aRetirar.length / total) * 100) : 0} icon={AlertTriangle} variant="danger" trend="down" delay={300} />
       </div>
 
-      {/* Finance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FinanceCard title="Total Recebido" value={formatCurrency(totalRecebido)} subtitle={`${pagos.length} pedidos pagos`} icon={Wallet} variant="received" delay={200} />
         <FinanceCard title="Total a Receber" value={formatCurrency(totalAReceber)} subtitle={`${total - pagos.length} pedidos pendentes`} icon={DollarSign} variant="pending" delay={300} />
         <FinanceCard title="Agendado para Hoje" value={formatCurrency(totalAgendado)} subtitle={`${retirados.length} pedidos retirados`} icon={CalendarClock} variant="scheduled" delay={400} />
       </div>
 
-      {/* Charts */}
       <DashboardCharts pedidos={filteredPedidos} />
     </div>
   );
