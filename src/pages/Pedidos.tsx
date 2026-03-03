@@ -1,8 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePedidos, useCreatePedido, useUpdatePedido, useDeletePedido } from "@/hooks/usePedidos";
-import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,24 +15,37 @@ import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, stat
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
+import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets, fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 
 const Pedidos = () => {
   const { country } = useCountry();
-  const { user, isAdmin } = useAuth();
-  const { data: pedidos = [], isLoading: loading } = usePedidos();
-  const createPedido = useCreatePedido();
-  const updatePedido = useUpdatePedido();
-  const deletePedido = useDeletePedido();
-
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
-  const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const orders = await fetchOrdersFromSheets();
+      setPedidos(orders);
+    } catch (err) {
+      console.error("Erro ao carregar pedidos:", err);
+      toast.error("Falha ao carregar pedidos do Google Sheets");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return pedidos.filter((p) => {
@@ -47,21 +57,62 @@ const Pedidos = () => {
         p.cedula.includes(search) ||
         p.codigo_rastreamento.toLowerCase().includes(search.toLowerCase()) ||
         p.cidade.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === "todos" || p.status_pagamento === statusFilter;
-
-      let matchOwner = true;
-      if (isAdmin) {
-        if (ownerFilter === "meus") matchOwner = p.user_id === user?.id;
-        else if (ownerFilter === "afiliados") matchOwner = p.user_id !== user?.id;
-      }
-
-      return matchCountry && matchSearch && matchStatus && matchOwner;
+      const matchStatus =
+        statusFilter === "todos" || p.status_pagamento === statusFilter;
+      return matchCountry && matchSearch && matchStatus;
     });
-  }, [pedidos, search, statusFilter, country, isAdmin, ownerFilter, user]);
+  }, [pedidos, search, statusFilter, country]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
-    createPedido.mutate(newOrder);
-    setCreateOpen(false);
+    const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    const order: Pedido = { ...newOrder, id: pedidoId };
+    setPedidos([order, ...pedidos]);
+    try {
+      await syncOrderToSheets({
+        pedido_id: pedidoId, nome: order.nome, telefone: order.telefone,
+        cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
+        valor: order.valor, cidade: order.cidade, departamento: order.departamento,
+        codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
+        data_criacao: order.data_entrada, data_envio: order.data_envio || "",
+        vendedor: order.vendedor || "", criativo: order.criativo || "",
+        status_envio: order.status_envio, pais: order.pais,
+      });
+      toast.success("Pedido sincronizado com Google Sheets!");
+    } catch (err) {
+      console.error("Falha ao sincronizar:", err);
+      toast.error("Pedido criado, mas falhou ao sincronizar com Google Sheets");
+    }
+  };
+
+  const handlePayment = async (orderId: string) => {
+    const currentOrder = pedidos.find((p) => p.id === orderId);
+    if (!currentOrder) { toast.error("Pedido não encontrado"); return; }
+    const now = new Date();
+    const dataPagamento = now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+    setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
+        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
+        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
+        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
+        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
+      });
+      toast.success("Status atualizado no Google Sheets!");
+    } catch (err) {
+      console.error("Falha ao atualizar status:", err);
+      toast.error("Status alterado localmente, mas falhou ao sincronizar");
+    }
+  };
+
+  const openPaymentDialog = (id: string, nome: string) => {
+    setSelectedOrder({ id, nome });
+    setPaymentOpen(true);
   };
 
   const isOverdue = (p: Pedido) => {
@@ -71,33 +122,96 @@ const Pedidos = () => {
   };
 
   const handleStatusPagChange = async (pedidoId: string, value: StatusPagamento) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
     const now = new Date();
     const dataPagamento = value === "pago" ? now.toISOString().split("T")[0] : null;
-    const horaPagamento = value === "pago" ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
-    updatePedido.mutate({ id: pedidoId, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento });
+    const horaPagamento = value === "pago" ? now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : null;
+    const updated = { ...currentOrder, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento };
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId, status_pagamento: value,
+        data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
+        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
+        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
+        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
+        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de pagamento:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
   };
 
   const handleStatusEnvChange = async (pedidoId: string, value: StatusEnvio) => {
-    updatePedido.mutate({ id: pedidoId, status_envio: value });
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
+        data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
+        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
+        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
+        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
+        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
+        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
+        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
+        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
+        status_envio: value, pais: currentOrder.pais,
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de envio:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
   };
 
-  const handleAttachmentChange = useCallback((
+  const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
     value: string | null,
   ) => {
-    updatePedido.mutate({ id: pedidoId, [field]: value });
-  }, [updatePedido]);
-
-  const handleTrackingChange = useCallback((pedidoId: string, code: string) => {
-    updatePedido.mutate({ id: pedidoId, codigo_rastreamento: code });
-  }, [updatePedido]);
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    const updatedOrder = { ...currentOrder, [field]: value };
+    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
+    try {
+      await updateOrderStatusInSheets({
+        pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
+        data_pagamento: updatedOrder.data_pagamento, hora_pagamento: updatedOrder.hora_pagamento,
+        nome: updatedOrder.nome, telefone: updatedOrder.telefone, cedula: updatedOrder.cedula,
+        produto: updatedOrder.produto, quantidade: updatedOrder.quantidade, valor: updatedOrder.valor,
+        cidade: updatedOrder.cidade, departamento: updatedOrder.departamento,
+        codigo_rastreamento: updatedOrder.codigo_rastreamento, data_criacao: updatedOrder.data_entrada,
+        data_envio: updatedOrder.data_envio || "", comprovante_url: updatedOrder.comprovante_url || "",
+        etiqueta_envio_url: updatedOrder.etiqueta_envio_url || "",
+        vendedor: updatedOrder.vendedor || "", criativo: updatedOrder.criativo || "",
+        status_envio: updatedOrder.status_envio, pais: updatedOrder.pais,
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar anexo:", err);
+      toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
+    }
+  }, [pedidos]);
 
   const handleDeleteOrder = async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
-    deletePedido.mutate(pedidoId);
+    setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+    toast.success("Pedido excluído");
+    try {
+      await deleteOrderFromSheets(pedidoId);
+      toast.success("Pedido excluído da planilha!");
+    } catch (err) {
+      console.error("Falha ao excluir da planilha:", err);
+      toast.error("Pedido removido localmente, mas falhou ao excluir da planilha");
+    }
   };
 
   const totalPedidos = filtered.length;
@@ -107,7 +221,6 @@ const Pedidos = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -116,16 +229,12 @@ const Pedidos = () => {
               {totalPedidos} pedido{totalPedidos !== 1 ? "s" : ""} encontrado{totalPedidos !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
-            <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow text-base px-6">
-              <Plus className="h-4 w-4" />
-              Criar Pedido
-            </Button>
-          </div>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow text-base px-6">
+            <Plus className="h-4 w-4" />
+            Criar Pedido
+          </Button>
         </div>
 
-        {/* Mini Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="rounded-2xl border-2 border-primary/20 bg-primary/5 shadow-lg">
             <CardContent className="p-3 flex items-center gap-3">
@@ -166,7 +275,6 @@ const Pedidos = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -190,7 +298,6 @@ const Pedidos = () => {
         </Select>
       </div>
 
-      {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -250,7 +357,11 @@ const Pedidos = () => {
                     <TableCell>
                       <TrackingCell
                         value={p.codigo_rastreamento}
-                        onChange={(code) => handleTrackingChange(p.id, code)}
+                        onChange={(code) => {
+                          setPedidos(pedidos.map((ped) =>
+                            ped.id === p.id ? { ...ped, codigo_rastreamento: code } : ped
+                          ));
+                        }}
                       />
                     </TableCell>
                     <TableCell>
@@ -325,7 +436,7 @@ const Pedidos = () => {
       )}
 
       <CreateOrderDialog open={createOpen} onOpenChange={setCreateOpen} onSave={handleCreateOrder} />
-      <PaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} orderId={selectedOrder?.id ?? null} orderName={selectedOrder?.nome ?? ""} onConfirm={(id) => handleStatusPagChange(id, "pago")} />
+      <PaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} orderId={selectedOrder?.id ?? null} orderName={selectedOrder?.nome ?? ""} onConfirm={handlePayment} />
     </div>
   );
 };
