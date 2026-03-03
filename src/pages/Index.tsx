@@ -20,10 +20,11 @@ import { cn } from "@/lib/utils";
 import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
 
-type FilterOption = "hoje" | "7" | "15" | "30" | "custom";
+type FilterOption = "hoje" | "ontem" | "7" | "15" | "30" | "custom";
 
 const filterLabels: Record<FilterOption, string> = {
   hoje: "Hoje",
+  ontem: "Ontem",
   "7": "Últimos 7 dias",
   "15": "Últimos 15 dias",
   "30": "Últimos 30 dias",
@@ -87,6 +88,18 @@ const Dashboard = () => {
 
     if (activeFilter === "custom") return list;
 
+    if (activeFilter === "ontem") {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      const yesterdayEnd = new Date(yesterday);
+      yesterdayEnd.setHours(23, 59, 59, 999);
+      return list.filter((p) => {
+        const d = parseLocalDate(p.data_entrada);
+        return d >= yesterday && d <= yesterdayEnd;
+      });
+    }
+
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
     const start = new Date(now);
@@ -130,7 +143,7 @@ const Dashboard = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
-          {(["hoje", "7", "15", "30"] as FilterOption[]).map((opt) => (
+          {(["hoje", "ontem", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}
               size="sm"
