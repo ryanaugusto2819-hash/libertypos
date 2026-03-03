@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Wallet, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 const navItems = [
   { title: "Cobrança", url: "/", icon: LayoutDashboard },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
+  { title: "Financeiro", url: "/financeiro", icon: Wallet },
 ];
 
 export function AppSidebar() {
