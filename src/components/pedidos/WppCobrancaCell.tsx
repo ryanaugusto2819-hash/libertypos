@@ -67,7 +67,7 @@ export function WppCobrancaCell({ pedidoId }: Props) {
 
   return (
     <div className="flex items-center gap-1 group">
-      <span className="text-xs font-medium text-foreground">{wppStore[pedidoId]}</span>
+      <span className="text-xs font-medium text-foreground">{getWppStore()[pedidoId]}</span>
       <button
         onClick={() => setEditing(true)}
         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted"
