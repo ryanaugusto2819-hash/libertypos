@@ -341,6 +341,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
+                <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -462,6 +463,9 @@ const Pedidos = () => {
                         />
                       </TableCell>
                     )}
+                    <TableCell>
+                      <WppCobrancaCell pedidoId={p.id} />
+                    </TableCell>
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -477,7 +481,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={country === "UY" ? 12 : 11} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={country === "UY" ? 13 : 12} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
