@@ -56,12 +56,14 @@ const Pedidos = () => {
   };
 
   const filtered = useMemo(() => {
+    const normalize = (s: string) => s.replace(/[\s\-\+\(\)]/g, "");
     return pedidos.filter((p) => {
       const matchCountry = p.pais === country;
+      const searchLower = search.toLowerCase();
       const matchSearch =
         !search ||
-        p.nome.toLowerCase().includes(search.toLowerCase()) ||
-        p.telefone.includes(search) ||
+        p.nome.toLowerCase().includes(searchLower) ||
+        normalize(p.telefone).includes(normalize(search)) ||
         p.cedula.includes(search) ||
         p.codigo_rastreamento.toLowerCase().includes(search.toLowerCase()) ||
         p.cidade.toLowerCase().includes(search.toLowerCase());
