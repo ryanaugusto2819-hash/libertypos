@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Copy, Check, Pencil } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Props {
@@ -39,12 +37,12 @@ export function TrackingCell({ value, onChange }: Props) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Badge
-            variant="secondary"
-            className="status-pending cursor-pointer text-xs font-bold hover:opacity-80 transition-opacity"
+          <button
+            type="button"
+            className="status-pending inline-flex items-center rounded-full border border-transparent px-2.5 py-0.5 text-xs font-bold cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Pendente
-          </Badge>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-3 space-y-3" align="start">
           <p className="text-sm font-bold text-foreground">Código de Rastreamento</p>
