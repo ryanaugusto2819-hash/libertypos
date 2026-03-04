@@ -7,16 +7,26 @@ interface Props {
   pedidoId: string;
 }
 
-const wppStore: Record<string, string> = {};
+function getWppStore(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem("wppCobranca") || "{}");
+  } catch { return {}; }
+}
+
+function setWppStore(key: string, value: string) {
+  const store = getWppStore();
+  store[key] = value;
+  localStorage.setItem("wppCobranca", JSON.stringify(store));
+}
 
 export function WppCobrancaCell({ pedidoId }: Props) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(wppStore[pedidoId] || "");
-  const [saved, setSaved] = useState(!!wppStore[pedidoId]);
+  const [value, setValue] = useState(getWppStore()[pedidoId] || "");
+  const [saved, setSaved] = useState(!!getWppStore()[pedidoId]);
 
   const handleSave = () => {
     if (value.trim()) {
-      wppStore[pedidoId] = value.trim();
+      setWppStore(pedidoId, value.trim());
       setSaved(true);
       setEditing(false);
       toast.success("Nome WPP salvo!");
@@ -57,7 +67,7 @@ export function WppCobrancaCell({ pedidoId }: Props) {
 
   return (
     <div className="flex items-center gap-1 group">
-      <span className="text-xs font-medium text-foreground">{wppStore[pedidoId]}</span>
+      <span className="text-xs font-medium text-foreground">{getWppStore()[pedidoId]}</span>
       <button
         onClick={() => setEditing(true)}
         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted"
