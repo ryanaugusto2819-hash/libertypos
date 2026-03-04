@@ -7,7 +7,17 @@ interface Props {
   pedidoId: string;
 }
 
-const wppStore: Record<string, string> = {};
+function getWppStore(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem("wppCobranca") || "{}");
+  } catch { return {}; }
+}
+
+function setWppStore(key: string, value: string) {
+  const store = getWppStore();
+  store[key] = value;
+  localStorage.setItem("wppCobranca", JSON.stringify(store));
+}
 
 export function WppCobrancaCell({ pedidoId }: Props) {
   const [editing, setEditing] = useState(false);
