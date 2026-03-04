@@ -37,7 +37,7 @@ export function formatARS(value: number): string {
 }
 
 export function formatBRLFromARS(valueARS: number): string {
-  const valueBRL = valueARS * COTACAO_ARS_BRL;
+  const valueBRL = valueARS / COTACAO_ARS_BRL;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
