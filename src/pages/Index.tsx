@@ -41,6 +41,8 @@ const Dashboard = () => {
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
 
+  useEffect(() => { setActivePais(country); }, [country]);
+
   useEffect(() => {
     const load = async () => {
       try {

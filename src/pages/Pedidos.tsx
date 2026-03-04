@@ -35,6 +35,8 @@ const Pedidos = () => {
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
 
+  useEffect(() => { setActivePais(country); }, [country]);
+
   useEffect(() => {
     loadOrders();
   }, []);
