@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
-import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig } from "@/lib/formatters";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, setActivePais } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,8 @@ const Pedidos = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+
+  useEffect(() => { setActivePais(country); }, [country]);
 
   useEffect(() => {
     loadOrders();

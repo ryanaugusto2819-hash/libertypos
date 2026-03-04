@@ -1,11 +1,24 @@
 import { StatusPagamento, StatusEnvio } from "@/types/pedido";
 
 const COTACAO_UYU_BRL = 7.49; // 1 BRL = 7.49 UYU
-const COTACAO_ARS_BRL = 0.0054; // 1 ARS ≈ 0.0054 BRL
+const COTACAO_ARS_BRL = 268.56; // 1 BRL = 268.56 ARS
 const COTACAO_ARS_USD = 0.00083; // 1 ARS ≈ 0.00083 USD
 
-export function formatCurrency(valueUYU: number): string {
-  const valueBRL = valueUYU / COTACAO_UYU_BRL;
+let _activePais: string = "UY";
+
+export function setActivePais(pais: string) {
+  _activePais = pais;
+}
+
+export function formatCurrency(value: number): string {
+  let valueBRL: number;
+  if (_activePais === "AR") {
+    valueBRL = value / COTACAO_ARS_BRL;
+  } else if (_activePais === "BR") {
+    valueBRL = value;
+  } else {
+    valueBRL = value / COTACAO_UYU_BRL;
+  }
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -24,7 +37,7 @@ export function formatARS(value: number): string {
 }
 
 export function formatBRLFromARS(valueARS: number): string {
-  const valueBRL = valueARS * COTACAO_ARS_BRL;
+  const valueBRL = valueARS / COTACAO_ARS_BRL;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",

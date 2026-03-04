@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { parseLocalDate } from "@/lib/formatters";
+import { parseLocalDate, setActivePais } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
@@ -40,6 +40,8 @@ const Dashboard = () => {
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+
+  useEffect(() => { setActivePais(country); }, [country]);
 
   useEffect(() => {
     const load = async () => {
