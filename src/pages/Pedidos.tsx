@@ -22,6 +22,7 @@ import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets, fe
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
+import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 
 const Pedidos = () => {
   const { country } = useCountry();
