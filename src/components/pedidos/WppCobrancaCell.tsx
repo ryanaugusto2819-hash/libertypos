@@ -21,12 +21,12 @@ function setWppStore(key: string, value: string) {
 
 export function WppCobrancaCell({ pedidoId }: Props) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(wppStore[pedidoId] || "");
-  const [saved, setSaved] = useState(!!wppStore[pedidoId]);
+  const [value, setValue] = useState(getWppStore()[pedidoId] || "");
+  const [saved, setSaved] = useState(!!getWppStore()[pedidoId]);
 
   const handleSave = () => {
     if (value.trim()) {
-      wppStore[pedidoId] = value.trim();
+      setWppStore(pedidoId, value.trim());
       setSaved(true);
       setEditing(false);
       toast.success("Nome WPP salvo!");
