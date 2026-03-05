@@ -480,6 +480,7 @@ const Pedidos = () => {
                           {statusCobrancaConfig[p.status_cobranca || "pendente"]?.label ?? p.status_cobranca}
                         </Badge>
                       )}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <ImageUploadCell
