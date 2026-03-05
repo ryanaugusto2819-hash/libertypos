@@ -1,6 +1,24 @@
 export type StatusPagamento = "pago" | "pendente";
 export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
-export type StatusCobranca = "pendente" | "pre enviado" | "enviado";
+export type StatusCobranca = 
+  | "pendente"
+  | "pre enviado"
+  | "funil enviado"
+  | "funil a retirar"
+  | "1-follow (a retirar)"
+  | "2-follow (a retirar)"
+  | "3-follow (a retirar)"
+  | "4-follow (a retirar)"
+  | "1-recobrança (a retirar)"
+  | "2-recobrança (a retirar)"
+  | "3-recobrança (a retirar)"
+  | "funil retirado"
+  | "1-follow (retirado)"
+  | "2-follow (retirado)"
+  | "3-follow (retirado)"
+  | "4-follow (retirado)"
+  | "1-recobrança (retirado)"
+  | "2-recobrança (retirado)";
 
 export type PaisCode = "UY" | "BR" | "AR";
 
