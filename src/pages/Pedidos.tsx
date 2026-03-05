@@ -467,7 +467,7 @@ const Pedidos = () => {
                       </TableCell>
                     )}
                     <TableCell>
-                      <WppCobrancaCell pedidoId={p.id} />
+                      <WppCobrancaCell pedidoId={p.id} initialValue={(p as any).wpp_cobranca || ""} />
                     </TableCell>
                     <TableCell className="text-center">
                       <Button

@@ -1,0 +1,1 @@
+ALTER TABLE public.pedidos ADD COLUMN wpp_cobranca TEXT DEFAULT '' NOT NULL;

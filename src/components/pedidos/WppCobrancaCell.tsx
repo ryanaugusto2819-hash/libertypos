@@ -2,35 +2,36 @@ import { useState } from "react";
 import { Pencil, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   pedidoId: string;
+  initialValue?: string;
+  onSaved?: () => void;
 }
 
-function getWppStore(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem("wppCobranca") || "{}");
-  } catch { return {}; }
-}
-
-function setWppStore(key: string, value: string) {
-  const store = getWppStore();
-  store[key] = value;
-  localStorage.setItem("wppCobranca", JSON.stringify(store));
-}
-
-export function WppCobrancaCell({ pedidoId }: Props) {
+export function WppCobrancaCell({ pedidoId, initialValue = "", onSaved }: Props) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(getWppStore()[pedidoId] || "");
-  const [saved, setSaved] = useState(!!getWppStore()[pedidoId]);
+  const [value, setValue] = useState(initialValue);
+  const [saved, setSaved] = useState(!!initialValue);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    if (value.trim()) {
-      setWppStore(pedidoId, value.trim());
-      setSaved(true);
-      setEditing(false);
-      toast.success("Nome WPP salvo!");
+  const handleSave = async () => {
+    if (!value.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ wpp_cobranca: value.trim() } as any)
+      .eq("id", pedidoId);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar WPP Cobrança");
+      return;
     }
+    setSaved(true);
+    setEditing(false);
+    toast.success("Nome WPP salvo!");
+    onSaved?.();
   };
 
   if (!saved && !editing) {
@@ -54,10 +55,12 @@ export function WppCobrancaCell({ pedidoId }: Props) {
           className="h-7 text-xs border-2 border-primary/30 rounded-lg w-28"
           placeholder="Nome..."
           autoFocus
+          disabled={saving}
         />
         <button
           onClick={handleSave}
           className="p-1 rounded-md hover:bg-muted"
+          disabled={saving}
         >
           <Check className="h-3.5 w-3.5 text-primary" />
         </button>
@@ -67,7 +70,7 @@ export function WppCobrancaCell({ pedidoId }: Props) {
 
   return (
     <div className="flex items-center gap-1 group">
-      <span className="text-xs font-medium text-foreground">{getWppStore()[pedidoId]}</span>
+      <span className="text-xs font-medium text-foreground">{value}</span>
       <button
         onClick={() => setEditing(true)}
         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted"
