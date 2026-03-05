@@ -20,15 +20,16 @@ const CountryContext = createContext<CountryContextType | undefined>(undefined);
 export function CountryProvider({ children }: { children: ReactNode }) {
   const { isAdmin, loading } = useAuth();
 
-  const [country, setCountry] = useState<Country>(() => {
-    const saved = localStorage.getItem("selected-country") as Country;
-    return saved && countryConfig[saved] ? saved : "UY";
-  });
+  const [country, setCountry] = useState<Country>("UY");
 
-  // Lock affiliates to AR
+  // Set country based on role once auth is loaded
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (!isAdmin) {
       setCountry("AR");
+    } else {
+      const saved = localStorage.getItem("selected-country") as Country;
+      setCountry(saved && countryConfig[saved] ? saved : "UY");
     }
   }, [loading, isAdmin]);
 
