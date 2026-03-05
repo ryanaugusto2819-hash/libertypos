@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { CountrySelector } from "@/components/CountrySelector";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, RefreshCw } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role, isAdmin, signOut } = useAuth();
@@ -24,6 +24,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   {role}
                 </span>
               </div>
+              <Button variant="ghost" size="icon" onClick={() => window.location.reload()} title="Atualizar">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
                 <LogOut className="h-4 w-4" />
               </Button>
