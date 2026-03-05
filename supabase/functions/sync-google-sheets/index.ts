@@ -177,7 +177,13 @@ serve(async (req) => {
       
       const validStatusPag = ["pago", "pendente"];
       const validStatusEnv = ["não enviado", "enviado", "a retirar", "retirado"];
-      const validStatusCob = ["pendente", "pre enviado", "enviado"];
+      const validStatusCob = [
+        "pendente", "pre enviado", "funil enviado", "funil a retirar", "funil retirado",
+        "1-follow (a retirar)", "2-follow (a retirar)", "3-follow (a retirar)", "4-follow (a retirar)",
+        "1-recobrança (a retirar)", "2-recobrança (a retirar)", "3-recobrança (a retirar)",
+        "1-follow (retirado)", "2-follow (retirado)", "3-follow (retirado)", "4-follow (retirado)",
+        "1-recobrança (retirado)", "2-recobrança (retirado)",
+      ];
 
       const pedidos = rows.filter((row: string[]) => row[0]).map((row: string[]) => {
         const rawStatusPag = (row[10] || "").toLowerCase().trim();
