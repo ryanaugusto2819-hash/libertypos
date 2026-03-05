@@ -41,6 +41,7 @@ export type Database = {
           user_id: string
           valor: number
           vendedor: string | null
+          wpp_cobranca: string
         }
         Insert: {
           cedula?: string
@@ -68,6 +69,7 @@ export type Database = {
           user_id: string
           valor?: number
           vendedor?: string | null
+          wpp_cobranca?: string
         }
         Update: {
           cedula?: string
@@ -95,6 +97,7 @@ export type Database = {
           user_id?: string
           valor?: number
           vendedor?: string | null
+          wpp_cobranca?: string
         }
         Relationships: []
       }
