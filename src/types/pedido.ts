@@ -28,4 +28,5 @@ export interface Pedido {
   criativo?: string;
   pais: PaisCode;
   afiliado_id?: string;
+  wpp_cobranca?: string;
 }

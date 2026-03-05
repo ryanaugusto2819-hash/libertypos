@@ -29,6 +29,7 @@ function rowToPedido(row: any): Pedido {
     criativo: row.criativo,
     pais: row.pais,
     user_id: row.user_id,
+    wpp_cobranca: row.wpp_cobranca,
   };
 }
 
