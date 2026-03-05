@@ -474,6 +474,7 @@ const Pedidos = () => {
                             <SelectItem value="pre enviado">Pré Enviado</SelectItem>
                             <SelectItem value="funil enviado">Funil Enviado</SelectItem>
                             <SelectItem value="funil a retirar">Funil A Retirar</SelectItem>
+                            <SelectItem value="funil retirado">Funil Retirado</SelectItem>
                             <SelectItem value="1-follow (a retirar)">1-Follow (A Retirar)</SelectItem>
                             <SelectItem value="2-follow (a retirar)">2-Follow (A Retirar)</SelectItem>
                             <SelectItem value="3-follow (a retirar)">3-Follow (A Retirar)</SelectItem>
@@ -481,7 +482,6 @@ const Pedidos = () => {
                             <SelectItem value="1-recobrança (a retirar)">1-Recobrança (A Retirar)</SelectItem>
                             <SelectItem value="2-recobrança (a retirar)">2-Recobrança (A Retirar)</SelectItem>
                             <SelectItem value="3-recobrança (a retirar)">3-Recobrança (A Retirar)</SelectItem>
-                            <SelectItem value="funil retirado">Funil Retirado</SelectItem>
                             <SelectItem value="1-follow (retirado)">1-Follow (Retirado)</SelectItem>
                             <SelectItem value="2-follow (retirado)">2-Follow (Retirado)</SelectItem>
                             <SelectItem value="3-follow (retirado)">3-Follow (Retirado)</SelectItem>
