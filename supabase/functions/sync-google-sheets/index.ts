@@ -160,6 +160,15 @@ serve(async (req) => {
 
     if (action === "read") {
       const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
+      
+      // Ensure column X header exists
+      if (allData.length > 0 && allData[0][0] === "pedido_id") {
+        const header = allData[0];
+        if (!header[23] || header[23] !== "wpp_cobranca") {
+          await updateRow(accessToken, spreadsheetId, "X1", [["wpp_cobranca"]]);
+        }
+      }
+      
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
       const validStatusPag = ["pago", "pendente"];
