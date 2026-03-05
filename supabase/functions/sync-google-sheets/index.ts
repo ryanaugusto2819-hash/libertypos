@@ -225,7 +225,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -248,7 +248,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:W", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:X", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
