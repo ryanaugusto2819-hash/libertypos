@@ -13,8 +13,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
-import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, setActivePais } from "@/lib/formatters";
+import { Pedido, StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
