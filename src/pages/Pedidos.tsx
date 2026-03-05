@@ -194,6 +194,24 @@ const Pedidos = () => {
     }
   };
 
+  const handleStatusCobChange = async (pedidoId: string, value: StatusCobranca) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
+    toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
+    try {
+      await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_status_cobranca",
+          pedido: { pedido_id: pedidoId, status_cobranca: value },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de cobrança:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
