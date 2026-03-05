@@ -160,13 +160,16 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
       
-      // Ensure column X header exists
+      // Ensure column X and Y headers exist
       if (allData.length > 0 && allData[0][0] === "pedido_id") {
         const header = allData[0];
         if (!header[23] || header[23] !== "wpp_cobranca") {
           await updateRow(accessToken, spreadsheetId, "X1", [["wpp_cobranca"]]);
+        }
+        if (!header[24] || header[24] !== "status_cobranca") {
+          await updateRow(accessToken, spreadsheetId, "Y1", [["status_cobranca"]]);
         }
       }
       
@@ -174,10 +177,12 @@ serve(async (req) => {
       
       const validStatusPag = ["pago", "pendente"];
       const validStatusEnv = ["não enviado", "enviado", "a retirar", "retirado"];
+      const validStatusCob = ["pendente", "pre enviado", "enviado"];
 
       const pedidos = rows.filter((row: string[]) => row[0]).map((row: string[]) => {
         const rawStatusPag = (row[10] || "").toLowerCase().trim();
         const rawStatusEnv = (row[19] || "").toLowerCase().trim();
+        const rawStatusCob = (row[24] || "").toLowerCase().trim();
         return {
           id: row[0] || "",
           nome: row[1] || "",
@@ -202,6 +207,7 @@ serve(async (req) => {
           pais: row[21] || "UY",
           afiliado_id: row[22] || "",
           wpp_cobranca: row[23] || "",
+          status_cobranca: validStatusCob.includes(rawStatusCob) ? rawStatusCob : "pendente",
           observacoes: "",
         };
       });
