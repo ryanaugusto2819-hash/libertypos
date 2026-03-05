@@ -232,7 +232,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:X", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:Y", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -241,7 +241,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -264,7 +264,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:X", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:Y", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -348,7 +348,7 @@ serve(async (req) => {
     }
 
     if (action === "update_wpp") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -369,6 +369,32 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: "WPP Cobrança atualizado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_status_cobranca") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      let rowIndex = -1;
+
+      for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === pedido.pedido_id) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await updateRow(accessToken, spreadsheetId, `Y${rowIndex}`, [[pedido.status_cobranca || "pendente"]]);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Status de Cobrança atualizado" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
