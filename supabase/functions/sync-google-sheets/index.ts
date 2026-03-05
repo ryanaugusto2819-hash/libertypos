@@ -216,7 +216,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:W", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:X", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
