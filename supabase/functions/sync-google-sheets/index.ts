@@ -159,7 +159,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
       const validStatusPag = ["pago", "pendente"];
@@ -191,6 +191,7 @@ serve(async (req) => {
           etiqueta_envio_url: row[20] || null,
           pais: row[21] || "UY",
           afiliado_id: row[22] || "",
+          wpp_cobranca: row[23] || "",
           observacoes: "",
         };
       });
