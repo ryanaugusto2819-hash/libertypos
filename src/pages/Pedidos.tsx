@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
+import { supabase } from "@/integrations/supabase/client";
 
 const Pedidos = () => {
   const { country } = useCountry();
