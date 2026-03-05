@@ -1,4 +1,4 @@
-import { StatusPagamento, StatusEnvio } from "@/types/pedido";
+import { StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
 
 const COTACAO_UYU_BRL = 7.49; // 1 BRL = 7.49 UYU
 const COTACAO_ARS_BRL = 268.56; // 1 BRL = 268.56 ARS
@@ -88,6 +88,12 @@ export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: 
   enviado: { label: "Enviado", className: "status-sent" },
   "a retirar": { label: "A Retirar", className: "status-pending" },
   retirado: { label: "Retirado", className: "status-paid" },
+};
+
+export const statusCobrancaConfig: Record<StatusCobranca, { label: string; className: string }> = {
+  pendente: { label: "Pendente", className: "status-pending" },
+  "pre enviado": { label: "Pré Enviado", className: "status-sent" },
+  enviado: { label: "Enviado", className: "status-paid" },
 };
 
 // Keep backward compat alias

@@ -13,8 +13,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pedido, StatusPagamento, StatusEnvio } from "@/types/pedido";
-import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, setActivePais } from "@/lib/formatters";
+import { Pedido, StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
+import { supabase } from "@/integrations/supabase/client";
 
 const Pedidos = () => {
   const { country } = useCountry();
@@ -194,6 +195,24 @@ const Pedidos = () => {
     }
   };
 
+  const handleStatusCobChange = async (pedidoId: string, value: StatusCobranca) => {
+    const currentOrder = pedidos.find((p) => p.id === pedidoId);
+    if (!currentOrder) return;
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
+    toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
+    try {
+      await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_status_cobranca",
+          pedido: { pedido_id: pedidoId, status_cobranca: value },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar status de cobrança:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
@@ -342,6 +361,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Rastreamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
@@ -440,6 +460,24 @@ const Pedidos = () => {
                       ) : (
                         <Badge variant="secondary" className={cn("text-xs font-bold", statusEnvioConfig[p.status_envio]?.className)}>
                           {statusEnvioConfig[p.status_envio]?.label ?? p.status_envio}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isAdmin ? (
+                        <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>
+                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusCobrancaConfig[p.status_cobranca || "pendente"]?.className)}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="pre enviado">Pré Enviado</SelectItem>
+                            <SelectItem value="enviado">Enviado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="secondary" className={cn("text-xs font-bold", statusCobrancaConfig[p.status_cobranca || "pendente"]?.className)}>
+                          {statusCobrancaConfig[p.status_cobranca || "pendente"]?.label ?? p.status_cobranca}
                         </Badge>
                       )}
                     </TableCell>

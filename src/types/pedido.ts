@@ -1,5 +1,6 @@
 export type StatusPagamento = "pago" | "pendente";
 export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
+export type StatusCobranca = "pendente" | "pre enviado" | "enviado";
 
 export type PaisCode = "UY" | "BR" | "AR";
 
@@ -29,4 +30,5 @@ export interface Pedido {
   pais: PaisCode;
   afiliado_id?: string;
   wpp_cobranca?: string;
+  status_cobranca?: StatusCobranca;
 }
