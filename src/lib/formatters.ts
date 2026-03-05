@@ -93,7 +93,22 @@ export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: 
 export const statusCobrancaConfig: Record<StatusCobranca, { label: string; className: string }> = {
   pendente: { label: "Pendente", className: "status-pending" },
   "pre enviado": { label: "Pré Enviado", className: "status-sent" },
-  enviado: { label: "Enviado", className: "status-paid" },
+  "funil enviado": { label: "Funil Enviado", className: "status-sent" },
+  "funil a retirar": { label: "Funil A Retirar", className: "status-pending" },
+  "1-follow (a retirar)": { label: "1-Follow (A Retirar)", className: "status-pending" },
+  "2-follow (a retirar)": { label: "2-Follow (A Retirar)", className: "status-pending" },
+  "3-follow (a retirar)": { label: "3-Follow (A Retirar)", className: "status-pending" },
+  "4-follow (a retirar)": { label: "4-Follow (A Retirar)", className: "status-pending" },
+  "1-recobrança (a retirar)": { label: "1-Recobrança (A Retirar)", className: "status-overdue" },
+  "2-recobrança (a retirar)": { label: "2-Recobrança (A Retirar)", className: "status-overdue" },
+  "3-recobrança (a retirar)": { label: "3-Recobrança (A Retirar)", className: "status-overdue" },
+  "funil retirado": { label: "Funil Retirado", className: "status-paid" },
+  "1-follow (retirado)": { label: "1-Follow (Retirado)", className: "status-paid" },
+  "2-follow (retirado)": { label: "2-Follow (Retirado)", className: "status-paid" },
+  "3-follow (retirado)": { label: "3-Follow (Retirado)", className: "status-paid" },
+  "4-follow (retirado)": { label: "4-Follow (Retirado)", className: "status-paid" },
+  "1-recobrança (retirado)": { label: "1-Recobrança (Retirado)", className: "status-overdue" },
+  "2-recobrança (retirado)": { label: "2-Recobrança (Retirado)", className: "status-overdue" },
 };
 
 // Keep backward compat alias
