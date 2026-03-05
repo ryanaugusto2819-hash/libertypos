@@ -104,7 +104,7 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
 // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
 // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
 // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
-// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca, Y:status_cobranca
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -131,6 +131,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.pais || "UY",
     pedido.afiliado_id || "",
     pedido.wpp_cobranca || "",
+    pedido.status_cobranca || "pendente",
   ];
 }
 
