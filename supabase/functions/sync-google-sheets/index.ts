@@ -104,7 +104,7 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
 // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
 // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
 // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
-// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -130,6 +130,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.etiqueta_envio_url || "",
     pedido.pais || "UY",
     pedido.afiliado_id || "",
+    pedido.wpp_cobranca || "",
   ];
 }
 
@@ -158,7 +159,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
       const validStatusPag = ["pago", "pendente"];
@@ -190,6 +191,7 @@ serve(async (req) => {
           etiqueta_envio_url: row[20] || null,
           pais: row[21] || "UY",
           afiliado_id: row[22] || "",
+          wpp_cobranca: row[23] || "",
           observacoes: "",
         };
       });
@@ -214,7 +216,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:W", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:X", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -223,7 +225,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:W");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -246,7 +248,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:W", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:X", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -325,6 +327,32 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido excluído da planilha" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_wpp") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:X");
+      let rowIndex = -1;
+
+      for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === pedido.pedido_id) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await updateRow(accessToken, spreadsheetId, `X${rowIndex}`, [[pedido.wpp_cobranca || ""]]);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "WPP Cobrança atualizado" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

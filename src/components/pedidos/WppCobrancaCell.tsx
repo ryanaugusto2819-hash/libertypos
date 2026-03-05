@@ -19,19 +19,25 @@ export function WppCobrancaCell({ pedidoId, initialValue = "", onSaved }: Props)
   const handleSave = async () => {
     if (!value.trim()) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("pedidos")
-      .update({ wpp_cobranca: value.trim() } as any)
-      .eq("id", pedidoId);
-    setSaving(false);
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_wpp",
+          pedido: { pedido_id: pedidoId, wpp_cobranca: value.trim() },
+        },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error);
+      setSaved(true);
+      setEditing(false);
+      toast.success("Nome WPP salvo!");
+      onSaved?.();
+    } catch (err: any) {
       toast.error("Erro ao salvar WPP Cobrança");
-      return;
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
-    setSaved(true);
-    setEditing(false);
-    toast.success("Nome WPP salvo!");
-    onSaved?.();
   };
 
   if (!saved && !editing) {
