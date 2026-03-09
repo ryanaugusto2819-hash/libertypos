@@ -30,6 +30,7 @@ const produtos = [
   "Gota Cavalo",
   "Gota Prosta",
   "Gota Memo",
+  "Gota Emagrecimento",
 ];
 
 const departamentosPorPais: Record<string, string[]> = {
