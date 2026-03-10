@@ -385,7 +385,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status_cobranca") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
