@@ -611,7 +611,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={country === "UY" ? 13 : 12} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={country === "UY" ? 15 : 14} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
