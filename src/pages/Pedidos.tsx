@@ -32,6 +32,8 @@ const Pedidos = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [envioFilter, setEnvioFilter] = useState<string>("todos");
+  const [cobrancaFilter, setCobrancaFilter] = useState<string>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
