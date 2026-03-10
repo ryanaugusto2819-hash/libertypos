@@ -72,6 +72,10 @@ const Pedidos = () => {
         p.cidade.toLowerCase().includes(search.toLowerCase());
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
+      const matchEnvio =
+        envioFilter === "todos" || p.status_envio === envioFilter;
+      const matchCobranca =
+        cobrancaFilter === "todos" || (p.status_cobranca || "pendente") === cobrancaFilter;
 
       // Owner filter
       let matchOwner = true;
