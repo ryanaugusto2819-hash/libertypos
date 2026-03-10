@@ -172,6 +172,9 @@ serve(async (req) => {
         if (!header[24] || header[24] !== "status_cobranca") {
           await updateRow(accessToken, spreadsheetId, "Y1", [["status_cobranca"]]);
         }
+        if (!header[25] || header[25] !== "conta_bancaria") {
+          await updateRow(accessToken, spreadsheetId, "Z1", [["conta_bancaria"]]);
+        }
       }
       
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
