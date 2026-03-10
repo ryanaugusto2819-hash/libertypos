@@ -86,9 +86,9 @@ const Pedidos = () => {
         else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
-      return matchCountry && matchSearch && matchStatus && matchOwner;
+      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner;
     });
-  }, [pedidos, search, statusFilter, country, isAdmin, ownerFilter, user]);
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
