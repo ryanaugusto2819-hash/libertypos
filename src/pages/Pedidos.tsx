@@ -219,6 +219,22 @@ const Pedidos = () => {
     }
   };
 
+  const handleContaBancariaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
+    toast.success(`Conta bancária → "${value}"`);
+    try {
+      await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_conta_bancaria",
+          pedido: { pedido_id: pedidoId, conta_bancaria: value },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar conta bancária:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
