@@ -32,6 +32,8 @@ const Pedidos = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [envioFilter, setEnvioFilter] = useState<string>("todos");
+  const [cobrancaFilter, setCobrancaFilter] = useState<string>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
@@ -70,6 +72,10 @@ const Pedidos = () => {
         p.cidade.toLowerCase().includes(search.toLowerCase());
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
+      const matchEnvio =
+        envioFilter === "todos" || p.status_envio === envioFilter;
+      const matchCobranca =
+        cobrancaFilter === "todos" || (p.status_cobranca || "pendente") === cobrancaFilter;
 
       // Owner filter
       let matchOwner = true;
@@ -80,9 +86,9 @@ const Pedidos = () => {
         else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
-      return matchCountry && matchSearch && matchStatus && matchOwner;
+      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner;
     });
-  }, [pedidos, search, statusFilter, country, isAdmin, ownerFilter, user]);
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -318,8 +324,8 @@ const Pedidos = () => {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome, telefone, cédula, cidade ou rastreamento..."
@@ -329,14 +335,54 @@ const Pedidos = () => {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-44">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todos os Status</SelectItem>
+            <SelectItem value="todos">Pagamento: Todos</SelectItem>
             <SelectItem value="pago">Pago</SelectItem>
             <SelectItem value="pendente">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={envioFilter} onValueChange={setEnvioFilter}>
+          <SelectTrigger className="w-full sm:w-44">
+            <Truck className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Envio: Todos</SelectItem>
+            <SelectItem value="não enviado">Não Enviado</SelectItem>
+            <SelectItem value="enviado">Enviado</SelectItem>
+            <SelectItem value="a retirar">A Retirar</SelectItem>
+            <SelectItem value="retirado">Retirado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={cobrancaFilter} onValueChange={setCobrancaFilter}>
+          <SelectTrigger className="w-full sm:w-52">
+            <CircleDot className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Cobrança: Todos</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="pre enviado">Pré Enviado</SelectItem>
+            <SelectItem value="funil enviado">Funil Enviado</SelectItem>
+            <SelectItem value="funil a retirar">Funil A Retirar</SelectItem>
+            <SelectItem value="funil retirado">Funil Retirado</SelectItem>
+            <SelectItem value="1-follow (a retirar)">1-Follow (A Retirar)</SelectItem>
+            <SelectItem value="2-follow (a retirar)">2-Follow (A Retirar)</SelectItem>
+            <SelectItem value="3-follow (a retirar)">3-Follow (A Retirar)</SelectItem>
+            <SelectItem value="4-follow (a retirar)">4-Follow (A Retirar)</SelectItem>
+            <SelectItem value="1-recobrança (a retirar)">1-Recobrança (A Retirar)</SelectItem>
+            <SelectItem value="2-recobrança (a retirar)">2-Recobrança (A Retirar)</SelectItem>
+            <SelectItem value="3-recobrança (a retirar)">3-Recobrança (A Retirar)</SelectItem>
+            <SelectItem value="1-follow (retirado)">1-Follow (Retirado)</SelectItem>
+            <SelectItem value="2-follow (retirado)">2-Follow (Retirado)</SelectItem>
+            <SelectItem value="3-follow (retirado)">3-Follow (Retirado)</SelectItem>
+            <SelectItem value="4-follow (retirado)">4-Follow (Retirado)</SelectItem>
+            <SelectItem value="1-recobrança (retirado)">1-Recobrança (Retirado)</SelectItem>
+            <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
           </SelectContent>
         </Select>
       </div>
