@@ -13,14 +13,14 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar";
+  useSidebar } from
+"@/components/ui/sidebar";
 
 const navItems = [
-  { title: "Cobrança", url: "/", icon: LayoutDashboard },
-  { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
-  { title: "Financeiro", url: "/financeiro", icon: Wallet },
-];
+{ title: "Cobrança", url: "/", icon: LayoutDashboard },
+{ title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
+{ title: "Financeiro", url: "/financeiro", icon: Wallet }];
+
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -34,16 +34,16 @@ export function AppSidebar() {
           <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-sm">GC</span>
           </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
+          {!collapsed &&
+          <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-sidebar-foreground truncate">
-                Gestão COD
+                LIbertyPainel
               </h1>
               <p className="text-xs text-sidebar-muted truncate">
                 Sistema de Cobranças
               </p>
             </div>
-          )}
+          }
         </div>
       </SidebarHeader>
 
@@ -54,21 +54,21 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {navItems.map((item) =>
+              <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to={item.url}
-                      end
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
-                    >
+                    to={item.url}
+                    end
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    activeClassName="bg-sidebar-accent text-primary font-medium">
+                    
                       <item.icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -79,12 +79,12 @@ export function AppSidebar() {
           variant="ghost"
           size={collapsed ? "icon" : "sm"}
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        >
+          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground">
+          
           {theme === "dark" ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
           {!collapsed && <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>}
         </Button>
       </SidebarFooter>
-    </Sidebar>
-  );
+    </Sidebar>);
+
 }
