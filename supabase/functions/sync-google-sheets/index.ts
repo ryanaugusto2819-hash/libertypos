@@ -218,6 +218,7 @@ serve(async (req) => {
           afiliado_id: row[22] || "",
           wpp_cobranca: row[23] || "",
           status_cobranca: validStatusCob.includes(rawStatusCob) ? rawStatusCob : "pendente",
+          conta_bancaria: row[25] || "",
           observacoes: "",
         };
       });
