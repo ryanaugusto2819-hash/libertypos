@@ -32,9 +32,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">GC</span>
-          </div>
+          <img src={sidebarLogo} alt="Group Liberty" className="h-9 w-9 rounded-lg shrink-0 object-cover" />
           {!collapsed &&
           <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-sidebar-foreground truncate">
