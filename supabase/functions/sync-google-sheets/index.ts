@@ -359,7 +359,7 @@ serve(async (req) => {
     }
 
     if (action === "update_wpp") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
