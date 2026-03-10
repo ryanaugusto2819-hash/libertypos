@@ -161,7 +161,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       
       // Ensure column X and Y headers exist
       if (allData.length > 0 && allData[0][0] === "pedido_id") {
