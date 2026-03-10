@@ -1,4 +1,5 @@
 import { LayoutDashboard, ShoppingCart, Wallet, Sun, Moon } from "lucide-react";
+import sidebarLogo from "@/assets/sidebar-logo.png";
 import { useTheme } from "next-themes";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
