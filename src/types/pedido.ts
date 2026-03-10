@@ -49,4 +49,5 @@ export interface Pedido {
   afiliado_id?: string;
   wpp_cobranca?: string;
   status_cobranca?: StatusCobranca;
+  conta_bancaria?: string;
 }

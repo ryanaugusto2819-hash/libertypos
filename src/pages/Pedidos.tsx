@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,6 +219,22 @@ const Pedidos = () => {
     }
   };
 
+  const handleContaBancariaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
+    toast.success(`Conta bancária → "${value}"`);
+    try {
+      await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_conta_bancaria",
+          pedido: { pedido_id: pedidoId, conta_bancaria: value },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao sincronizar conta bancária:", err);
+      toast.error("Falhou ao sincronizar com Google Sheets");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
@@ -411,6 +427,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -568,6 +585,17 @@ const Pedidos = () => {
                     <TableCell>
                       <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
                     </TableCell>
+                    <TableCell>
+                      <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pablo">Pablo</SelectItem>
+                          <SelectItem value="Mulher">Mulher</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -583,7 +611,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={country === "UY" ? 13 : 12} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={country === "UY" ? 15 : 14} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>

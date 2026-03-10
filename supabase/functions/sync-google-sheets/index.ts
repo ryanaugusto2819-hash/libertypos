@@ -104,7 +104,7 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
 // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
 // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
 // P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
-// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca, Y:status_cobranca
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca, Y:status_cobranca, Z:conta_bancaria
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -132,6 +132,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.afiliado_id || "",
     pedido.wpp_cobranca || "",
     pedido.status_cobranca || "pendente",
+    pedido.conta_bancaria || "",
   ];
 }
 
@@ -160,7 +161,7 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       
       // Ensure column X and Y headers exist
       if (allData.length > 0 && allData[0][0] === "pedido_id") {
@@ -170,6 +171,9 @@ serve(async (req) => {
         }
         if (!header[24] || header[24] !== "status_cobranca") {
           await updateRow(accessToken, spreadsheetId, "Y1", [["status_cobranca"]]);
+        }
+        if (!header[25] || header[25] !== "conta_bancaria") {
+          await updateRow(accessToken, spreadsheetId, "Z1", [["conta_bancaria"]]);
         }
       }
       
@@ -214,6 +218,7 @@ serve(async (req) => {
           afiliado_id: row[22] || "",
           wpp_cobranca: row[23] || "",
           status_cobranca: validStatusCob.includes(rawStatusCob) ? rawStatusCob : "pendente",
+          conta_bancaria: row[25] || "",
           observacoes: "",
         };
       });
@@ -238,7 +243,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
-      await appendRow(accessToken, spreadsheetId, "A:Y", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
@@ -247,7 +252,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -270,7 +275,7 @@ serve(async (req) => {
         }
 
         const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:Y", [row]);
+        await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
 
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
@@ -354,7 +359,7 @@ serve(async (req) => {
     }
 
     if (action === "update_wpp") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -380,7 +385,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status_cobranca") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Y");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
       let rowIndex = -1;
 
       for (let i = 0; i < allData.length; i++) {
@@ -401,6 +406,32 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: "Status de Cobrança atualizado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_conta_bancaria") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      let rowIndex = -1;
+
+      for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === pedido.pedido_id) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await updateRow(accessToken, spreadsheetId, `Z${rowIndex}`, [[pedido.conta_bancaria || ""]]);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Conta Bancária atualizada" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
