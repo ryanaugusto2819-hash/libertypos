@@ -410,6 +410,32 @@ serve(async (req) => {
       );
     }
 
+    if (action === "update_conta_bancaria") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      let rowIndex = -1;
+
+      for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === pedido.pedido_id) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await updateRow(accessToken, spreadsheetId, `Z${rowIndex}`, [[pedido.conta_bancaria || ""]]);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Conta Bancária atualizada" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: "Ação inválida" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
