@@ -79,14 +79,21 @@ const Dashboard = () => {
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
+    const getDateValue = (p: Pedido): Date | null => {
+      if (dateField === "data_pagamento") {
+        return p.data_pagamento ? parseLocalDate(p.data_pagamento) : null;
+      }
+      return parseLocalDate(p.data_entrada);
+    };
+
     if (activeFilter === "custom" && customStart && customEnd) {
       const start = new Date(customStart);
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
       return list.filter((p) => {
-        const d = parseLocalDate(p.data_entrada);
-        return d >= start && d <= end;
+        const d = getDateValue(p);
+        return d && d >= start && d <= end;
       });
     }
 
@@ -99,8 +106,8 @@ const Dashboard = () => {
       const yesterdayEnd = new Date(yesterday);
       yesterdayEnd.setHours(23, 59, 59, 999);
       return list.filter((p) => {
-        const d = parseLocalDate(p.data_entrada);
-        return d >= yesterday && d <= yesterdayEnd;
+        const d = getDateValue(p);
+        return d && d >= yesterday && d <= yesterdayEnd;
       });
     }
 
@@ -111,8 +118,8 @@ const Dashboard = () => {
     start.setHours(0, 0, 0, 0);
 
     return list.filter((p) => {
-      const d = parseLocalDate(p.data_entrada);
-      return d >= start && d <= now;
+      const d = getDateValue(p);
+      return d && d >= start && d <= now;
     });
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
 
