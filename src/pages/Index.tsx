@@ -21,6 +21,7 @@ import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
 
 type FilterOption = "hoje" | "ontem" | "7" | "15" | "30" | "custom";
+type DateField = "data_entrada" | "data_pagamento";
 
 const filterLabels: Record<FilterOption, string> = {
   hoje: "Hoje",
@@ -40,6 +41,7 @@ const Dashboard = () => {
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [dateField, setDateField] = useState<DateField>("data_entrada");
 
   useEffect(() => { setActivePais(country); }, [country]);
 
@@ -77,14 +79,21 @@ const Dashboard = () => {
     const now = new Date();
     now.setHours(23, 59, 59, 999);
 
+    const getDateValue = (p: Pedido): Date | null => {
+      if (dateField === "data_pagamento") {
+        return p.data_pagamento ? parseLocalDate(p.data_pagamento) : null;
+      }
+      return parseLocalDate(p.data_entrada);
+    };
+
     if (activeFilter === "custom" && customStart && customEnd) {
       const start = new Date(customStart);
       start.setHours(0, 0, 0, 0);
       const end = new Date(customEnd);
       end.setHours(23, 59, 59, 999);
       return list.filter((p) => {
-        const d = parseLocalDate(p.data_entrada);
-        return d >= start && d <= end;
+        const d = getDateValue(p);
+        return d && d >= start && d <= end;
       });
     }
 
@@ -97,8 +106,8 @@ const Dashboard = () => {
       const yesterdayEnd = new Date(yesterday);
       yesterdayEnd.setHours(23, 59, 59, 999);
       return list.filter((p) => {
-        const d = parseLocalDate(p.data_entrada);
-        return d >= yesterday && d <= yesterdayEnd;
+        const d = getDateValue(p);
+        return d && d >= yesterday && d <= yesterdayEnd;
       });
     }
 
@@ -109,10 +118,10 @@ const Dashboard = () => {
     start.setHours(0, 0, 0, 0);
 
     return list.filter((p) => {
-      const d = parseLocalDate(p.data_entrada);
-      return d >= start && d <= now;
+      const d = getDateValue(p);
+      return d && d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -144,6 +153,24 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 mr-2">
+            <Button
+              size="sm"
+              variant={dateField === "data_entrada" ? "default" : "outline"}
+              onClick={() => setDateField("data_entrada")}
+              className="text-xs"
+            >
+              Data Entrada
+            </Button>
+            <Button
+              size="sm"
+              variant={dateField === "data_pagamento" ? "default" : "outline"}
+              onClick={() => setDateField("data_pagamento")}
+              className="text-xs"
+            >
+              Data Pagamento
+            </Button>
+          </div>
           <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
           {(["hoje", "ontem", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
