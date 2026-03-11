@@ -90,9 +90,9 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
               <Package className="h-8 w-8 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues + Retirados</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado + A Retirar</p>
               <p className="text-3xl font-bold text-blue-400">{percPagosVsEntreguesRetirados}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} entregues/retirados</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} retirados/a retirar</p>
             </div>
           </CardContent>
         </Card>
