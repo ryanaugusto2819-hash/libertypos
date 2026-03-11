@@ -57,8 +57,8 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const totalRetiradosEARetirar = retirados + aRetirar;
   const percPagosVsRetiradosEARetirar = totalRetiradosEARetirar > 0 ? Math.round((pagos / totalRetiradosEARetirar) * 100) : 0;
 
-  const totalEntEnvRet = retirados + enviados + aRetirar + pagos;
-  const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
+  const totalEnvRetAret = retirados + enviados + aRetirar;
+  const percPagosVsTodos = totalEnvRetAret > 0 ? Math.round((pagos / totalEnvRetAret) * 100) : 0;
 
   const paymentRateData = [
     { name: `Pagos (${total > 0 ? Math.round((pagos / total) * 100) : 0}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
