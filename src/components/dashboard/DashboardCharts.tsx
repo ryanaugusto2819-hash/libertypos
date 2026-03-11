@@ -54,8 +54,8 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
 
   const percPagosVsRetirados = retirados > 0 ? Math.round((pagos / retirados) * 100) : 0;
 
-  const entreguesRetiradosJuntos = retirados + aRetirar + pagos;
-  const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
+  const totalRetiradosEARetirar = retirados + aRetirar;
+  const percPagosVsRetiradosEARetirar = totalRetiradosEARetirar > 0 ? Math.round((pagos / totalRetiradosEARetirar) * 100) : 0;
 
   const totalEntEnvRet = retirados + enviados + aRetirar + pagos;
   const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
