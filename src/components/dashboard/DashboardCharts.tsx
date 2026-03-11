@@ -52,14 +52,13 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const enviados = pedidos.filter((p) => p.status_envio === "enviado").length;
   const naoEnviados = pedidos.filter((p) => p.status_envio === "não enviado").length;
 
-  const entreguesERetirados = retirados + pagos;
-  const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
+  const percPagosVsRetirados = retirados > 0 ? Math.round((pagos / retirados) * 100) : 0;
 
-  const entreguesRetiradosJuntos = retirados + aRetirar + pagos;
-  const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
+  const totalRetiradosEARetirar = retirados + aRetirar;
+  const percPagosVsRetiradosEARetirar = totalRetiradosEARetirar > 0 ? Math.round((pagos / totalRetiradosEARetirar) * 100) : 0;
 
-  const totalEntEnvRet = retirados + enviados + aRetirar + pagos;
-  const percPagosVsTodos = totalEntEnvRet > 0 ? Math.round((pagos / totalEntEnvRet) * 100) : 0;
+  const totalEnvRetAret = retirados + enviados + aRetirar;
+  const percPagosVsTodos = totalEnvRetAret > 0 ? Math.round((pagos / totalEnvRetAret) * 100) : 0;
 
   const paymentRateData = [
     { name: `Pagos (${total > 0 ? Math.round((pagos / total) * 100) : 0}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
@@ -79,8 +78,8 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado</p>
-              <p className="text-3xl font-bold text-emerald-400">{percPagosVsEntregues}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesERetirados} retirados</p>
+              <p className="text-3xl font-bold text-emerald-400">{percPagosVsRetirados}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {retirados} retirados</p>
             </div>
           </CardContent>
         </Card>
@@ -91,8 +90,8 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado + A Retirar</p>
-              <p className="text-3xl font-bold text-blue-400">{percPagosVsEntreguesRetirados}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} retirados/a retirar</p>
+              <p className="text-3xl font-bold text-blue-400">{percPagosVsRetiradosEARetirar}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {totalRetiradosEARetirar} retirados/a retirar</p>
             </div>
           </CardContent>
         </Card>
@@ -104,7 +103,7 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
             <div>
               <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado + Enviados + A Retirar</p>
               <p className="text-3xl font-bold text-violet-400">{percPagosVsTodos}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {totalEntEnvRet} total</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {totalEnvRetAret} total</p>
             </div>
           </CardContent>
         </Card>
