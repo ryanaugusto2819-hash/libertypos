@@ -63,9 +63,44 @@ export function arsToUsd(valueARS: number): number {
 export function parseLocalDate(date: string): Date {
   // If the date is just YYYY-MM-DD, parse as local noon to avoid timezone shift
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return new Date(date + "T12:00:00");
+    return new Date(date + "T12:00:00-03:00");
+  }
+  // If it's an ISO string without timezone, treat as São Paulo time
+  if (/^\d{4}-\d{2}-\d{2}T[\d:]+$/.test(date)) {
+    return new Date(date + "-03:00");
   }
   return new Date(date);
+}
+
+/**
+ * Returns the current date/time in São Paulo timezone
+ */
+export function nowInSaoPaulo(): Date {
+  const spFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const parts = spFormatter.formatToParts(new Date());
+  const get = (type: string) => parts.find(p => p.type === type)?.value || "0";
+  return new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}-03:00`);
+}
+
+/**
+ * Returns today's date string (YYYY-MM-DD) in São Paulo timezone
+ */
+export function todayInSaoPaulo(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 export function formatDate(date: string | null): string {

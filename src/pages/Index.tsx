@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { parseLocalDate, setActivePais } from "@/lib/formatters";
+import { parseLocalDate, setActivePais, nowInSaoPaulo, todayInSaoPaulo } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
@@ -76,7 +76,7 @@ const Dashboard = () => {
       }
     }
 
-    const now = new Date();
+    const now = nowInSaoPaulo();
     now.setHours(23, 59, 59, 999);
 
     const getDateValue = (p: Pedido): Date | null => {
