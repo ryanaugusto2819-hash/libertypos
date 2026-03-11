@@ -62,7 +62,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       return;
     }
 
-    const now = new Date();
+    const todaySP = todayInSaoPaulo();
 
     onSave({
       nome: form.nome,
@@ -76,8 +76,8 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       codigo_rastreamento: "",
       status_pagamento: "pendente",
       status_envio: "não enviado",
-      data_entrada: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
-      data_envio: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
+      data_entrada: todaySP,
+      data_envio: todaySP,
       data_pagamento: null,
       hora_pagamento: null,
       comprovante_url: null,
