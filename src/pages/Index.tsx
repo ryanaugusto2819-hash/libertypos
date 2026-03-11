@@ -121,7 +121,7 @@ const Dashboard = () => {
       const d = getDateValue(p);
       return d && d >= start && d <= now;
     });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
