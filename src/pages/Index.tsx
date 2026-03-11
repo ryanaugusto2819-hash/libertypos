@@ -76,7 +76,7 @@ const Dashboard = () => {
       }
     }
 
-    const now = new Date();
+    const now = nowInSaoPaulo();
     now.setHours(23, 59, 59, 999);
 
     const getDateValue = (p: Pedido): Date | null => {
