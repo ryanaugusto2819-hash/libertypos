@@ -52,8 +52,7 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const enviados = pedidos.filter((p) => p.status_envio === "enviado").length;
   const naoEnviados = pedidos.filter((p) => p.status_envio === "não enviado").length;
 
-  const entreguesERetirados = retirados + pagos;
-  const percPagosVsEntregues = entreguesERetirados > 0 ? Math.round((pagos / entreguesERetirados) * 100) : 0;
+  const percPagosVsRetirados = retirados > 0 ? Math.round((pagos / retirados) * 100) : 0;
 
   const entreguesRetiradosJuntos = retirados + aRetirar + pagos;
   const percPagosVsEntreguesRetirados = entreguesRetiradosJuntos > 0 ? Math.round((pagos / entreguesRetiradosJuntos) * 100) : 0;
