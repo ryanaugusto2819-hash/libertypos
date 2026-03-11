@@ -21,6 +21,7 @@ import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
 
 type FilterOption = "hoje" | "ontem" | "7" | "15" | "30" | "custom";
+type DateField = "data_entrada" | "data_pagamento";
 
 const filterLabels: Record<FilterOption, string> = {
   hoje: "Hoje",
