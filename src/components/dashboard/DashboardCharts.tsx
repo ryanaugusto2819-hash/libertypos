@@ -78,9 +78,9 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
               <Truck className="h-8 w-8 text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado</p>
               <p className="text-3xl font-bold text-emerald-400">{percPagosVsEntregues}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesERetirados} entregues</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesERetirados} retirados</p>
             </div>
           </CardContent>
         </Card>
@@ -90,9 +90,9 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
               <Package className="h-8 w-8 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues + Retirados</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado + A Retirar</p>
               <p className="text-3xl font-bold text-blue-400">{percPagosVsEntreguesRetirados}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} entregues/retirados</p>
+              <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {entreguesRetiradosJuntos} retirados/a retirar</p>
             </div>
           </CardContent>
         </Card>
@@ -102,7 +102,7 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
               <BarChart3 className="h-8 w-8 text-violet-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Entregues + Enviados + Retirados</p>
+              <p className="text-sm text-muted-foreground font-medium">% Pagamento vs Retirado + Enviados + A Retirar</p>
               <p className="text-3xl font-bold text-violet-400">{percPagosVsTodos}%</p>
               <p className="text-xs text-muted-foreground mt-1">{pagos} pagos de {totalEntEnvRet} total</p>
             </div>
