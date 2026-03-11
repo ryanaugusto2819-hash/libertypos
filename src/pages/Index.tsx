@@ -153,6 +153,24 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 mr-2">
+            <Button
+              size="sm"
+              variant={dateField === "data_entrada" ? "default" : "outline"}
+              onClick={() => setDateField("data_entrada")}
+              className="text-xs"
+            >
+              Data Entrada
+            </Button>
+            <Button
+              size="sm"
+              variant={dateField === "data_pagamento" ? "default" : "outline"}
+              onClick={() => setDateField("data_pagamento")}
+              className="text-xs"
+            >
+              Data Pagamento
+            </Button>
+          </div>
           <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
           {(["hoje", "ontem", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
