@@ -90,6 +90,12 @@ export default function Configuracoes() {
             valor: 100,
             cidade: "Montevideo",
             departamento: "Montevideo",
+            cep: "00000-000",
+            rua: "Rua Teste",
+            numero: "123",
+            complemento: "Apto 1",
+            bairro: "Centro",
+            email: "teste@teste.com",
           },
         },
       });
