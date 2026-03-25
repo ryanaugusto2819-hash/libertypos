@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       customer_document: pedido.cedula || "",
       products: [
         {
-          name: pedido.produto || "",
+          name: (pedido.produto || "").replace(/\s*\[.*?\]\s*$/, ""),
           quantity: pedido.quantidade || 1,
         },
       ],
