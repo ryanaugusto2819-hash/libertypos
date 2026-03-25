@@ -106,6 +106,13 @@ const Pedidos = () => {
         afiliado_id: user?.id || "",
       });
       toast.success("Pedido sincronizado com Google Sheets!");
+
+      // Send webhook in background
+      supabase.functions.invoke("send-webhook", {
+        body: { pedido: { ...order, id: pedidoId } },
+      }).catch((err) => {
+        console.warn("Webhook falhou:", err.message);
+      });
     } catch (err) {
       console.error("Falha ao sincronizar:", err);
       toast.error("Pedido criado, mas falhou ao sincronizar com Google Sheets");
