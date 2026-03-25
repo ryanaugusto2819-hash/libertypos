@@ -55,6 +55,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     departamento: "",
     vendedor: "",
     criativo: "",
+    cep: "",
+    rua: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    email: "",
   });
 
   const handleSave = () => {
@@ -87,6 +93,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       vendedor: form.vendedor,
       criativo: form.criativo,
       pais: country,
+      cep: form.cep,
+      rua: form.rua,
+      numero: form.numero,
+      complemento: form.complemento,
+      bairro: form.bairro,
+      email: form.email,
     });
 
     setForm({
@@ -100,6 +112,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       departamento: "",
       vendedor: "",
       criativo: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      email: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
@@ -188,6 +206,59 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               </SelectContent>
             </Select>
           </div>
+          {country === "BR" && (
+            <>
+              <div className="space-y-2">
+                <Label>CEP</Label>
+                <Input
+                  value={form.cep}
+                  onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                  placeholder="00000-000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Rua</Label>
+                <Input
+                  value={form.rua}
+                  onChange={(e) => setForm({ ...form, rua: e.target.value })}
+                  placeholder="Nome da rua"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Número</Label>
+                <Input
+                  value={form.numero}
+                  onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                  placeholder="Nº"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Complemento</Label>
+                <Input
+                  value={form.complemento}
+                  onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                  placeholder="Apto, Bloco..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Bairro</Label>
+                <Input
+                  value={form.bairro}
+                  onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                  placeholder="Bairro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label>Vendedor</Label>
             <Input

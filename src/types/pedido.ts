@@ -50,4 +50,10 @@ export interface Pedido {
   wpp_cobranca?: string;
   status_cobranca?: StatusCobranca;
   conta_bancaria?: string;
+  cep?: string;
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  email?: string;
 }

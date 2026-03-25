@@ -16,9 +16,12 @@ export type Database = {
     Tables: {
       pedidos: {
         Row: {
+          bairro: string | null
           cedula: string
+          cep: string | null
           cidade: string
           codigo_rastreamento: string
+          complemento: string | null
           comprovante_url: string | null
           created_at: string
           criativo: string | null
@@ -26,14 +29,17 @@ export type Database = {
           data_envio: string | null
           data_pagamento: string | null
           departamento: string
+          email: string | null
           etiqueta_envio_url: string | null
           hora_pagamento: string | null
           id: string
           nome: string
+          numero: string | null
           observacoes: string
           pais: string
           produto: string
           quantidade: number
+          rua: string | null
           status_envio: string
           status_pagamento: string
           telefone: string
@@ -44,9 +50,12 @@ export type Database = {
           wpp_cobranca: string
         }
         Insert: {
+          bairro?: string | null
           cedula?: string
+          cep?: string | null
           cidade?: string
           codigo_rastreamento?: string
+          complemento?: string | null
           comprovante_url?: string | null
           created_at?: string
           criativo?: string | null
@@ -54,14 +63,17 @@ export type Database = {
           data_envio?: string | null
           data_pagamento?: string | null
           departamento?: string
+          email?: string | null
           etiqueta_envio_url?: string | null
           hora_pagamento?: string | null
           id?: string
           nome: string
+          numero?: string | null
           observacoes?: string
           pais?: string
           produto?: string
           quantidade?: number
+          rua?: string | null
           status_envio?: string
           status_pagamento?: string
           telefone?: string
@@ -72,9 +84,12 @@ export type Database = {
           wpp_cobranca?: string
         }
         Update: {
+          bairro?: string | null
           cedula?: string
+          cep?: string | null
           cidade?: string
           codigo_rastreamento?: string
+          complemento?: string | null
           comprovante_url?: string | null
           created_at?: string
           criativo?: string | null
@@ -82,14 +97,17 @@ export type Database = {
           data_envio?: string | null
           data_pagamento?: string | null
           departamento?: string
+          email?: string | null
           etiqueta_envio_url?: string | null
           hora_pagamento?: string | null
           id?: string
           nome?: string
+          numero?: string | null
           observacoes?: string
           pais?: string
           produto?: string
           quantidade?: number
+          rua?: string | null
           status_envio?: string
           status_pagamento?: string
           telefone?: string
