@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     };
 
     // Send webhook
-    const webhookResponse = await fetch(config.webhook_url, {
+    const webhookResponse = await fetch(config.webhook_url.trim(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
