@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       customer_street: pedido.rua || "",
       customer_district: pedido.bairro || "",
       customer_city: pedido.cidade || "",
-      customer_state: pedido.departamento || "",
+      customer_state: stateAbbreviations[pedido.departamento || ""] || pedido.departamento || "",
       customer_number: pedido.numero || "",
       customer_complement: pedido.complemento || "",
       customer_email: pedido.email || "",
