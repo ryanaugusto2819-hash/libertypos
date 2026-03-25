@@ -55,6 +55,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     departamento: "",
     vendedor: "",
     criativo: "",
+    cep: "",
+    rua: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    email: "",
   });
 
   const handleSave = () => {
@@ -87,6 +93,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       vendedor: form.vendedor,
       criativo: form.criativo,
       pais: country,
+      cep: form.cep,
+      rua: form.rua,
+      numero: form.numero,
+      complemento: form.complemento,
+      bairro: form.bairro,
+      email: form.email,
     });
 
     setForm({
@@ -100,6 +112,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       departamento: "",
       vendedor: "",
       criativo: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      email: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);

@@ -30,6 +30,12 @@ function rowToPedido(row: any): Pedido {
     pais: row.pais,
     user_id: row.user_id,
     wpp_cobranca: row.wpp_cobranca,
+    cep: row.cep,
+    rua: row.rua,
+    numero: row.numero,
+    complemento: row.complemento,
+    bairro: row.bairro,
+    email: row.email,
   };
 }
 
@@ -79,6 +85,12 @@ export function useCreatePedido() {
         vendedor: pedido.vendedor,
         criativo: pedido.criativo,
         pais: pedido.pais,
+        cep: pedido.cep || "",
+        rua: pedido.rua || "",
+        numero: pedido.numero || "",
+        complemento: pedido.complemento || "",
+        bairro: pedido.bairro || "",
+        email: pedido.email || "",
       };
       const { error } = await supabase.from("pedidos").insert(insertData);
       if (error) throw error;
