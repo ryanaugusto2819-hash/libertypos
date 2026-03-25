@@ -1,0 +1,7 @@
+ALTER TABLE public.pedidos
+  ADD COLUMN IF NOT EXISTS cep text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS rua text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS numero text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS complemento text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS bairro text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS email text DEFAULT '';
