@@ -10,6 +10,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Pedidos from "./pages/Pedidos";
 import Financeiro from "./pages/Financeiro";
+import Configuracoes from "./pages/Configuracoes";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -66,6 +67,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout><Financeiro /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Configuracoes /></AppLayout>
           </ProtectedRoute>
         }
       />
