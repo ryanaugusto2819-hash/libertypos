@@ -56,7 +56,7 @@ export function useCreatePedido() {
 
   return useMutation({
     mutationFn: async (pedido: Omit<Pedido, "id">) => {
-      const { error } = await supabase.from("pedidos").insert({
+      const insertData = {
         user_id: user!.id,
         nome: pedido.nome,
         telefone: pedido.telefone,
@@ -79,8 +79,16 @@ export function useCreatePedido() {
         vendedor: pedido.vendedor,
         criativo: pedido.criativo,
         pais: pedido.pais,
-      });
+      };
+      const { error } = await supabase.from("pedidos").insert(insertData);
       if (error) throw error;
+
+      // Send webhook in background (don't block order creation)
+      supabase.functions.invoke("send-webhook", {
+        body: { pedido: { ...insertData, id: "NEW-" + Date.now() } },
+      }).catch((err) => {
+        console.warn("Webhook falhou:", err.message);
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });
