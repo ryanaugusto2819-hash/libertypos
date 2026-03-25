@@ -53,12 +53,12 @@ export default function Configuracoes() {
     if (existing) {
       ({ error } = await (supabase as any)
         .from("webhook_config")
-        .update({ webhook_url: webhookUrl, is_active: isActive, updated_at: new Date().toISOString() })
+        .update({ webhook_url: webhookUrl.trim(), is_active: isActive, updated_at: new Date().toISOString() })
         .eq("user_id", user.id));
     } else {
       ({ error } = await (supabase as any)
         .from("webhook_config")
-        .insert({ user_id: user.id, webhook_url: webhookUrl, is_active: isActive }));
+        .insert({ user_id: user.id, webhook_url: webhookUrl.trim(), is_active: isActive }));
     }
 
     if (error) {
