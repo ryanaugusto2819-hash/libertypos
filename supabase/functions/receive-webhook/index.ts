@@ -89,6 +89,56 @@ Deno.serve(async (req) => {
       });
     }
 
+    async function syncGoogleSheets(
+      action: "create" | "update_status",
+      pedidoPayload: Record<string, unknown>
+    ): Promise<string | null> {
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
+        body: { action, pedido: pedidoPayload },
+      });
+
+      if (error) return error.message;
+
+      if (data && typeof data === "object" && "success" in data) {
+        const result = data as { success?: boolean; error?: string; message?: string };
+        if (result.success === false) {
+          return result.error || result.message || "Falha ao sincronizar com Google Sheets";
+        }
+      }
+
+      return null;
+    }
+
+    function buildSheetsPayload(pedidoData: Record<string, any>, overrides: Record<string, any> = {}) {
+      return {
+        pedido_id: pedidoData.id,
+        nome: pedidoData.nome || "",
+        telefone: pedidoData.telefone || "",
+        cedula: pedidoData.cedula || "",
+        produto: pedidoData.produto || "",
+        quantidade: Number(pedidoData.quantidade ?? 1),
+        valor: Number(pedidoData.valor ?? 0),
+        cidade: pedidoData.cidade || "",
+        departamento: pedidoData.departamento || "",
+        codigo_rastreamento: overrides.codigo_rastreamento ?? pedidoData.codigo_rastreamento ?? "",
+        status_pagamento: pedidoData.status_pagamento || "pendente",
+        data_criacao: pedidoData.data_entrada || new Date().toISOString().split("T")[0],
+        data_envio: overrides.data_envio ?? pedidoData.data_envio ?? "",
+        data_pagamento: pedidoData.data_pagamento || null,
+        hora_pagamento: pedidoData.hora_pagamento || null,
+        comprovante_url: pedidoData.comprovante_url || "",
+        etiqueta_envio_url: overrides.etiqueta_envio_url ?? pedidoData.etiqueta_envio_url ?? "",
+        vendedor: pedidoData.vendedor || "",
+        criativo: pedidoData.criativo || "",
+        status_envio: overrides.status_envio ?? pedidoData.status_envio ?? "não enviado",
+        pais: pedidoData.pais || "BR",
+        afiliado_id: pedidoData.afiliado_id || "",
+        wpp_cobranca: pedidoData.wpp_cobranca || "",
+        status_cobranca: pedidoData.status_cobranca || "pendente",
+        conta_bancaria: pedidoData.conta_bancaria || "",
+      };
+    }
+
     if (!rawStatus) {
       await logWebhook({ status_recebido: "N/A", success: false, error_message: "Campo 'status' não encontrado" });
       return new Response(
@@ -102,7 +152,7 @@ Deno.serve(async (req) => {
     // Try to find existing pedido
     const { data: allPedidos } = await supabase
       .from("pedidos")
-      .select("id, nome, cedula, telefone, status_envio, codigo_rastreamento, user_id");
+      .select("id, nome, cedula, telefone, produto, quantidade, valor, cidade, departamento, status_pagamento, status_envio, data_entrada, data_envio, data_pagamento, hora_pagamento, comprovante_url, etiqueta_envio_url, codigo_rastreamento, pais, user_id");
 
     let pedido = null;
     let matchedBy = "";
@@ -138,7 +188,6 @@ Deno.serve(async (req) => {
         updateData.data_envio = new Date().toISOString().split("T")[0];
       }
 
-      // Save label URL if available
       if (body.files?.label?.a4) {
         updateData.etiqueta_envio_url = body.files.label.a4;
       }
@@ -150,6 +199,22 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      const syncError = await syncGoogleSheets(
+        "update_status",
+        buildSheetsPayload(pedido, {
+          status_envio: updateData.status_envio,
+          codigo_rastreamento: updateData.codigo_rastreamento,
+          data_envio: updateData.data_envio,
+          etiqueta_envio_url: updateData.etiqueta_envio_url,
+        })
+      );
+
+      if (syncError) {
+        const fullError = `Pedido atualizado no banco, mas falhou ao sincronizar na planilha: ${syncError}`;
+        await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: matchedBy, success: false, error_message: fullError });
+        return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: matchedBy, success: true });
 
       console.log(`ATUALIZADO: ${pedido.nome} → ${mappedStatus}`);
@@ -158,7 +223,6 @@ Deno.serve(async (req) => {
 
     // ========== PEDIDO NOT FOUND → CREATE NEW ==========
 
-    // Get admin user_id
     const { data: adminRole } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -207,6 +271,17 @@ Deno.serve(async (req) => {
     if (insertError) {
       await logWebhook({ user_id: adminUserId, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, success: false, error_message: insertError.message });
       return new Response(JSON.stringify({ error: insertError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const syncError = await syncGoogleSheets(
+      "create",
+      buildSheetsPayload({ id: inserted.id, ...newPedido })
+    );
+
+    if (syncError) {
+      const fullError = `Pedido criado no banco, mas falhou ao sincronizar na planilha: ${syncError}`;
+      await logWebhook({ user_id: adminUserId, pedido_id: inserted.id, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: "criado_novo", success: false, error_message: fullError });
+      return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     await logWebhook({ user_id: adminUserId, pedido_id: inserted.id, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: "criado_novo", success: true });
