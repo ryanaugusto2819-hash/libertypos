@@ -8,12 +8,14 @@ const corsHeaders = {
 
 const statusMap: Record<string, string> = {
   "a enviar": "não enviado",
+  "saldo de expedição insuficiente": "não enviado",
   "saldo insuficiente": "não enviado",
   "em separação": "não enviado",
   "enviado": "enviado",
   "entregue": "retirado",
   "em devolução": "a retirar",
   "devolvido": "não enviado",
+  "sem estoque": "não enviado",
   "estoque insuficiente": "não enviado",
   "sem unidades disponíveis": "não enviado",
   "erro no leilão": "não enviado",
