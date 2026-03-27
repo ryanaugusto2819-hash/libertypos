@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Map LogZZ statuses to our internal status_envio values
 const statusMap: Record<string, string> = {
   "a enviar": "não enviado",
   "saldo insuficiente": "não enviado",
@@ -25,7 +24,6 @@ function normalizeStatus(raw: string): string | null {
   return statusMap[lower] ?? null;
 }
 
-// Strip non-alphanumeric chars for document/phone matching
 function normalizeDoc(val: string): string {
   return (val || "").replace(/[^a-zA-Z0-9]/g, "");
 }
@@ -50,10 +48,39 @@ Deno.serve(async (req) => {
     const trackingCode = body.tracking_code || null;
     const recipientDocument = body.recipient_document || null;
     const recipientPhone = body.recipient_phone || null;
-    const recipientName = body.recipient_name || null;
     const shippingDate = body.shipping_date || null;
 
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Helper to log webhook
+    async function logWebhook(opts: {
+      user_id?: string;
+      pedido_id?: string;
+      pedido_nome?: string;
+      status_recebido: string;
+      status_mapeado?: string;
+      matched_by?: string;
+      success: boolean;
+      error_message?: string;
+    }) {
+      await supabase.from("webhook_logs").insert({
+        user_id: opts.user_id || null,
+        pedido_id: opts.pedido_id || null,
+        pedido_nome: opts.pedido_nome || null,
+        status_recebido: opts.status_recebido,
+        status_mapeado: opts.status_mapeado || null,
+        matched_by: opts.matched_by || null,
+        payload: body,
+        success: opts.success,
+        error_message: opts.error_message || null,
+      });
+    }
+
     if (!rawStatus) {
+      await logWebhook({ status_recebido: "N/A", success: false, error_message: "Campo 'status' não encontrado" });
       return new Response(
         JSON.stringify({ error: "Campo 'status' não encontrado no payload" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -61,36 +88,28 @@ Deno.serve(async (req) => {
     }
 
     if (!recipientDocument && !recipientPhone && !trackingCode) {
+      await logWebhook({ status_recebido: rawStatus, success: false, error_message: "Nenhum identificador encontrado" });
       return new Response(
-        JSON.stringify({ error: "Nenhum identificador encontrado (recipient_document, recipient_phone ou tracking_code)" }),
+        JSON.stringify({ error: "Nenhum identificador encontrado" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const mappedStatus = normalizeStatus(rawStatus);
     if (!mappedStatus) {
-      console.warn(`Status desconhecido recebido: '${rawStatus}'`);
+      await logWebhook({ status_recebido: rawStatus, success: false, error_message: `Status desconhecido: '${rawStatus}'` });
       return new Response(
-        JSON.stringify({
-          error: `Status desconhecido: '${rawStatus}'`,
-          known_statuses: Object.keys(statusMap),
-        }),
+        JSON.stringify({ error: `Status desconhecido: '${rawStatus}'`, known_statuses: Object.keys(statusMap) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Fetch all pedidos and match by normalized cedula, then phone, then tracking
     const { data: allPedidos, error: selectError } = await supabase
       .from("pedidos")
-      .select("id, nome, cedula, telefone, status_envio, codigo_rastreamento");
+      .select("id, nome, cedula, telefone, status_envio, codigo_rastreamento, user_id");
 
     if (selectError) {
-      console.error("Erro ao buscar pedidos:", selectError);
+      await logWebhook({ status_recebido: rawStatus, success: false, error_message: selectError.message });
       return new Response(
         JSON.stringify({ error: "Erro ao buscar pedidos", details: selectError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -98,75 +117,57 @@ Deno.serve(async (req) => {
     }
 
     let pedido = null;
+    let matchedBy = "";
 
-    // 1. Match by document (cedula)
-    if (!pedido && recipientDocument) {
-      const normalizedDoc = normalizeDoc(recipientDocument);
-      pedido = (allPedidos || []).find(
-        (p: any) => normalizeDoc(p.cedula) === normalizedDoc
-      ) || null;
+    if (recipientDocument) {
+      const nd = normalizeDoc(recipientDocument);
+      pedido = (allPedidos || []).find((p: any) => normalizeDoc(p.cedula) === nd) || null;
+      if (pedido) matchedBy = "cedula";
     }
 
-    // 2. Match by phone
     if (!pedido && recipientPhone) {
-      const normalizedPhone = normalizeDoc(recipientPhone);
-      pedido = (allPedidos || []).find(
-        (p: any) => normalizeDoc(p.telefone) === normalizedPhone
-      ) || null;
+      const np = normalizeDoc(recipientPhone);
+      pedido = (allPedidos || []).find((p: any) => normalizeDoc(p.telefone) === np) || null;
+      if (pedido) matchedBy = "telefone";
     }
 
-    // 3. Match by tracking code
     if (!pedido && trackingCode) {
-      pedido = (allPedidos || []).find(
-        (p: any) => p.codigo_rastreamento === trackingCode
-      ) || null;
+      pedido = (allPedidos || []).find((p: any) => p.codigo_rastreamento === trackingCode) || null;
+      if (pedido) matchedBy = "tracking_code";
     }
 
     if (!pedido) {
-      console.warn(`Pedido não encontrado - doc: ${recipientDocument}, phone: ${recipientPhone}, tracking: ${trackingCode}`);
+      await logWebhook({ status_recebido: rawStatus, status_mapeado: mappedStatus, success: false, error_message: "Pedido não encontrado" });
       return new Response(
-        JSON.stringify({
-          error: "Pedido não encontrado",
-          recipient_document: recipientDocument,
-          recipient_phone: recipientPhone,
-          tracking_code: trackingCode,
-        }),
+        JSON.stringify({ error: "Pedido não encontrado", recipient_document: recipientDocument, recipient_phone: recipientPhone, tracking_code: trackingCode }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Build update
-    const updateData: Record<string, any> = {
-      status_envio: mappedStatus,
-    };
+    const updateData: Record<string, any> = { status_envio: mappedStatus };
 
-    // Save tracking code if provided and missing
     if (trackingCode && (!pedido.codigo_rastreamento || pedido.codigo_rastreamento === "")) {
       updateData.codigo_rastreamento = trackingCode;
     }
 
-    // Set shipping date
     if (mappedStatus === "enviado" && shippingDate) {
       const parts = shippingDate.split("/");
-      if (parts.length === 3) {
-        updateData.data_envio = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
+      if (parts.length === 3) updateData.data_envio = `${parts[2]}-${parts[1]}-${parts[0]}`;
     } else if (mappedStatus === "enviado") {
       updateData.data_envio = new Date().toISOString().split("T")[0];
     }
 
-    const { error: updateError } = await supabase
-      .from("pedidos")
-      .update(updateData)
-      .eq("id", pedido.id);
+    const { error: updateError } = await supabase.from("pedidos").update(updateData).eq("id", pedido.id);
 
     if (updateError) {
-      console.error("Erro ao atualizar pedido:", updateError);
+      await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus, matched_by: matchedBy, success: false, error_message: updateError.message });
       return new Response(
         JSON.stringify({ error: "Erro ao atualizar pedido", details: updateError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus, matched_by: matchedBy, success: true });
 
     console.log(`Pedido ${pedido.id} (${pedido.nome}) atualizado: ${pedido.status_envio} → ${mappedStatus}`);
 
@@ -177,7 +178,7 @@ Deno.serve(async (req) => {
         nome: pedido.nome,
         status_anterior: pedido.status_envio,
         status_novo: mappedStatus,
-        matched_by: recipientDocument ? "cedula" : recipientPhone ? "telefone" : "tracking_code",
+        matched_by: matchedBy,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

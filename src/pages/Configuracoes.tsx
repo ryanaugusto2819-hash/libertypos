@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Webhook, TestTube2, CheckCircle2, XCircle } from "lucide-react";
+import WebhookHistory from "@/components/webhook/WebhookHistory";
 
 export default function Configuracoes() {
   const { user } = useAuth();
@@ -223,6 +224,8 @@ export default function Configuracoes() {
           </div>
         </CardContent>
       </Card>
+
+      <WebhookHistory />
     </div>
   );
 }
