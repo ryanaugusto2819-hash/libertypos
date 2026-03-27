@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
       email: body.recipient_email || "",
       codigo_rastreamento: trackingCode || "",
       status_pagamento: "pendente",
-      status_envio: mappedStatus || "não enviado",
+      status_envio: mappedStatus || "a enviar",
       data_entrada: parseDate(body.creation_date) || new Date().toISOString().split("T")[0],
       data_envio: parseDate(shippingDate) || null,
       pais: "BR",
