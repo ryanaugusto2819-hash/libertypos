@@ -123,7 +123,18 @@ export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: 
   enviado: { label: "Enviado", className: "status-sent" },
   "a retirar": { label: "A Retirar", className: "status-pending" },
   retirado: { label: "Retirado", className: "status-paid" },
+  // BR (LogZZ) statuses
+  "a enviar": { label: "A Enviar", className: "status-overdue" },
+  "saldo de expedição insuficiente": { label: "Saldo Insuficiente", className: "status-overdue" },
+  "em separação": { label: "Em Separação", className: "status-pending" },
+  "entregue": { label: "Entregue", className: "status-paid" },
+  "em devolução": { label: "Em Devolução", className: "status-pending" },
+  "devolvido": { label: "Devolvido", className: "status-overdue" },
+  "sem estoque": { label: "Sem Estoque", className: "status-overdue" },
 };
+
+export const statusEnvioUY: StatusEnvio[] = ["não enviado", "enviado", "a retirar", "retirado"];
+export const statusEnvioBR: StatusEnvio[] = ["a enviar", "saldo de expedição insuficiente", "em separação", "enviado", "entregue", "em devolução", "devolvido", "sem estoque"];
 
 export const statusCobrancaConfig: Record<StatusCobranca, { label: string; className: string }> = {
   pendente: { label: "Pendente", className: "status-pending" },

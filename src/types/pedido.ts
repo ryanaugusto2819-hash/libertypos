@@ -1,5 +1,8 @@
 export type StatusPagamento = "pago" | "pendente";
-export type StatusEnvio = "não enviado" | "enviado" | "a retirar" | "retirado";
+export type StatusEnvio = 
+  | "não enviado" | "enviado" | "a retirar" | "retirado"
+  | "a enviar" | "saldo de expedição insuficiente" | "em separação" 
+  | "entregue" | "em devolução" | "devolvido" | "sem estoque";
 export type StatusCobranca = 
   | "pendente"
   | "pre enviado"
