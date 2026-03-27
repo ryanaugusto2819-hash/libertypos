@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pedido, StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
-import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais } from "@/lib/formatters";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais, statusEnvioUY, statusEnvioBR } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -375,10 +375,9 @@ const Pedidos = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Envio: Todos</SelectItem>
-            <SelectItem value="não enviado">Não Enviado</SelectItem>
-            <SelectItem value="enviado">Enviado</SelectItem>
-            <SelectItem value="a retirar">A Retirar</SelectItem>
-            <SelectItem value="retirado">Retirado</SelectItem>
+            {(country === "BR" ? statusEnvioBR : statusEnvioUY).map((s) => (
+              <SelectItem key={s} value={s}>{statusEnvioConfig[s]?.label ?? s}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={cobrancaFilter} onValueChange={setCobrancaFilter}>
@@ -521,10 +520,9 @@ const Pedidos = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="não enviado">Não Enviado</SelectItem>
-                            <SelectItem value="enviado">Enviado</SelectItem>
-                            <SelectItem value="a retirar">A Retirar</SelectItem>
-                            <SelectItem value="retirado">Retirado</SelectItem>
+                            {(country === "BR" ? statusEnvioBR : statusEnvioUY).map((s) => (
+                              <SelectItem key={s} value={s}>{statusEnvioConfig[s]?.label ?? s}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       ) : (

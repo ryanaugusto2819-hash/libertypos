@@ -83,7 +83,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       departamento: form.departamento,
       codigo_rastreamento: "",
       status_pagamento: "pendente",
-      status_envio: "não enviado",
+      status_envio: country === "BR" ? "a enviar" : "não enviado",
       data_entrada: todaySP,
       data_envio: todaySP,
       data_pagamento: null,
