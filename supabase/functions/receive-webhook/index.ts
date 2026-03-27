@@ -6,28 +6,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Map logistics platform statuses to our internal status_envio values
+// Map LogZZ statuses to our internal status_envio values
 const statusMap: Record<string, string> = {
-  // Portuguese variations
-  "ENVIADO": "enviado",
-  "ENTREGUE": "retirado",
-  "EM TRANSITO": "enviado",
-  "EM TRÂNSITO": "enviado",
-  "SAIU PARA ENTREGA": "a retirar",
-  "A CAMINHO": "a retirar",
-  "DEVOLVIDO": "não enviado",
-  "CANCELADO": "não enviado",
-  // English variations
-  "SHIPPED": "enviado",
-  "DELIVERED": "retirado",
-  "IN_TRANSIT": "enviado",
-  "OUT_FOR_DELIVERY": "a retirar",
-  "RETURNED": "não enviado",
+  "pendente": "não enviado",
+  "em separação": "não enviado",
+  "despachado": "enviado",
+  "enviado": "enviado",
+  "em transito": "enviado",
+  "em trânsito": "enviado",
+  "saiu para entrega": "a retirar",
+  "a caminho": "a retirar",
+  "entregue": "retirado",
+  "devolvido": "não enviado",
+  "cancelado": "não enviado",
+  "extraviado": "não enviado",
 };
 
 function normalizeStatus(raw: string): string | null {
-  const upper = (raw || "").trim().toUpperCase();
-  return statusMap[upper] || null;
+  const lower = (raw || "").trim().toLowerCase();
+  return statusMap[lower] ?? null;
 }
 
 Deno.serve(async (req) => {
@@ -44,13 +41,15 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log("Webhook recebido:", JSON.stringify(body));
+    console.log("Webhook LogZZ recebido:", JSON.stringify(body));
 
-    // Try to extract order identifier and status from various payload formats
-    const orderId = body.order_id || body.id || body.pedido_id || body.external_id || null;
-    const trackingCode = body.tracking_code || body.codigo_rastreamento || body.rastreio || null;
-    const rawStatus = body.status || body.order_status || body.status_envio || null;
-    const newTrackingCode = body.tracking_code || body.codigo_rastreamento || body.rastreio || null;
+    // LogZZ payload fields
+    const externalId = body.external_id || null;
+    const rawStatus = body.status || null;
+    const trackingCode = body.tracking_code || null;
+    const logzzCode = body.code || null;
+    const shippingDate = body.shipping_date || null;
+    const deliveryDate = body.delivery_date || null;
 
     if (!rawStatus) {
       return new Response(
@@ -59,17 +58,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!orderId && !trackingCode) {
+    if (!externalId && !trackingCode) {
       return new Response(
-        JSON.stringify({ error: "Nenhum identificador de pedido encontrado (order_id, id, tracking_code)" }),
+        JSON.stringify({ error: "Nenhum identificador encontrado (external_id ou tracking_code)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const mappedStatus = normalizeStatus(rawStatus);
     if (!mappedStatus) {
+      console.warn(`Status desconhecido recebido: '${rawStatus}'`);
       return new Response(
-        JSON.stringify({ error: `Status desconhecido: '${rawStatus}'`, known_statuses: Object.keys(statusMap) }),
+        JSON.stringify({ 
+          error: `Status desconhecido: '${rawStatus}'`, 
+          known_statuses: Object.keys(statusMap) 
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -80,46 +83,57 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Build query to find the order
-    let query = supabase.from("pedidos").select("id, nome, status_envio").limit(1);
+    // Try to find by external_id first (our pedido ID), then by tracking_code
+    let pedido = null;
 
-    if (orderId) {
-      query = query.eq("id", orderId);
-    } else if (trackingCode) {
-      query = query.eq("codigo_rastreamento", trackingCode);
+    if (externalId) {
+      const { data } = await supabase
+        .from("pedidos")
+        .select("id, nome, status_envio, codigo_rastreamento")
+        .eq("id", externalId)
+        .limit(1);
+      if (data && data.length > 0) pedido = data[0];
     }
 
-    const { data: pedidos, error: selectError } = await query;
-
-    if (selectError) {
-      console.error("Erro ao buscar pedido:", selectError);
-      return new Response(
-        JSON.stringify({ error: "Erro ao buscar pedido", details: selectError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!pedido && trackingCode) {
+      const { data } = await supabase
+        .from("pedidos")
+        .select("id, nome, status_envio, codigo_rastreamento")
+        .eq("codigo_rastreamento", trackingCode)
+        .limit(1);
+      if (data && data.length > 0) pedido = data[0];
     }
 
-    if (!pedidos || pedidos.length === 0) {
+    if (!pedido) {
+      console.warn(`Pedido não encontrado - external_id: ${externalId}, tracking: ${trackingCode}`);
       return new Response(
-        JSON.stringify({ error: "Pedido não encontrado", order_id: orderId, tracking_code: trackingCode }),
+        JSON.stringify({ 
+          error: "Pedido não encontrado", 
+          external_id: externalId, 
+          tracking_code: trackingCode 
+        }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const pedido = pedidos[0];
-
-    // Build update object
-    const updateData: Record<string, string> = {
+    // Build update
+    const updateData: Record<string, any> = {
       status_envio: mappedStatus,
     };
 
-    // If logistics sent a tracking code and we don't have one yet, save it
-    if (newTrackingCode && pedido.codigo_rastreamento !== newTrackingCode) {
-      updateData.codigo_rastreamento = newTrackingCode;
+    // Save tracking code if we received one and don't have it yet
+    if (trackingCode && (!pedido.codigo_rastreamento || pedido.codigo_rastreamento === "")) {
+      updateData.codigo_rastreamento = trackingCode;
     }
 
-    // If status is "enviado", set data_envio to today
-    if (mappedStatus === "enviado") {
+    // Set shipping date if status is "enviado" and we have it
+    if (mappedStatus === "enviado" && shippingDate) {
+      // LogZZ sends dates as "DD/MM/YYYY", convert to "YYYY-MM-DD"
+      const parts = shippingDate.split("/");
+      if (parts.length === 3) {
+        updateData.data_envio = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    } else if (mappedStatus === "enviado") {
       updateData.data_envio = new Date().toISOString().split("T")[0];
     }
 
@@ -145,6 +159,7 @@ Deno.serve(async (req) => {
         nome: pedido.nome,
         status_anterior: pedido.status_envio,
         status_novo: mappedStatus,
+        tracking_code: trackingCode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
