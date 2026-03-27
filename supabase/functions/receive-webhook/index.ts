@@ -8,23 +8,26 @@ const corsHeaders = {
 
 // Map LogZZ statuses to our internal status_envio values
 const statusMap: Record<string, string> = {
-  "pendente": "não enviado",
+  "a enviar": "não enviado",
+  "saldo insuficiente": "não enviado",
   "em separação": "não enviado",
-  "despachado": "enviado",
   "enviado": "enviado",
-  "em transito": "enviado",
-  "em trânsito": "enviado",
-  "saiu para entrega": "a retirar",
-  "a caminho": "a retirar",
   "entregue": "retirado",
+  "em devolução": "a retirar",
   "devolvido": "não enviado",
-  "cancelado": "não enviado",
-  "extraviado": "não enviado",
+  "estoque insuficiente": "não enviado",
+  "sem unidades disponíveis": "não enviado",
+  "erro no leilão": "não enviado",
 };
 
 function normalizeStatus(raw: string): string | null {
   const lower = (raw || "").trim().toLowerCase();
   return statusMap[lower] ?? null;
+}
+
+// Strip non-alphanumeric chars for document/phone matching
+function normalizeDoc(val: string): string {
+  return (val || "").replace(/[^a-zA-Z0-9]/g, "");
 }
 
 Deno.serve(async (req) => {
@@ -43,13 +46,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log("Webhook LogZZ recebido:", JSON.stringify(body));
 
-    // LogZZ payload fields
-    const externalId = body.external_id || null;
     const rawStatus = body.status || null;
     const trackingCode = body.tracking_code || null;
-    const logzzCode = body.code || null;
+    const recipientDocument = body.recipient_document || null;
+    const recipientPhone = body.recipient_phone || null;
+    const recipientName = body.recipient_name || null;
     const shippingDate = body.shipping_date || null;
-    const deliveryDate = body.delivery_date || null;
 
     if (!rawStatus) {
       return new Response(
@@ -58,9 +60,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!externalId && !trackingCode) {
+    if (!recipientDocument && !recipientPhone && !trackingCode) {
       return new Response(
-        JSON.stringify({ error: "Nenhum identificador encontrado (external_id ou tracking_code)" }),
+        JSON.stringify({ error: "Nenhum identificador encontrado (recipient_document, recipient_phone ou tracking_code)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -69,48 +71,65 @@ Deno.serve(async (req) => {
     if (!mappedStatus) {
       console.warn(`Status desconhecido recebido: '${rawStatus}'`);
       return new Response(
-        JSON.stringify({ 
-          error: `Status desconhecido: '${rawStatus}'`, 
-          known_statuses: Object.keys(statusMap) 
+        JSON.stringify({
+          error: `Status desconhecido: '${rawStatus}'`,
+          known_statuses: Object.keys(statusMap),
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Use service role to bypass RLS
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Try to find by external_id first (our pedido ID), then by tracking_code
-    let pedido = null;
+    // Fetch all pedidos and match by normalized cedula, then phone, then tracking
+    const { data: allPedidos, error: selectError } = await supabase
+      .from("pedidos")
+      .select("id, nome, cedula, telefone, status_envio, codigo_rastreamento");
 
-    if (externalId) {
-      const { data } = await supabase
-        .from("pedidos")
-        .select("id, nome, status_envio, codigo_rastreamento")
-        .eq("id", externalId)
-        .limit(1);
-      if (data && data.length > 0) pedido = data[0];
+    if (selectError) {
+      console.error("Erro ao buscar pedidos:", selectError);
+      return new Response(
+        JSON.stringify({ error: "Erro ao buscar pedidos", details: selectError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    let pedido = null;
+
+    // 1. Match by document (cedula)
+    if (!pedido && recipientDocument) {
+      const normalizedDoc = normalizeDoc(recipientDocument);
+      pedido = (allPedidos || []).find(
+        (p: any) => normalizeDoc(p.cedula) === normalizedDoc
+      ) || null;
+    }
+
+    // 2. Match by phone
+    if (!pedido && recipientPhone) {
+      const normalizedPhone = normalizeDoc(recipientPhone);
+      pedido = (allPedidos || []).find(
+        (p: any) => normalizeDoc(p.telefone) === normalizedPhone
+      ) || null;
+    }
+
+    // 3. Match by tracking code
     if (!pedido && trackingCode) {
-      const { data } = await supabase
-        .from("pedidos")
-        .select("id, nome, status_envio, codigo_rastreamento")
-        .eq("codigo_rastreamento", trackingCode)
-        .limit(1);
-      if (data && data.length > 0) pedido = data[0];
+      pedido = (allPedidos || []).find(
+        (p: any) => p.codigo_rastreamento === trackingCode
+      ) || null;
     }
 
     if (!pedido) {
-      console.warn(`Pedido não encontrado - external_id: ${externalId}, tracking: ${trackingCode}`);
+      console.warn(`Pedido não encontrado - doc: ${recipientDocument}, phone: ${recipientPhone}, tracking: ${trackingCode}`);
       return new Response(
-        JSON.stringify({ 
-          error: "Pedido não encontrado", 
-          external_id: externalId, 
-          tracking_code: trackingCode 
+        JSON.stringify({
+          error: "Pedido não encontrado",
+          recipient_document: recipientDocument,
+          recipient_phone: recipientPhone,
+          tracking_code: trackingCode,
         }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -121,14 +140,13 @@ Deno.serve(async (req) => {
       status_envio: mappedStatus,
     };
 
-    // Save tracking code if we received one and don't have it yet
+    // Save tracking code if provided and missing
     if (trackingCode && (!pedido.codigo_rastreamento || pedido.codigo_rastreamento === "")) {
       updateData.codigo_rastreamento = trackingCode;
     }
 
-    // Set shipping date if status is "enviado" and we have it
+    // Set shipping date
     if (mappedStatus === "enviado" && shippingDate) {
-      // LogZZ sends dates as "DD/MM/YYYY", convert to "YYYY-MM-DD"
       const parts = shippingDate.split("/");
       if (parts.length === 3) {
         updateData.data_envio = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -159,7 +177,7 @@ Deno.serve(async (req) => {
         nome: pedido.nome,
         status_anterior: pedido.status_envio,
         status_novo: mappedStatus,
-        tracking_code: trackingCode,
+        matched_by: recipientDocument ? "cedula" : recipientPhone ? "telefone" : "tracking_code",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
