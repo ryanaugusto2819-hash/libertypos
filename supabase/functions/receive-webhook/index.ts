@@ -7,19 +7,19 @@ const corsHeaders = {
 };
 
 const statusMap: Record<string, string> = {
-  "a enviar": "não enviado",
-  "saldo de expedição insuficiente": "não enviado",
-  "saldo insuficiente": "não enviado",
-  "em separação": "não enviado",
+  "a enviar": "a enviar",
+  "saldo de expedição insuficiente": "saldo de expedição insuficiente",
+  "saldo insuficiente": "saldo de expedição insuficiente",
+  "em separação": "em separação",
   "enviado": "enviado",
-  "entregue": "retirado",
-  "em devolução": "a retirar",
-  "devolvido": "não enviado",
-  "sem estoque": "não enviado",
-  "estoque insuficiente": "não enviado",
-  "sem unidades disponíveis": "não enviado",
-  "erro no leilão": "não enviado",
-  "pendente": "não enviado",
+  "entregue": "entregue",
+  "em devolução": "em devolução",
+  "devolvido": "devolvido",
+  "sem estoque": "sem estoque",
+  "estoque insuficiente": "sem estoque",
+  "sem unidades disponíveis": "sem estoque",
+  "erro no leilão": "sem estoque",
+  "pendente": "a enviar",
 };
 
 function normalizeStatus(raw: string): string | null {
