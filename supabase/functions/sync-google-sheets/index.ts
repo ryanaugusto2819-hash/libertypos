@@ -406,24 +406,8 @@ serve(async (req) => {
 
     if (action === "update_wpp") {
       const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
-      let rowIndex = -1;
-
-      for (let i = 0; i < allData.length; i++) {
-        if (allData[i][0] === pedido.pedido_id) {
-          rowIndex = i + 1;
-          break;
-        }
-      }
-
-      if (rowIndex === -1) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `X${rowIndex}`, [[pedido.wpp_cobranca || ""]]);
-
       return new Response(
         JSON.stringify({ success: true, message: "WPP Cobrança atualizado" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -432,24 +416,8 @@ serve(async (req) => {
 
     if (action === "update_status_cobranca") {
       const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
-      let rowIndex = -1;
-
-      for (let i = 0; i < allData.length; i++) {
-        if (allData[i][0] === pedido.pedido_id) {
-          rowIndex = i + 1;
-          break;
-        }
-      }
-
-      if (rowIndex === -1) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Y${rowIndex}`, [[pedido.status_cobranca || "pendente"]]);
-
       return new Response(
         JSON.stringify({ success: true, message: "Status de Cobrança atualizado" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -458,24 +426,8 @@ serve(async (req) => {
 
     if (action === "update_conta_bancaria") {
       const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
-      let rowIndex = -1;
-
-      for (let i = 0; i < allData.length; i++) {
-        if (allData[i][0] === pedido.pedido_id) {
-          rowIndex = i + 1;
-          break;
-        }
-      }
-
-      if (rowIndex === -1) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Pedido não encontrado na planilha" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Z${rowIndex}`, [[pedido.conta_bancaria || ""]]);
-
       return new Response(
         JSON.stringify({ success: true, message: "Conta Bancária atualizada" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
