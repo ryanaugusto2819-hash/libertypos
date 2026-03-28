@@ -49,7 +49,7 @@ const Pedidos = () => {
     try {
       setLoading(true);
       const orders = await fetchOrdersFromSheets();
-      setPedidos(orders);
+      setPedidos(orders.reverse());
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
       toast.error("Falha ao carregar pedidos do Google Sheets");
