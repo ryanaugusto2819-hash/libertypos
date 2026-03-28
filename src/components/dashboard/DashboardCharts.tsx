@@ -63,7 +63,7 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
   const paymentRateData = [
     { name: `Pagos (${total > 0 ? Math.round((pagos / total) * 100) : 0}%)`, value: pagos, fill: "hsl(142, 71%, 45%)" },
     { name: `Retirados (${total > 0 ? Math.round((retirados / total) * 100) : 0}%)`, value: retirados, fill: "hsl(38, 92%, 50%)" },
-    { name: `Enviados (${total > 0 ? Math.round((enviados / total) * 100) : 0}%)`, value: enviados, fill: "hsl(217, 91%, 60%)" },
+    { name: `Enviados (${total > 0 ? Math.round((enviados / total) * 100) : 0}%)`, value: enviados, fill: "hsl(271, 76%, 60%)" },
     { name: `A Retirar (${total > 0 ? Math.round((aRetirar / total) * 100) : 0}%)`, value: aRetirar, fill: "hsl(280, 60%, 55%)" },
   ];
 
@@ -153,8 +153,8 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(222, 47%, 9%)",
-                    border: "1px solid hsl(217, 33%, 17%)",
+                    backgroundColor: "hsl(258, 35%, 8%)",
+                    border: "1px solid hsl(271, 30%, 20%)",
                     borderRadius: "8px",
                     color: "hsl(213, 31%, 91%)",
                     fontSize: "12px",
@@ -181,13 +181,19 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 17%)" />
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(271, 76%, 63%)" />
+                    <stop offset="100%" stopColor="hsl(300, 76%, 55%)" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(258, 30%, 18%)" />
                 <XAxis dataKey="dia" tick={{ fontSize: 11, fill: "hsl(215, 20%, 65%)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(215, 20%, 65%)" }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(222, 47%, 9%)",
-                    border: "1px solid hsl(217, 33%, 17%)",
+                    backgroundColor: "hsl(258, 35%, 8%)",
+                    border: "1px solid hsl(271, 30%, 20%)",
                     borderRadius: "8px",
                     color: "hsl(213, 31%, 91%)",
                     fontSize: "12px",
@@ -196,7 +202,7 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
                     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(value)
                   }
                 />
-                <Bar dataKey="recebido" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="recebido" fill="url(#barGradient)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -212,13 +218,13 @@ export function DashboardCharts({ pedidos = [] }: DashboardChartsProps) {
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={defaultRateData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 17%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(258, 30%, 18%)" />
                 <XAxis dataKey="mes" tick={{ fontSize: 11, fill: "hsl(215, 20%, 65%)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(215, 20%, 65%)" }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(222, 47%, 9%)",
-                    border: "1px solid hsl(217, 33%, 17%)",
+                    backgroundColor: "hsl(258, 35%, 8%)",
+                    border: "1px solid hsl(271, 30%, 20%)",
                     borderRadius: "8px",
                     color: "hsl(213, 31%, 91%)",
                     fontSize: "12px",
