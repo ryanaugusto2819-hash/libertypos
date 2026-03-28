@@ -206,6 +206,19 @@ const Pedidos = () => {
       console.error("Falha ao sincronizar status de envio:", err);
       toast.error("Falhou ao sincronizar com Google Sheets");
     }
+
+    // Send attendance webhook in background for trigger statuses
+    const triggerStatuses = ["a enviar", "enviado", "entregue"];
+    if (triggerStatuses.includes(value.toLowerCase())) {
+      supabase.functions.invoke("send-attendance-webhook", {
+        body: {
+          pedido: { ...currentOrder, status_envio: value },
+          new_status: value,
+        },
+      }).catch((err) => {
+        console.warn("Webhook de atendimento falhou:", err.message);
+      });
+    }
   };
 
   const handleStatusCobChange = async (pedidoId: string, value: StatusCobranca) => {
