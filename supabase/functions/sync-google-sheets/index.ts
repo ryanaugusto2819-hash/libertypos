@@ -299,30 +299,10 @@ serve(async (req) => {
 
     if (action === "update_status") {
       const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
-      let rowIndex = -1;
-
-      for (let i = 0; i < allData.length; i++) {
-        if (allData[i][0] === pedido.pedido_id) {
-          rowIndex = i + 1;
-          break;
-        }
-      }
-
       const now = new Date().toISOString();
+      const { rowIndex, created } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
 
-      if (rowIndex === -1) {
-        const hasRequiredFallbackData = pedido.nome && pedido.telefone && pedido.produto;
-
-        if (!hasRequiredFallbackData) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Pedido não encontrado na planilha e faltam dados para criar automaticamente" }),
-            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        const row = buildSheetRow(pedido, now, true);
-        await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
-
+      if (created) {
         return new Response(
           JSON.stringify({ success: true, message: "Pedido não existia na planilha e foi criado com status atualizado" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
