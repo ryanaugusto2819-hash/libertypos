@@ -249,6 +249,7 @@ export type Database = {
           status_recebido: string
           success: boolean
           user_id: string | null
+          webhook_type: string
         }
         Insert: {
           created_at?: string
@@ -262,6 +263,7 @@ export type Database = {
           status_recebido: string
           success?: boolean
           user_id?: string | null
+          webhook_type?: string
         }
         Update: {
           created_at?: string
@@ -275,6 +277,7 @@ export type Database = {
           status_recebido?: string
           success?: boolean
           user_id?: string | null
+          webhook_type?: string
         }
         Relationships: []
       }
