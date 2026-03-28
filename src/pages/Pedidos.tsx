@@ -298,6 +298,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
+      // Update DB
+      await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
         data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
