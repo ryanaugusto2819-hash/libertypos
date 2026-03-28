@@ -473,6 +473,66 @@ const Pedidos = () => {
             <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          {[
+            { label: "Todos", value: "todos" },
+            { label: "7 dias", value: "7" },
+            { label: "15 dias", value: "15" },
+            { label: "30 dias", value: "30" },
+          ].map((opt) => (
+            <Button
+              key={opt.value}
+              size="sm"
+              variant={dateFilter === opt.value ? "default" : "outline"}
+              className="h-8 rounded-lg text-xs font-semibold"
+              onClick={() => {
+                setDateFilter(opt.value);
+                if (opt.value !== "custom") {
+                  setCustomDateFrom(undefined);
+                  setCustomDateTo(undefined);
+                }
+              }}
+            >
+              {opt.label}
+            </Button>
+          ))}
+          <Popover open={customPopoverOpen} onOpenChange={setCustomPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant={dateFilter === "custom" ? "default" : "outline"}
+                className="h-8 rounded-lg text-xs font-semibold"
+                onClick={() => setDateFilter("custom")}
+              >
+                Personalizado
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4 space-y-3" align="end">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Data Início</p>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDateFrom}
+                  onSelect={setCustomDateFrom}
+                  className="rounded-md border"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Data Fim</p>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDateTo}
+                  onSelect={setCustomDateTo}
+                  className="rounded-md border"
+                />
+              </div>
+              <Button size="sm" className="w-full" onClick={() => setCustomPopoverOpen(false)}>
+                Aplicar
+              </Button>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {loading ? (
