@@ -413,11 +413,14 @@ const Pedidos = () => {
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     toast.success("Pedido excluído");
     try {
+      // Delete from DB
+      await supabase.from("pedidos").delete().eq("id", pedidoId);
+      // Delete from Sheets
       await deleteOrderFromSheets(pedidoId);
-      toast.success("Pedido excluído da planilha!");
+      toast.success("Pedido excluído!");
     } catch (err) {
-      console.error("Falha ao excluir da planilha:", err);
-      toast.error("Pedido removido localmente, mas falhou ao excluir da planilha");
+      console.error("Falha ao excluir:", err);
+      toast.error("Pedido removido localmente, mas falhou ao excluir completamente");
     }
   };
 
