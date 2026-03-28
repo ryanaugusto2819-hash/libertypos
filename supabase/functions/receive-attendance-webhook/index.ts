@@ -29,6 +29,11 @@ Deno.serve(async (req) => {
     });
   }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
   try {
     const body = await req.json();
     console.log("Webhook de atendimento recebido:", JSON.stringify(body));
@@ -39,6 +44,7 @@ Deno.serve(async (req) => {
     const wppCobranca = body.wpp_cobranca || null;
 
     if (!statusCobranca && !wppCobranca) {
+      await logWebhook(supabase, { body, success: false, error_message: "Nenhum campo para atualizar", status_recebido: statusCobranca || "N/A" });
       return new Response(
         JSON.stringify({ error: "Nenhum campo para atualizar (status_cobranca ou wpp_cobranca)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -46,6 +52,7 @@ Deno.serve(async (req) => {
     }
 
     if (!telefone && !cedula) {
+      await logWebhook(supabase, { body, success: false, error_message: "Identificação ausente", status_recebido: statusCobranca || "N/A" });
       return new Response(
         JSON.stringify({ error: "Campo de identificação obrigatório (telefone ou cedula)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -53,6 +60,7 @@ Deno.serve(async (req) => {
     }
 
     if (statusCobranca && !VALID_STATUS_COBRANCA.includes(statusCobranca.toLowerCase())) {
+      await logWebhook(supabase, { body, success: false, error_message: `Status inválido: ${statusCobranca}`, status_recebido: statusCobranca });
       return new Response(
         JSON.stringify({
           error: `Status de cobrança inválido: "${statusCobranca}". Valores válidos: ${VALID_STATUS_COBRANCA.join(", ")}`,
@@ -60,11 +68,6 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     // Find matching order by cedula or telefone (BR only)
     const { data: allPedidos } = await supabase
@@ -89,16 +92,12 @@ Deno.serve(async (req) => {
 
     if (!pedido) {
       console.log(`Pedido não encontrado para telefone=${telefone}, cedula=${cedula}`);
+      await logWebhook(supabase, { body, success: false, error_message: "Pedido não encontrado", status_recebido: statusCobranca || "N/A" });
       return new Response(
         JSON.stringify({ success: false, error: "Pedido não encontrado" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Update via Google Sheets sync
-    const updatePayload: Record<string, string> = { pedido_id: pedido.id };
-    if (statusCobranca) updatePayload.status_cobranca = statusCobranca.toLowerCase();
-    if (wppCobranca) updatePayload.wpp_cobranca = wppCobranca;
 
     // Update status_cobranca
     if (statusCobranca) {
@@ -122,6 +121,17 @@ Deno.serve(async (req) => {
 
     console.log(`Atendimento atualizado: ${pedido.nome} (matched_by=${matchedBy}) → status_cobranca=${statusCobranca || "N/A"}, wpp_cobranca=${wppCobranca || "N/A"}`);
 
+    await logWebhook(supabase, {
+      body,
+      success: true,
+      pedido_id: pedido.id,
+      pedido_nome: pedido.nome,
+      user_id: pedido.user_id,
+      matched_by: matchedBy,
+      status_recebido: statusCobranca || wppCobranca || "N/A",
+      status_mapeado: statusCobranca?.toLowerCase() || null,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -135,9 +145,39 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("Erro no webhook de atendimento:", error.message);
+    await logWebhook(supabase, { body: {}, success: false, error_message: error.message, status_recebido: "erro" });
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
+
+async function logWebhook(supabase: any, data: {
+  body: any;
+  success: boolean;
+  error_message?: string;
+  pedido_id?: string;
+  pedido_nome?: string;
+  user_id?: string;
+  matched_by?: string;
+  status_recebido: string;
+  status_mapeado?: string | null;
+}) {
+  try {
+    await supabase.from("webhook_logs").insert({
+      webhook_type: "atendimento",
+      payload: data.body,
+      success: data.success,
+      error_message: data.error_message || null,
+      pedido_id: data.pedido_id || null,
+      pedido_nome: data.pedido_nome || null,
+      user_id: data.user_id || null,
+      matched_by: data.matched_by || null,
+      status_recebido: data.status_recebido,
+      status_mapeado: data.status_mapeado || null,
+    });
+  } catch (e) {
+    console.error("Erro ao salvar log:", e.message);
+  }
+}

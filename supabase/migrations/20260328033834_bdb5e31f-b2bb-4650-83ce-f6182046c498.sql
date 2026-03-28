@@ -1,0 +1,1 @@
+ALTER TABLE public.webhook_logs ADD COLUMN webhook_type text NOT NULL DEFAULT 'logistica';
