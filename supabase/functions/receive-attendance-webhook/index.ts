@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     if (wppCobranca) {
       await supabase.functions.invoke("sync-google-sheets", {
         body: {
-          action: "update_wpp_cobranca",
+          action: "update_wpp",
           pedido: { pedido_id: pedido.id, wpp_cobranca: wppCobranca },
         },
       });
