@@ -33,6 +33,10 @@ function shouldTriggerAttendanceWebhook(status: string | null | undefined): bool
   return !!status && ATTENDANCE_TRIGGER_STATUSES.includes(status.trim().toLowerCase());
 }
 
+function isCountryBR(pedidoData: Record<string, any>): boolean {
+  return (pedidoData.pais || "").toUpperCase() === "BR";
+}
+
 function normalizeDoc(val: string): string {
   return (val || "").replace(/[^a-zA-Z0-9]/g, "");
 }
@@ -351,7 +355,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    await sendAttendanceWebhook(adminUserId, { id: inserted.id, ...newPedido }, newPedido.status_envio);
+    if (isCountryBR(newPedido)) {
+      await sendAttendanceWebhook(adminUserId, { id: inserted.id, ...newPedido }, newPedido.status_envio);
+    }
 
     await logWebhook({ user_id: adminUserId, pedido_id: inserted.id, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: "criado_novo", success: true });
 
