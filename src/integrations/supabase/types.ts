@@ -205,6 +205,8 @@ export type Database = {
       }
       webhook_config: {
         Row: {
+          attendance_webhook_active: boolean
+          attendance_webhook_url: string
           created_at: string
           id: string
           is_active: boolean
@@ -213,6 +215,8 @@ export type Database = {
           webhook_url: string
         }
         Insert: {
+          attendance_webhook_active?: boolean
+          attendance_webhook_url?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -221,6 +225,8 @@ export type Database = {
           webhook_url?: string
         }
         Update: {
+          attendance_webhook_active?: boolean
+          attendance_webhook_url?: string
           created_at?: string
           id?: string
           is_active?: boolean
