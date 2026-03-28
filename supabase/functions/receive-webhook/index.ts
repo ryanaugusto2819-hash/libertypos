@@ -22,9 +22,15 @@ const statusMap: Record<string, string> = {
   "pendente": "a enviar",
 };
 
+const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
+
 function normalizeStatus(raw: string): string | null {
   const lower = (raw || "").trim().toLowerCase();
   return statusMap[lower] ?? null;
+}
+
+function shouldTriggerAttendanceWebhook(status: string | null | undefined): boolean {
+  return !!status && ATTENDANCE_TRIGGER_STATUSES.includes(status.trim().toLowerCase());
 }
 
 function normalizeDoc(val: string): string {
@@ -141,6 +147,59 @@ Deno.serve(async (req) => {
       };
     }
 
+    async function sendAttendanceWebhook(
+      userId: string,
+      pedidoData: Record<string, any>,
+      newStatus: string | null | undefined
+    ) {
+      if (!shouldTriggerAttendanceWebhook(newStatus)) return;
+
+      const { data: attendanceConfig, error: attendanceConfigError } = await supabase
+        .from("webhook_config")
+        .select("attendance_webhook_url, attendance_webhook_active")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (
+        attendanceConfigError ||
+        !attendanceConfig ||
+        !attendanceConfig.attendance_webhook_active ||
+        !attendanceConfig.attendance_webhook_url?.trim()
+      ) {
+        console.log(`Webhook de atendimento não configurado para user_id=${userId}`);
+        return;
+      }
+
+      const payload = {
+        id: pedidoData.id || "",
+        nome: pedidoData.nome || "",
+        telefone: pedidoData.telefone || "",
+        produto: (pedidoData.produto || "").replace(/\s*\[.*?\]\s*$/, ""),
+        status_envio: newStatus,
+        codigo_rastreamento: pedidoData.codigo_rastreamento || "",
+        valor: Number(pedidoData.valor || 0),
+        cidade: pedidoData.cidade || "",
+        departamento: pedidoData.departamento || "",
+        pais: pedidoData.pais || "",
+        cedula: pedidoData.cedula || "",
+        email: pedidoData.email || "",
+      };
+
+      try {
+        const attendanceResponse = await fetch(attendanceConfig.attendance_webhook_url.trim(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        console.log(
+          `Webhook de atendimento enviado para ${payload.nome}: status=${newStatus}, response=${attendanceResponse.status}`
+        );
+      } catch (attendanceError) {
+        console.error("Falha ao enviar webhook de atendimento:", attendanceError);
+      }
+    }
+
     if (!rawStatus) {
       await logWebhook({ status_recebido: "N/A", success: false, error_message: "Campo 'status' não encontrado" });
       return new Response(
@@ -154,7 +213,7 @@ Deno.serve(async (req) => {
     // Try to find existing pedido
     const { data: allPedidos } = await supabase
       .from("pedidos")
-      .select("id, nome, cedula, telefone, produto, quantidade, valor, cidade, departamento, status_pagamento, status_envio, data_entrada, data_envio, data_pagamento, hora_pagamento, comprovante_url, etiqueta_envio_url, codigo_rastreamento, pais, user_id");
+      .select("id, nome, cedula, telefone, email, produto, quantidade, valor, cidade, departamento, status_pagamento, status_envio, data_entrada, data_envio, data_pagamento, hora_pagamento, comprovante_url, etiqueta_envio_url, codigo_rastreamento, pais, user_id");
 
     let pedido = null;
     let matchedBy = "";
@@ -216,6 +275,12 @@ Deno.serve(async (req) => {
         await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: matchedBy, success: false, error_message: fullError });
         return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+
+      await sendAttendanceWebhook(
+        pedido.user_id,
+        { ...pedido, ...updateData },
+        (updateData.status_envio as string | undefined) ?? pedido.status_envio
+      );
 
       await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: matchedBy, success: true });
 
@@ -285,6 +350,8 @@ Deno.serve(async (req) => {
       await logWebhook({ user_id: adminUserId, pedido_id: inserted.id, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: "criado_novo", success: false, error_message: fullError });
       return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    await sendAttendanceWebhook(adminUserId, { id: inserted.id, ...newPedido }, newPedido.status_envio);
 
     await logWebhook({ user_id: adminUserId, pedido_id: inserted.id, pedido_nome: newPedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: "criado_novo", success: true });
 
