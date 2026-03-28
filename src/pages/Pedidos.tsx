@@ -2,7 +2,9 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark } from "lucide-react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,10 @@ const Pedidos = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [dateFilter, setDateFilter] = useState<string>("todos");
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+  const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
 
   useEffect(() => { setActivePais(country); }, [country]);
 
@@ -88,9 +94,44 @@ const Pedidos = () => {
         else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
-      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner;
+      // Date filter
+      let matchDate = true;
+      if (dateFilter !== "todos") {
+        const entryDate = parseLocalDate(p.data_entrada);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        if (dateFilter === "7") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 7);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "15") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 15);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "30") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 30);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "custom") {
+          if (customDateFrom) {
+            const from = new Date(customDateFrom);
+            from.setHours(0, 0, 0, 0);
+            matchDate = entryDate >= from;
+          }
+          if (matchDate && customDateTo) {
+            const to = new Date(customDateTo);
+            to.setHours(23, 59, 59, 999);
+            matchDate = entryDate <= to;
+          }
+        }
+      }
+
+      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user]);
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateFilter, customDateFrom, customDateTo]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -432,6 +473,66 @@ const Pedidos = () => {
             <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          {[
+            { label: "Todos", value: "todos" },
+            { label: "7 dias", value: "7" },
+            { label: "15 dias", value: "15" },
+            { label: "30 dias", value: "30" },
+          ].map((opt) => (
+            <Button
+              key={opt.value}
+              size="sm"
+              variant={dateFilter === opt.value ? "default" : "outline"}
+              className="h-8 rounded-lg text-xs font-semibold"
+              onClick={() => {
+                setDateFilter(opt.value);
+                if (opt.value !== "custom") {
+                  setCustomDateFrom(undefined);
+                  setCustomDateTo(undefined);
+                }
+              }}
+            >
+              {opt.label}
+            </Button>
+          ))}
+          <Popover open={customPopoverOpen} onOpenChange={setCustomPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant={dateFilter === "custom" ? "default" : "outline"}
+                className="h-8 rounded-lg text-xs font-semibold"
+                onClick={() => setDateFilter("custom")}
+              >
+                Personalizado
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4 space-y-3" align="end">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Data Início</p>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDateFrom}
+                  onSelect={setCustomDateFrom}
+                  className="rounded-md border"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Data Fim</p>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDateTo}
+                  onSelect={setCustomDateTo}
+                  className="rounded-md border"
+                />
+              </div>
+              <Button size="sm" className="w-full" onClick={() => setCustomPopoverOpen(false)}>
+                Aplicar
+              </Button>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {loading ? (
