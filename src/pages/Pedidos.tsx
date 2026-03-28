@@ -94,7 +94,42 @@ const Pedidos = () => {
         else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
-      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner;
+      // Date filter
+      let matchDate = true;
+      if (dateFilter !== "todos") {
+        const entryDate = parseLocalDate(p.data_entrada);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        if (dateFilter === "7") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 7);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "15") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 15);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "30") {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 30);
+          from.setHours(0, 0, 0, 0);
+          matchDate = entryDate >= from && entryDate <= today;
+        } else if (dateFilter === "custom") {
+          if (customDateFrom) {
+            const from = new Date(customDateFrom);
+            from.setHours(0, 0, 0, 0);
+            matchDate = entryDate >= from;
+          }
+          if (matchDate && customDateTo) {
+            const to = new Date(customDateTo);
+            to.setHours(23, 59, 59, 999);
+            matchDate = entryDate <= to;
+          }
+        }
+      }
+
+      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
   }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user]);
 
