@@ -112,13 +112,34 @@ export function useCreatePedido() {
   });
 }
 
+const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
+
 export function useUpdatePedido() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<Pedido>) => {
+      // If status_envio is changing, fetch current pedido data for the webhook
+      let pedidoData: Pedido | null = null;
+      if (updates.status_envio && ATTENDANCE_TRIGGER_STATUSES.includes(updates.status_envio.toLowerCase())) {
+        const { data } = await supabase.from("pedidos").select("*").eq("id", id).single();
+        if (data) pedidoData = rowToPedido(data);
+      }
+
       const { error } = await supabase.from("pedidos").update(updates).eq("id", id);
       if (error) throw error;
+
+      // Send attendance webhook in background if status_envio changed to a trigger status
+      if (pedidoData && updates.status_envio) {
+        supabase.functions.invoke("send-attendance-webhook", {
+          body: {
+            pedido: { ...pedidoData, ...updates },
+            new_status: updates.status_envio,
+          },
+        }).catch((err) => {
+          console.warn("Webhook de atendimento falhou:", err.message);
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pedidos"] });

@@ -14,6 +14,8 @@ export default function Configuracoes() {
   const { user } = useAuth();
   const [webhookUrl, setWebhookUrl] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [attendanceWebhookUrl, setAttendanceWebhookUrl] = useState("");
+  const [attendanceWebhookActive, setAttendanceWebhookActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
