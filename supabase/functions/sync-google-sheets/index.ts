@@ -231,10 +231,12 @@ serve(async (req) => {
     }
 
     if (action === "create") {
+      console.log(`[CREATE] Recebido pedido_id=${pedido.pedido_id}, nome=${pedido.nome}, pais=${pedido.pais}`);
       const existingData = await getSheetData(accessToken, spreadsheetId, "A:A");
       const existingIds = existingData.map((row: string[]) => row[0]);
 
       if (existingIds.includes(pedido.pedido_id)) {
+        console.log(`[CREATE] Pedido ${pedido.pedido_id} já existe na planilha`);
         return new Response(
           JSON.stringify({ success: false, error: "Pedido já existe na planilha" }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -244,7 +246,9 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const row = buildSheetRow(pedido, now);
 
+      console.log(`[CREATE] Adicionando row com ${row.length} colunas para ${pedido.nome}`);
       await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+      console.log(`[CREATE] Sucesso: ${pedido.nome} adicionado à planilha`);
 
       return new Response(
         JSON.stringify({ success: true, message: "Pedido adicionado à planilha" }),
