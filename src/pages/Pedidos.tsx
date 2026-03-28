@@ -25,6 +25,8 @@ import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { supabase } from "@/integrations/supabase/client";
 
+const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
+
 const Pedidos = () => {
   const { country } = useCountry();
   const { user, isAdmin } = useAuth();
@@ -113,6 +115,17 @@ const Pedidos = () => {
       }).catch((err) => {
         console.warn("Webhook falhou:", err.message);
       });
+
+      if (ATTENDANCE_TRIGGER_STATUSES.includes(order.status_envio.toLowerCase())) {
+        supabase.functions.invoke("send-attendance-webhook", {
+          body: {
+            pedido: { ...order, id: pedidoId },
+            new_status: order.status_envio,
+          },
+        }).catch((err) => {
+          console.warn("Webhook de atendimento falhou:", err.message);
+        });
+      }
     } catch (err) {
       console.error("Falha ao sincronizar:", err);
       toast.error("Pedido criado, mas falhou ao sincronizar com Google Sheets");
@@ -208,8 +221,7 @@ const Pedidos = () => {
     }
 
     // Send attendance webhook in background for trigger statuses
-    const triggerStatuses = ["a enviar", "enviado", "entregue"];
-    if (triggerStatuses.includes(value.toLowerCase())) {
+    if (ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
       supabase.functions.invoke("send-attendance-webhook", {
         body: {
           pedido: { ...currentOrder, status_envio: value },
