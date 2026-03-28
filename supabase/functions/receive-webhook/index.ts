@@ -280,11 +280,13 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: fullError }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      await sendAttendanceWebhook(
-        pedido.user_id,
-        { ...pedido, ...updateData },
-        (updateData.status_envio as string | undefined) ?? pedido.status_envio
-      );
+      if (isCountryBR(pedido)) {
+        await sendAttendanceWebhook(
+          pedido.user_id,
+          { ...pedido, ...updateData },
+          (updateData.status_envio as string | undefined) ?? pedido.status_envio
+        );
+      }
 
       await logWebhook({ user_id: pedido.user_id, pedido_id: pedido.id, pedido_nome: pedido.nome, status_recebido: rawStatus, status_mapeado: mappedStatus || undefined, matched_by: matchedBy, success: true });
 

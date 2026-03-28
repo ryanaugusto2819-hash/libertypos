@@ -116,7 +116,7 @@ const Pedidos = () => {
         console.warn("Webhook falhou:", err.message);
       });
 
-      if (ATTENDANCE_TRIGGER_STATUSES.includes(order.status_envio.toLowerCase())) {
+      if (order.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(order.status_envio.toLowerCase())) {
         supabase.functions.invoke("send-attendance-webhook", {
           body: {
             pedido: { ...order, id: pedidoId },
@@ -221,7 +221,7 @@ const Pedidos = () => {
     }
 
     // Send attendance webhook in background for trigger statuses
-    if (ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
+    if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
       supabase.functions.invoke("send-attendance-webhook", {
         body: {
           pedido: { ...currentOrder, status_envio: value },
