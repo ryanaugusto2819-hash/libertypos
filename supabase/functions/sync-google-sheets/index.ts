@@ -137,6 +137,46 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   ];
 }
 
+async function ensurePedidoInSheet(
+  accessToken: string, spreadsheetId: string, pedidoId: string, allData: string[][]
+): Promise<{ rowIndex: number; created: boolean }> {
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i][0] === pedidoId) {
+      return { rowIndex: i + 1, created: false };
+    }
+  }
+  // Not found in sheet — fetch from DB and create row
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const { data: dbRow } = await supabase.from("pedidos").select("*").eq("id", pedidoId).maybeSingle();
+  if (!dbRow) {
+    throw new Error("Pedido não encontrado na planilha nem no banco de dados");
+  }
+  const now = new Date().toISOString();
+  const row = buildSheetRow({
+    pedido_id: dbRow.id, nome: dbRow.nome, telefone: dbRow.telefone, cedula: dbRow.cedula,
+    produto: dbRow.produto, quantidade: dbRow.quantidade, valor: dbRow.valor,
+    cidade: dbRow.cidade, departamento: dbRow.departamento,
+    codigo_rastreamento: dbRow.codigo_rastreamento, status_pagamento: dbRow.status_pagamento,
+    data_criacao: dbRow.data_entrada, data_envio: dbRow.data_envio || "",
+    data_pagamento: dbRow.data_pagamento || "", hora_pagamento: dbRow.hora_pagamento || "",
+    comprovante_url: dbRow.comprovante_url || "", etiqueta_envio_url: dbRow.etiqueta_envio_url || "",
+    vendedor: dbRow.vendedor || "", criativo: dbRow.criativo || "",
+    status_envio: dbRow.status_envio, pais: dbRow.pais, afiliado_id: dbRow.user_id || "",
+    wpp_cobranca: dbRow.wpp_cobranca || "",
+  }, now, true);
+  await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+  console.log(`[AUTO-CREATE] Pedido ${pedidoId} criado na planilha a partir do banco`);
+  // Return the new row index (last row)
+  const updatedData = await getSheetData(accessToken, spreadsheetId, "A:A");
+  for (let i = updatedData.length - 1; i >= 0; i--) {
+    if (updatedData[i][0] === pedidoId) return { rowIndex: i + 1, created: true };
+  }
+  return { rowIndex: allData.length + 1, created: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
