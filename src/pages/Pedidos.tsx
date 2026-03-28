@@ -42,6 +42,10 @@ const Pedidos = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [dateFilter, setDateFilter] = useState<string>("todos");
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+  const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
 
   useEffect(() => { setActivePais(country); }, [country]);
 
