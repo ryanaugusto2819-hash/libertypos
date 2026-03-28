@@ -241,7 +241,72 @@ export default function Configuracoes() {
         </CardContent>
       </Card>
 
-      <WebhookHistory />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-accent/10">
+              <Webhook className="h-5 w-5 text-accent-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Webhook de Atendimento</CardTitle>
+              <CardDescription>
+                Dispara automaticamente um webhook para sua plataforma de atendimento quando o status de envio mudar para: <strong>A Enviar</strong>, <strong>Enviado</strong> ou <strong>Entregue</strong>.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="attendance-webhook-url">URL do Webhook de Atendimento</Label>
+            <Input
+              id="attendance-webhook-url"
+              value={attendanceWebhookUrl}
+              onChange={(e) => setAttendanceWebhookUrl(e.target.value)}
+              placeholder="https://sua-plataforma.com/webhook/..."
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Cole aqui a URL do webhook da sua plataforma de atendimento.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label>Webhook Ativo</Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativo, mudanças de status dispararão o webhook automaticamente.
+              </p>
+            </div>
+            <Switch checked={attendanceWebhookActive} onCheckedChange={setAttendanceWebhookActive} />
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Payload enviado:</p>
+            <pre className="text-xs text-muted-foreground overflow-x-auto whitespace-pre-wrap">
+{JSON.stringify(
+  {
+    id: "uuid-do-pedido",
+    nome: "Nome do cliente",
+    telefone: "Telefone",
+    produto: "Nome do produto",
+    status_envio: "enviado",
+    codigo_rastreamento: "AB123456789BR",
+    valor: 100,
+    cidade: "Cidade",
+    departamento: "Estado/Departamento",
+    pais: "BR",
+    cedula: "CPF/Cédula",
+    email: "email@exemplo.com",
+  },
+  null,
+  2
+)}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
+
+
     </div>
   );
 }
