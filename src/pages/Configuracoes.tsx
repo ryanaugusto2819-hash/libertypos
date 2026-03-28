@@ -287,7 +287,7 @@ export default function Configuracoes() {
             Salvar Configuração
           </Button>
 
-
+          <div className="rounded-lg border bg-muted/30 p-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">Payload enviado:</p>
             <pre className="text-xs text-muted-foreground overflow-x-auto whitespace-pre-wrap">
 {JSON.stringify(
