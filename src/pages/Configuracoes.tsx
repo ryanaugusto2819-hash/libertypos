@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2, Webhook, TestTube2, CheckCircle2, XCircle } from "lucide-react";
 import WebhookHistory from "@/components/webhook/WebhookHistory";
+import AttendanceWebhookHistory from "@/components/webhook/AttendanceWebhookHistory";
 
 export default function Configuracoes() {
   const { user } = useAuth();
@@ -314,6 +315,7 @@ export default function Configuracoes() {
       </Card>
 
       <WebhookHistory />
+      <AttendanceWebhookHistory />
     </div>
   );
 }
