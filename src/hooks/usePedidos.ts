@@ -48,7 +48,7 @@ export function usePedidos() {
       const { data, error } = await supabase
         .from("pedidos")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map(rowToPedido);
     },
