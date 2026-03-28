@@ -227,6 +227,14 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
+      // Update DB
+      await supabase.from("pedidos").update({
+        status_pagamento: "pago",
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", orderId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
         nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
@@ -238,7 +246,7 @@ const Pedidos = () => {
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
         status_envio: currentOrder.status_envio, pais: currentOrder.pais,
       });
-      toast.success("Status atualizado no Google Sheets!");
+      toast.success("Status atualizado!");
     } catch (err) {
       console.error("Falha ao atualizar status:", err);
       toast.error("Status alterado localmente, mas falhou ao sincronizar");
