@@ -313,7 +313,7 @@ export default function Configuracoes() {
         </CardContent>
       </Card>
 
-
+      <WebhookHistory />
     </div>
   );
 }
