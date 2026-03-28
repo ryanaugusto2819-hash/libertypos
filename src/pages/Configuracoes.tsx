@@ -37,6 +37,8 @@ export default function Configuracoes() {
     if (data) {
       setWebhookUrl(data.webhook_url || "");
       setIsActive(data.is_active ?? true);
+      setAttendanceWebhookUrl(data.attendance_webhook_url || "");
+      setAttendanceWebhookActive(data.attendance_webhook_active ?? false);
     }
     setLoading(false);
   }
@@ -56,12 +58,24 @@ export default function Configuracoes() {
     if (existing) {
       ({ error } = await (supabase as any)
         .from("webhook_config")
-        .update({ webhook_url: webhookUrl.trim(), is_active: isActive, updated_at: new Date().toISOString() })
+        .update({
+          webhook_url: webhookUrl.trim(),
+          is_active: isActive,
+          attendance_webhook_url: attendanceWebhookUrl.trim(),
+          attendance_webhook_active: attendanceWebhookActive,
+          updated_at: new Date().toISOString(),
+        })
         .eq("user_id", user.id));
     } else {
       ({ error } = await (supabase as any)
         .from("webhook_config")
-        .insert({ user_id: user.id, webhook_url: webhookUrl.trim(), is_active: isActive }));
+        .insert({
+          user_id: user.id,
+          webhook_url: webhookUrl.trim(),
+          is_active: isActive,
+          attendance_webhook_url: attendanceWebhookUrl.trim(),
+          attendance_webhook_active: attendanceWebhookActive,
+        }));
     }
 
     if (error) {
