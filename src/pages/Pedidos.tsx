@@ -131,7 +131,7 @@ const Pedidos = () => {
 
       return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user]);
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateFilter, customDateFrom, customDateTo]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
