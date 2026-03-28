@@ -48,6 +48,15 @@ export default function Configuracoes() {
     setSaving(true);
     setTestResult(null);
 
+    const saveData = {
+      webhook_url: webhookUrl.trim(),
+      is_active: isActive,
+      attendance_webhook_url: attendanceWebhookUrl.trim(),
+      attendance_webhook_active: attendanceWebhookActive,
+      updated_at: new Date().toISOString(),
+    };
+    console.log("Salvando configuração:", saveData);
+
     const { data: existing } = await (supabase as any)
       .from("webhook_config")
       .select("id")
@@ -56,29 +65,22 @@ export default function Configuracoes() {
 
     let error;
     if (existing) {
-      ({ error } = await (supabase as any)
+      const result = await (supabase as any)
         .from("webhook_config")
-        .update({
-          webhook_url: webhookUrl.trim(),
-          is_active: isActive,
-          attendance_webhook_url: attendanceWebhookUrl.trim(),
-          attendance_webhook_active: attendanceWebhookActive,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id));
+        .update(saveData)
+        .eq("user_id", user.id);
+      error = result.error;
+      console.log("Update result:", result);
     } else {
-      ({ error } = await (supabase as any)
+      const result = await (supabase as any)
         .from("webhook_config")
-        .insert({
-          user_id: user.id,
-          webhook_url: webhookUrl.trim(),
-          is_active: isActive,
-          attendance_webhook_url: attendanceWebhookUrl.trim(),
-          attendance_webhook_active: attendanceWebhookActive,
-        }));
+        .insert({ user_id: user.id, ...saveData });
+      error = result.error;
+      console.log("Insert result:", result);
     }
 
     if (error) {
+      console.error("Erro ao salvar:", error);
       toast.error("Erro ao salvar: " + error.message);
     } else {
       toast.success("Configuração salva com sucesso!");
