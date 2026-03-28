@@ -187,6 +187,7 @@ serve(async (req) => {
         "1-recobrança (a retirar)", "2-recobrança (a retirar)", "3-recobrança (a retirar)",
         "1-follow (retirado)", "2-follow (retirado)", "3-follow (retirado)", "4-follow (retirado)",
         "1-recobrança (retirado)", "2-recobrança (retirado)",
+        "pedido pre enviado", "pedido enviado", "pedido entregue",
       ];
 
       const pedidos = rows.filter((row: string[]) => row[0]).map((row: string[]) => {
