@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,30 +10,98 @@ interface FinanceCardProps {
   delay?: number;
 }
 
-const variantMap = {
-  received: "bg-success/10 text-success border-success/20",
-  pending: "bg-primary/10 text-primary border-primary/20",
-  scheduled: "bg-warning/10 text-warning border-warning/20",
+const variantConfig = {
+  received: {
+    gradient: "linear-gradient(135deg, hsl(142 71% 42%), hsl(142 71% 28%))",
+    glow: "hsl(142 71% 42% / 0.20)",
+    lightBg: "hsl(142 71% 42% / 0.08)",
+    border: "hsl(142 71% 42% / 0.25)",
+    iconColor: "hsl(142 71% 38%)",
+    label: "Recebido",
+  },
+  pending: {
+    gradient: "linear-gradient(135deg, hsl(271 76% 58%), hsl(300 76% 50%))",
+    glow: "hsl(271 76% 53% / 0.20)",
+    lightBg: "hsl(271 76% 53% / 0.08)",
+    border: "hsl(271 76% 53% / 0.25)",
+    iconColor: "hsl(271 76% 58%)",
+    label: "Pendente",
+  },
+  scheduled: {
+    gradient: "linear-gradient(135deg, hsl(38 92% 52%), hsl(25 92% 44%))",
+    glow: "hsl(38 92% 50% / 0.20)",
+    lightBg: "hsl(38 92% 50% / 0.08)",
+    border: "hsl(38 92% 50% / 0.25)",
+    iconColor: "hsl(38 92% 45%)",
+    label: "Agendado",
+  },
 };
 
 export function FinanceCard({ title, value, subtitle, icon: Icon, variant, delay = 0 }: FinanceCardProps) {
+  const config = variantConfig[variant];
+
   return (
-    <Card
-      className={cn("glass-card animate-fade-in overflow-hidden")}
-      style={{ animationDelay: `${delay}ms` }}
+    <div
+      className="animate-fade-in relative rounded-2xl overflow-hidden"
+      style={{
+        animationDelay: `${delay}ms`,
+        background: "hsl(var(--card))",
+        border: `1px solid ${config.border}`,
+        boxShadow: `0 4px 24px -4px ${config.glow}`,
+      }}
     >
-      <CardContent className="p-5">
-        <div className="flex items-center gap-4">
-          <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center border shrink-0", variantMap[variant])}>
-            <Icon className="h-6 w-6" />
+      {/* Gradient top bar */}
+      <div className="h-1 w-full" style={{ background: config.gradient }} />
+
+      {/* Background decorative blob */}
+      <div
+        className="absolute bottom-0 right-0 w-32 h-32 rounded-full pointer-events-none"
+        style={{
+          background: `radial-gradient(circle, ${config.lightBg} 0%, transparent 70%)`,
+          transform: "translate(20%, 20%)",
+        }}
+      />
+
+      <div className="p-5 relative">
+        <div className="flex items-start justify-between mb-3">
+          {/* Icon */}
+          <div
+            className="h-10 w-10 rounded-xl flex items-center justify-center"
+            style={{ background: config.lightBg }}
+          >
+            <Icon className="h-5 w-5" style={{ color: config.iconColor }} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-            <p className="text-xl font-bold text-card-foreground truncate">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
+
+          {/* Variant label pill */}
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+            style={{
+              background: config.lightBg,
+              color: config.iconColor,
+              border: `1px solid ${config.border}`,
+            }}
+          >
+            {config.label}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Title */}
+        <p className="text-xs font-medium uppercase tracking-widest mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+          {title}
+        </p>
+
+        {/* Value */}
+        <p className="text-2xl font-black tracking-tight" style={{ color: "hsl(var(--card-foreground))" }}>
+          {value}
+        </p>
+
+        {/* Subtitle */}
+        {subtitle && (
+          <p className="text-xs mt-1.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
