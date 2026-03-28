@@ -155,6 +155,9 @@ export const statusCobrancaConfig: Record<StatusCobranca, { label: string; class
   "4-follow (retirado)": { label: "4-Follow (Retirado)", className: "status-paid" },
   "1-recobrança (retirado)": { label: "1-Recobrança (Retirado)", className: "status-overdue" },
   "2-recobrança (retirado)": { label: "2-Recobrança (Retirado)", className: "status-overdue" },
+  "pedido pre enviado": { label: "Pedido Pré Enviado", className: "status-sent" },
+  "pedido enviado": { label: "Pedido Enviado", className: "status-sent" },
+  "pedido entregue": { label: "Pedido Entregue", className: "status-paid" },
 };
 
 // Keep backward compat alias

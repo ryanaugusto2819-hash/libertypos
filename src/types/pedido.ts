@@ -21,7 +21,10 @@ export type StatusCobranca =
   | "3-follow (retirado)"
   | "4-follow (retirado)"
   | "1-recobrança (retirado)"
-  | "2-recobrança (retirado)";
+  | "2-recobrança (retirado)"
+  | "pedido pre enviado"
+  | "pedido enviado"
+  | "pedido entregue";
 
 export type PaisCode = "UY" | "BR" | "AR";
 
