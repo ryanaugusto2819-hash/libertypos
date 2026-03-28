@@ -227,6 +227,14 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
+      // Update DB
+      await supabase.from("pedidos").update({
+        status_pagamento: "pago",
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", orderId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
         nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
@@ -238,7 +246,7 @@ const Pedidos = () => {
         vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
         status_envio: currentOrder.status_envio, pais: currentOrder.pais,
       });
-      toast.success("Status atualizado no Google Sheets!");
+      toast.success("Status atualizado!");
     } catch (err) {
       console.error("Falha ao atualizar status:", err);
       toast.error("Status alterado localmente, mas falhou ao sincronizar");
@@ -266,6 +274,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
+      // Update DB
+      await supabase.from("pedidos").update({
+        status_pagamento: value,
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", pedidoId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: value,
         data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
@@ -290,6 +306,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
+      // Update DB
+      await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
         data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
@@ -326,6 +346,8 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
+      // Update DB - status_cobranca is not a column in pedidos table, so only sync to Sheets
+      // But we need to persist somewhere - let's update via Sheets
       await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_status_cobranca",
@@ -364,6 +386,10 @@ const Pedidos = () => {
     const updatedOrder = { ...currentOrder, [field]: value };
     setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
     try {
+      // Update DB
+      await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+
+      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
         data_pagamento: updatedOrder.data_pagamento, hora_pagamento: updatedOrder.hora_pagamento,
@@ -387,11 +413,14 @@ const Pedidos = () => {
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     toast.success("Pedido excluído");
     try {
+      // Delete from DB
+      await supabase.from("pedidos").delete().eq("id", pedidoId);
+      // Delete from Sheets
       await deleteOrderFromSheets(pedidoId);
-      toast.success("Pedido excluído da planilha!");
+      toast.success("Pedido excluído!");
     } catch (err) {
-      console.error("Falha ao excluir da planilha:", err);
-      toast.error("Pedido removido localmente, mas falhou ao excluir da planilha");
+      console.error("Falha ao excluir:", err);
+      toast.error("Pedido removido localmente, mas falhou ao excluir completamente");
     }
   };
 
