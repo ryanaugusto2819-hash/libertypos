@@ -338,6 +338,8 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
+      // Update DB - status_cobranca is not a column in pedidos table, so only sync to Sheets
+      // But we need to persist somewhere - let's update via Sheets
       await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_status_cobranca",
