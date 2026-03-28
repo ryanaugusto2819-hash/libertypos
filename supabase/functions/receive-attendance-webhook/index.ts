@@ -99,24 +99,35 @@ Deno.serve(async (req) => {
       );
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    async function callSyncSheets(action: string, pedidoPayload: Record<string, unknown>) {
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/sync-google-sheets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+          },
+          body: JSON.stringify({ action, pedido: pedidoPayload }),
+        });
+        const text = await res.text();
+        console.log(`Sync (${action}) [${res.status}]:`, text.substring(0, 300));
+      } catch (e) {
+        console.error(`Sync (${action}) fetch error:`, e.message);
+      }
+    }
+
     // Update status_cobranca
     if (statusCobranca) {
-      await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_status_cobranca",
-          pedido: { pedido_id: pedido.id, status_cobranca: statusCobranca.toLowerCase() },
-        },
-      });
+      await callSyncSheets("update_status_cobranca", { pedido_id: pedido.id, status_cobranca: statusCobranca.toLowerCase() });
     }
 
     // Update wpp_cobranca
     if (wppCobranca) {
-      await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_wpp",
-          pedido: { pedido_id: pedido.id, wpp_cobranca: wppCobranca },
-        },
-      });
+      await callSyncSheets("update_wpp", { pedido_id: pedido.id, wpp_cobranca: wppCobranca });
     }
 
     console.log(`Atendimento atualizado: ${pedido.nome} (matched_by=${matchedBy}) → status_cobranca=${statusCobranca || "N/A"}, wpp_cobranca=${wppCobranca || "N/A"}`);

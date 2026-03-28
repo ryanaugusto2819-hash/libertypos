@@ -105,20 +105,43 @@ Deno.serve(async (req) => {
       action: "create" | "update_status",
       pedidoPayload: Record<string, unknown>
     ): Promise<string | null> {
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: { action, pedido: pedidoPayload },
-      });
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        
+        const syncResponse = await fetch(`${supabaseUrl}/functions/v1/sync-google-sheets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+          },
+          body: JSON.stringify({ action, pedido: pedidoPayload }),
+        });
 
-      if (error) return error.message;
+        const responseText = await syncResponse.text();
+        console.log(`Sync Google Sheets (${action}) response [${syncResponse.status}]:`, responseText.substring(0, 500));
 
-      if (data && typeof data === "object" && "success" in data) {
-        const result = data as { success?: boolean; error?: string; message?: string };
-        if (result.success === false) {
-          return result.error || result.message || "Falha ao sincronizar com Google Sheets";
+        if (!syncResponse.ok) {
+          return `Sync HTTP ${syncResponse.status}: ${responseText.substring(0, 200)}`;
         }
-      }
 
-      return null;
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          return `Sync response não é JSON: ${responseText.substring(0, 200)}`;
+        }
+
+        if (data && data.success === false) {
+          return data.error || data.message || "Falha ao sincronizar com Google Sheets";
+        }
+
+        return null;
+      } catch (fetchError) {
+        console.error("Erro ao chamar sync-google-sheets:", fetchError);
+        return `Fetch error: ${fetchError.message}`;
+      }
     }
 
     function buildSheetsPayload(pedidoData: Record<string, any>, overrides: Record<string, any> = {}) {
