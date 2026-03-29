@@ -284,6 +284,18 @@ const Dashboard = () => {
         <FinanceCard title="Total Recebido via Boleto" value={formatCurrency(totalBoleto)} subtitle={`${pagosBoleto.length} pedidos pagos`} icon={FileText} variant="boleto" delay={700} />
       </div>
 
+      {country === "BR" && (
+        <div className="flex">
+          <div className="rounded-2xl border border-primary/20 bg-card px-5 py-3 flex items-center gap-3 shadow-md">
+            <PackageCheck className="h-4 w-4 text-primary" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Frete</p>
+              <p className="text-sm font-bold text-foreground">{formatCurrency(totalFrete)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
