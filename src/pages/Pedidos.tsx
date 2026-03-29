@@ -96,6 +96,8 @@ const Pedidos = () => {
         complemento: row.complemento,
         bairro: row.bairro,
         email: row.email,
+        valor_frete: Number(row.valor_frete ?? 0),
+        forma_pagamento: row.forma_pagamento || "",
       }));
       
       // Merge: use Sheets as primary, add DB orders not found in Sheets
@@ -376,6 +378,17 @@ const Pedidos = () => {
     }
   };
 
+  const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
+    toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
+    try {
+      await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+    } catch (err) {
+      console.error("Falha ao atualizar forma de pagamento:", err);
+      toast.error("Falhou ao salvar forma de pagamento");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
@@ -626,15 +639,17 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Produto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase text-right">Valor</TableHead>
+                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase text-right">Frete</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Cidade</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Rastreamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>
+                {country !== "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -665,6 +680,11 @@ const Pedidos = () => {
                     <TableCell className="text-sm font-medium text-right">
                       {formatCurrency(p.valor)}
                     </TableCell>
+                    {country === "BR" && (
+                      <TableCell className="text-sm font-medium text-right text-muted-foreground">
+                        {p.valor_frete ? formatCurrency(p.valor_frete) : "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm font-medium">
                       <div>{p.cidade}</div>
                       <div className="text-xs text-muted-foreground">{p.departamento}</div>
@@ -713,6 +733,18 @@ const Pedidos = () => {
                           {statusPagamentoConfig[p.status_pagamento]?.label ?? p.status_pagamento}
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Select value={p.forma_pagamento || ""} onValueChange={(v) => handleFormaPagamentoChange(p.id, v)}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="cartao">Cartão</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       {isAdmin ? (
@@ -802,17 +834,19 @@ const Pedidos = () => {
                     <TableCell>
                       <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
                     </TableCell>
-                    <TableCell>
-                      <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
-                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pablo">Pablo</SelectItem>
-                          <SelectItem value="Mulher">Mulher</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
+                    {country !== "BR" && (
+                      <TableCell>
+                        <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
+                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                            <SelectValue placeholder="Selecionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pablo">Pablo</SelectItem>
+                            <SelectItem value="Mulher">Mulher</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -828,7 +862,7 @@ const Pedidos = () => {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={country === "UY" ? 15 : 14} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={20} className="text-center py-12 text-muted-foreground">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
