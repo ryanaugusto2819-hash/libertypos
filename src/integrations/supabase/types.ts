@@ -31,6 +31,7 @@ export type Database = {
           departamento: string
           email: string | null
           etiqueta_envio_url: string | null
+          forma_pagamento: string
           hora_pagamento: string | null
           id: string
           nome: string
@@ -65,6 +66,7 @@ export type Database = {
           departamento?: string
           email?: string | null
           etiqueta_envio_url?: string | null
+          forma_pagamento?: string
           hora_pagamento?: string | null
           id?: string
           nome: string
@@ -99,6 +101,7 @@ export type Database = {
           departamento?: string
           email?: string | null
           etiqueta_envio_url?: string | null
+          forma_pagamento?: string
           hora_pagamento?: string | null
           id?: string
           nome?: string

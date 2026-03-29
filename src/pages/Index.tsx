@@ -8,7 +8,7 @@ import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
-  CalendarClock, CalendarIcon, Loader2,
+  CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
@@ -91,6 +91,7 @@ const Dashboard = () => {
           complemento: row.complemento,
           bairro: row.bairro,
           email: row.email,
+          forma_pagamento: row.forma_pagamento || "",
         }));
         
         // Merge: use Sheets as primary, add DB orders not found in Sheets
@@ -181,6 +182,13 @@ const Dashboard = () => {
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
   const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
 
+  const pagosPix = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "pix");
+  const pagosCartao = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "cartão" || p.forma_pagamento?.toLowerCase() === "cartao");
+  const pagosBoleto = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "boleto");
+  const totalPix = pagosPix.reduce((sum, p) => sum + p.valor, 0);
+  const totalCartao = pagosCartao.reduce((sum, p) => sum + p.valor, 0);
+  const totalBoleto = pagosBoleto.reduce((sum, p) => sum + p.valor, 0);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -267,7 +275,12 @@ const Dashboard = () => {
         <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${total} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
       </div>
 
-      <DashboardCharts pedidos={filteredPedidos} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FinanceCard title="Total Recebido via PIX" value={formatCurrency(totalPix)} subtitle={`${pagosPix.length} pedidos pagos`} icon={QrCode} variant="pix" delay={500} />
+        <FinanceCard title="Total Recebido via Cartão" value={formatCurrency(totalCartao)} subtitle={`${pagosCartao.length} pedidos pagos`} icon={CreditCard} variant="cartao" delay={600} />
+        <FinanceCard title="Total Recebido via Boleto" value={formatCurrency(totalBoleto)} subtitle={`${pagosBoleto.length} pedidos pagos`} icon={FileText} variant="boleto" delay={700} />
+      </div>
+
     </div>
   );
 };
