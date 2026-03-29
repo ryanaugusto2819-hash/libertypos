@@ -8,7 +8,7 @@ import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
-  CalendarClock, CalendarIcon, Loader2,
+  CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
