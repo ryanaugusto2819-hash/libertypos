@@ -105,12 +105,7 @@ export function AppSidebar() {
                       end
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200"
                       style={{ color: "hsl(270 15% 50%)" }}
-                      activeClassName="font-semibold"
-                      activeStyle={{
-                        background: "linear-gradient(135deg, hsl(271 76% 53% / 0.85), hsl(300 76% 50% / 0.85))",
-                        color: "white",
-                        boxShadow: "0 4px 16px hsl(271 76% 53% / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.1)",
-                      }}
+                      activeClassName="font-semibold liberty-nav-active text-white"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
