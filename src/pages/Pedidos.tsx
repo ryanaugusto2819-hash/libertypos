@@ -186,6 +186,35 @@ const Pedidos = () => {
     const order: Pedido = { ...newOrder, id: pedidoId, afiliado_id: user?.id };
     setPedidos([order, ...pedidos]);
     try {
+      // Also save to Supabase DB for persistence
+      const { error: dbError } = await supabase.from("pedidos").insert({
+        user_id: user!.id,
+        nome: order.nome,
+        telefone: order.telefone,
+        cedula: order.cedula,
+        produto: order.produto,
+        quantidade: order.quantidade,
+        valor: order.valor,
+        cidade: order.cidade,
+        departamento: order.departamento,
+        codigo_rastreamento: order.codigo_rastreamento,
+        status_pagamento: order.status_pagamento,
+        status_envio: order.status_envio,
+        data_entrada: order.data_entrada,
+        data_envio: order.data_envio,
+        observacoes: order.observacoes,
+        vendedor: order.vendedor,
+        criativo: order.criativo,
+        pais: order.pais,
+        cep: order.cep || "",
+        rua: order.rua || "",
+        numero: order.numero || "",
+        complemento: order.complemento || "",
+        bairro: order.bairro || "",
+        email: order.email || "",
+      });
+      if (dbError) console.error("Erro ao salvar no banco:", dbError);
+
       await syncOrderToSheets({
         pedido_id: pedidoId, nome: order.nome, telefone: order.telefone,
         cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
