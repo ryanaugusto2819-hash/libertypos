@@ -275,7 +275,12 @@ const Dashboard = () => {
         <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${total} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
       </div>
 
-      <DashboardCharts pedidos={filteredPedidos} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FinanceCard title="Total Recebido via PIX" value={formatCurrency(totalPix)} subtitle={`${pagosPix.length} pedidos pagos`} icon={QrCode} variant="pix" delay={500} />
+        <FinanceCard title="Total Recebido via Cartão" value={formatCurrency(totalCartao)} subtitle={`${pagosCartao.length} pedidos pagos`} icon={CreditCard} variant="cartao" delay={600} />
+        <FinanceCard title="Total Recebido via Boleto" value={formatCurrency(totalBoleto)} subtitle={`${pagosBoleto.length} pedidos pagos`} icon={FileText} variant="boleto" delay={700} />
+      </div>
+
     </div>
   );
 };
