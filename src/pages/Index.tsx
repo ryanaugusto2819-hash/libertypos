@@ -285,12 +285,21 @@ const Dashboard = () => {
       </div>
 
       {country === "BR" && (
-        <div className="flex">
+        <div className="flex gap-3">
           <div className="rounded-2xl border border-primary/20 bg-card px-5 py-3 flex items-center gap-3 shadow-md">
             <PackageCheck className="h-4 w-4 text-primary" />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Frete</p>
               <p className="text-sm font-bold text-foreground">{formatCurrency(totalFrete)}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-primary/20 bg-card px-5 py-3 flex items-center gap-3 shadow-md">
+            <PackageCheck className="h-4 w-4 text-primary" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Custo Produtos</p>
+              <p className="text-sm font-bold text-foreground">
+                {filteredPedidos.reduce((sum, p) => sum + p.quantidade, 0)} un × R$ 13,00 = {formatCurrency(filteredPedidos.reduce((sum, p) => sum + p.quantidade, 0) * 13)}
+              </p>
             </div>
           </div>
         </div>
