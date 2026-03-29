@@ -269,6 +269,7 @@ Deno.serve(async (req) => {
 
       if (mappedStatus) updateData.status_envio = mappedStatus;
       if (trackingCode) updateData.codigo_rastreamento = trackingCode;
+      if (freightCost != null) updateData.valor_frete = freightCost;
 
       if (mappedStatus === "enviado" && shippingDate) {
         const parsed = parseDate(shippingDate);
@@ -357,6 +358,7 @@ Deno.serve(async (req) => {
       observacoes: `LogZZ: ${body.code || ""} | ${body.carrier || ""} | ${body.freight_modality || ""}`,
       etiqueta_envio_url: body.files?.label?.a4 || null,
       wpp_cobranca: "",
+      valor_frete: freightCost ?? 0,
     };
 
     const { data: inserted, error: insertError } = await supabase
