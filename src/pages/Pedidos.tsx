@@ -724,6 +724,18 @@ const Pedidos = () => {
                       )}
                     </TableCell>
                     <TableCell>
+                      <Select value={p.forma_pagamento || ""} onValueChange={(v) => handleFormaPagamentoChange(p.id, v)}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="cartao">Cartão</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
                       {isAdmin ? (
                         <Select value={p.status_envio} onValueChange={(v: StatusEnvio) => handleStatusEnvChange(p.id, v)}>
                           <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio]?.className)}>
@@ -811,17 +823,19 @@ const Pedidos = () => {
                     <TableCell>
                       <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
                     </TableCell>
-                    <TableCell>
-                      <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
-                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pablo">Pablo</SelectItem>
-                          <SelectItem value="Mulher">Mulher</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
+                    {country !== "BR" && (
+                      <TableCell>
+                        <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
+                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                            <SelectValue placeholder="Selecionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pablo">Pablo</SelectItem>
+                            <SelectItem value="Mulher">Mulher</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
