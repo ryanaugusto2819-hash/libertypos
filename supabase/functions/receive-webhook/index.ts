@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
     const recipientPhone = body.recipient_phone || null;
     const shippingDate = body.shipping_date || null;
     const deliveryDate = body.delivery_date || null;
+    const freightCost = body.freight_cost != null ? Number(body.freight_cost) : null;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
