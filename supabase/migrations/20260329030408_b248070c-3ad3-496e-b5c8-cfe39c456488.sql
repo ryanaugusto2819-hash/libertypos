@@ -1,0 +1,1 @@
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS forma_pagamento text NOT NULL DEFAULT '';
