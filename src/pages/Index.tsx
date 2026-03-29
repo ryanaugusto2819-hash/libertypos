@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 import { parseLocalDate, setActivePais, nowInSaoPaulo, todayInSaoPaulo } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
