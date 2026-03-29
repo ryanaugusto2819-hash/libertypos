@@ -50,11 +50,57 @@ const Dashboard = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const orders = await fetchOrdersFromSheets();
-        setAllPedidos(orders);
+        // Load from Google Sheets
+        const sheetsOrders = await fetchOrdersFromSheets();
+        
+        // Also load from database to catch webhook-created orders not yet in Sheets
+        const { data: dbRows } = await supabase
+          .from("pedidos")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        const dbOrders: Pedido[] = (dbRows || []).map((row: any) => ({
+          id: row.id,
+          nome: row.nome,
+          telefone: row.telefone,
+          cedula: row.cedula,
+          produto: row.produto,
+          quantidade: row.quantidade,
+          valor: Number(row.valor),
+          cidade: row.cidade,
+          departamento: row.departamento,
+          codigo_rastreamento: row.codigo_rastreamento,
+          status_pagamento: row.status_pagamento,
+          status_envio: row.status_envio,
+          data_entrada: row.data_entrada,
+          data_envio: row.data_envio,
+          data_pagamento: row.data_pagamento,
+          hora_pagamento: row.hora_pagamento,
+          comprovante_url: row.comprovante_url,
+          etiqueta_envio_url: row.etiqueta_envio_url,
+          observacoes: row.observacoes || "",
+          vendedor: row.vendedor,
+          criativo: row.criativo,
+          pais: row.pais,
+          user_id: row.user_id,
+          wpp_cobranca: row.wpp_cobranca,
+          afiliado_id: row.user_id,
+          cep: row.cep,
+          rua: row.rua,
+          numero: row.numero,
+          complemento: row.complemento,
+          bairro: row.bairro,
+          email: row.email,
+        }));
+        
+        // Merge: use Sheets as primary, add DB orders not found in Sheets
+        const sheetsIds = new Set(sheetsOrders.map((o) => o.id));
+        const dbOnlyOrders = dbOrders.filter((o) => !sheetsIds.has(o.id));
+        
+        setAllPedidos([...sheetsOrders, ...dbOnlyOrders]);
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
-        toast.error("Falha ao carregar dados do Google Sheets");
+        toast.error("Falha ao carregar dados");
       } finally {
         setLoading(false);
       }
