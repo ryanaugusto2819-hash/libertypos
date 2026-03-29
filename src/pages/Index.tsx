@@ -91,6 +91,7 @@ const Dashboard = () => {
           complemento: row.complemento,
           bairro: row.bairro,
           email: row.email,
+          forma_pagamento: row.forma_pagamento || "",
         }));
         
         // Merge: use Sheets as primary, add DB orders not found in Sheets
