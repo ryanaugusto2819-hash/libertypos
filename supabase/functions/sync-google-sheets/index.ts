@@ -72,9 +72,15 @@ async function getSheetData(accessToken: string, spreadsheetId: string, range: s
 }
 
 async function appendRow(accessToken: string, spreadsheetId: string, range: string, values: any[][]) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  // First, find the actual last row with data to avoid blank-row gaps
+  const existingData = await getSheetData(accessToken, spreadsheetId, "A:A");
+  const nextRow = existingData.length + 1;
+  const targetRange = `A${nextRow}:Z${nextRow}`;
+  
+  // Use update (PUT) to write to exact position instead of append
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${targetRange}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
-    method: "POST",
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
