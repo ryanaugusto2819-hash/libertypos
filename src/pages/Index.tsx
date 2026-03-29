@@ -179,7 +179,7 @@ const Dashboard = () => {
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
-  const totalAgendado = pendentes.reduce((sum, p) => sum + p.valor, 0);
+  const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
 
   if (loading) {
     return (
@@ -264,7 +264,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FinanceCard title="Total Recebido" value={formatCurrency(totalRecebido)} subtitle={`${pagos.length} pedidos pagos`} icon={Wallet} variant="received" delay={200} />
         <FinanceCard title="Total a Receber" value={formatCurrency(totalAReceber)} subtitle={`${total - pagos.length} pedidos pendentes`} icon={DollarSign} variant="pending" delay={300} />
-        <FinanceCard title="Agendado para Hoje" value={formatCurrency(totalAgendado)} subtitle={`${retirados.length} pedidos retirados`} icon={CalendarClock} variant="scheduled" delay={400} />
+        <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${total} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
       </div>
 
       <DashboardCharts pedidos={filteredPedidos} />
