@@ -378,6 +378,17 @@ const Pedidos = () => {
     }
   };
 
+  const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
+    toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
+    try {
+      await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+    } catch (err) {
+      console.error("Falha ao atualizar forma de pagamento:", err);
+      toast.error("Falhou ao salvar forma de pagamento");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
