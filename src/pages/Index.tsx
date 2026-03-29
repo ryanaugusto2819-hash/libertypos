@@ -9,6 +9,7 @@ import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
+  PackageCheck,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
@@ -92,6 +93,7 @@ const Dashboard = () => {
           bairro: row.bairro,
           email: row.email,
           forma_pagamento: row.forma_pagamento || "",
+          valor_frete: Number(row.valor_frete ?? 0),
         }));
         
         // Merge: use Sheets as primary, add DB orders not found in Sheets
@@ -188,6 +190,7 @@ const Dashboard = () => {
   const totalPix = pagosPix.reduce((sum, p) => sum + p.valor, 0);
   const totalCartao = pagosCartao.reduce((sum, p) => sum + p.valor, 0);
   const totalBoleto = pagosBoleto.reduce((sum, p) => sum + p.valor, 0);
+  const totalFrete = filteredPedidos.reduce((sum, p) => sum + (p.valor_frete || 0), 0);
 
   if (loading) {
     return (
@@ -280,6 +283,18 @@ const Dashboard = () => {
         <FinanceCard title="Total Recebido via Cartão" value={formatCurrency(totalCartao)} subtitle={`${pagosCartao.length} pedidos pagos`} icon={CreditCard} variant="cartao" delay={600} />
         <FinanceCard title="Total Recebido via Boleto" value={formatCurrency(totalBoleto)} subtitle={`${pagosBoleto.length} pedidos pagos`} icon={FileText} variant="boleto" delay={700} />
       </div>
+
+      {country === "BR" && (
+        <div className="flex">
+          <div className="rounded-2xl border border-primary/20 bg-card px-5 py-3 flex items-center gap-3 shadow-md">
+            <PackageCheck className="h-4 w-4 text-primary" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Frete</p>
+              <p className="text-sm font-bold text-foreground">{formatCurrency(totalFrete)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
