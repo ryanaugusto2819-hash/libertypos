@@ -62,4 +62,5 @@ export interface Pedido {
   complemento?: string;
   bairro?: string;
   email?: string;
+  forma_pagamento?: string;
 }
