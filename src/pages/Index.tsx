@@ -179,7 +179,7 @@ const Dashboard = () => {
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
-  const totalAgendado = pendentes.reduce((sum, p) => sum + p.valor, 0);
+  const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
 
   if (loading) {
     return (
