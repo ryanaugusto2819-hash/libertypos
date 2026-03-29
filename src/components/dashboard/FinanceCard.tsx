@@ -6,7 +6,7 @@ interface FinanceCardProps {
   value: string;
   subtitle?: string;
   icon: LucideIcon;
-  variant: "received" | "pending" | "scheduled";
+  variant: "received" | "pending" | "scheduled" | "pix" | "cartao" | "boleto";
   delay?: number;
 }
 
@@ -34,6 +34,30 @@ const variantConfig = {
     border: "hsl(38 92% 50% / 0.25)",
     iconColor: "hsl(38 92% 45%)",
     label: "Agendado",
+  },
+  pix: {
+    gradient: "linear-gradient(135deg, hsl(168 76% 42%), hsl(168 76% 30%))",
+    glow: "hsl(168 76% 42% / 0.20)",
+    lightBg: "hsl(168 76% 42% / 0.08)",
+    border: "hsl(168 76% 42% / 0.25)",
+    iconColor: "hsl(168 76% 38%)",
+    label: "PIX",
+  },
+  cartao: {
+    gradient: "linear-gradient(135deg, hsl(220 76% 55%), hsl(220 76% 40%))",
+    glow: "hsl(220 76% 55% / 0.20)",
+    lightBg: "hsl(220 76% 55% / 0.08)",
+    border: "hsl(220 76% 55% / 0.25)",
+    iconColor: "hsl(220 76% 50%)",
+    label: "Cartão",
+  },
+  boleto: {
+    gradient: "linear-gradient(135deg, hsl(30 80% 52%), hsl(30 80% 38%))",
+    glow: "hsl(30 80% 52% / 0.20)",
+    lightBg: "hsl(30 80% 52% / 0.08)",
+    border: "hsl(30 80% 52% / 0.25)",
+    iconColor: "hsl(30 80% 45%)",
+    label: "Boleto",
   },
 };
 
