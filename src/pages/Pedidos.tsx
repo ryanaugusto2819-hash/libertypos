@@ -96,6 +96,8 @@ const Pedidos = () => {
         complemento: row.complemento,
         bairro: row.bairro,
         email: row.email,
+        valor_frete: Number(row.valor_frete ?? 0),
+        forma_pagamento: row.forma_pagamento || "",
       }));
       
       // Merge: use Sheets as primary, add DB orders not found in Sheets
@@ -626,15 +628,17 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Produto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase text-right">Valor</TableHead>
+                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase text-right">Frete</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Cidade</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Rastreamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>
+                {country !== "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -665,6 +669,11 @@ const Pedidos = () => {
                     <TableCell className="text-sm font-medium text-right">
                       {formatCurrency(p.valor)}
                     </TableCell>
+                    {country === "BR" && (
+                      <TableCell className="text-sm font-medium text-right text-muted-foreground">
+                        {p.valor_frete ? formatCurrency(p.valor_frete) : "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm font-medium">
                       <div>{p.cidade}</div>
                       <div className="text-xs text-muted-foreground">{p.departamento}</div>
