@@ -36,6 +36,7 @@ function rowToPedido(row: any): Pedido {
     complemento: row.complemento,
     bairro: row.bairro,
     email: row.email,
+    valor_frete: Number(row.valor_frete ?? 0),
   };
 }
 

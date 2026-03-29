@@ -47,6 +47,7 @@ export type Database = {
           updated_at: string
           user_id: string
           valor: number
+          valor_frete: number
           vendedor: string | null
           wpp_cobranca: string
         }
@@ -82,6 +83,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           valor?: number
+          valor_frete?: number
           vendedor?: string | null
           wpp_cobranca?: string
         }
@@ -117,6 +119,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor?: number
+          valor_frete?: number
           vendedor?: string | null
           wpp_cobranca?: string
         }

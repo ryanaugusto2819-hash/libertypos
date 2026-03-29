@@ -1,0 +1,1 @@
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS valor_frete numeric NOT NULL DEFAULT 0;

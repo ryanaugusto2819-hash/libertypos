@@ -63,4 +63,5 @@ export interface Pedido {
   bairro?: string;
   email?: string;
   forma_pagamento?: string;
+  valor_frete?: number;
 }
