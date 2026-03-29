@@ -182,6 +182,13 @@ const Dashboard = () => {
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
   const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
 
+  const pagosPix = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "pix");
+  const pagosCartao = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "cartão" || p.forma_pagamento?.toLowerCase() === "cartao");
+  const pagosBoleto = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "boleto");
+  const totalPix = pagosPix.reduce((sum, p) => sum + p.valor, 0);
+  const totalCartao = pagosCartao.reduce((sum, p) => sum + p.valor, 0);
+  const totalBoleto = pagosBoleto.reduce((sum, p) => sum + p.valor, 0);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
