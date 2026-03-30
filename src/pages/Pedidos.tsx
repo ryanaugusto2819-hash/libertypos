@@ -418,6 +418,15 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase
+          .from("pedidos")
+          .update({ status_cobranca: value })
+          .eq("id", pedidoId);
+
+        if (dbError) throw dbError;
+      }
+
       const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_status_cobranca",
