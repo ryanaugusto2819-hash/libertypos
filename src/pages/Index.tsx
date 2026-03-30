@@ -50,16 +50,13 @@ const Dashboard = () => {
     const load = async () => {
       try {
         setLoading(true);
-        // Load from Google Sheets
-        const sheetsOrders = await fetchOrdersFromSheets();
-        
-        // Also load from database to catch webhook-created orders not yet in Sheets
-        const { data: dbRows } = await supabase
+        const { data: dbRows, error } = await supabase
           .from("pedidos")
           .select("*")
           .order("created_at", { ascending: false });
-        
-        const dbOrders: Pedido[] = (dbRows || []).map((row: any) => ({
+        if (error) throw error;
+
+        const orders: Pedido[] = (dbRows || []).map((row: any) => ({
           id: row.id,
           nome: row.nome,
           telefone: row.telefone,
@@ -94,12 +91,8 @@ const Dashboard = () => {
           forma_pagamento: row.forma_pagamento || "",
           valor_frete: Number(row.valor_frete ?? 0),
         }));
-        
-        // Merge: use Sheets as primary, add DB orders not found in Sheets
-        const sheetsIds = new Set(sheetsOrders.map((o) => o.id));
-        const dbOnlyOrders = dbOrders.filter((o) => !sheetsIds.has(o.id));
-        
-        setAllPedidos([...sheetsOrders, ...dbOnlyOrders]);
+
+        setAllPedidos(orders);
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
         toast.error("Falha ao carregar dados");
