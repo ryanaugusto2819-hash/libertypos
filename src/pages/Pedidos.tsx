@@ -770,6 +770,13 @@ const Pedidos = () => {
                             ped.id === p.id ? updatedOrder : ped
                           ));
                           try {
+                            const { error: dbError } = await supabase
+                              .from("pedidos")
+                              .update({ codigo_rastreamento: code })
+                              .eq("id", p.id);
+
+                            if (dbError) throw dbError;
+
                             await updateOrderStatusInSheets({
                               pedido_id: p.id, status_pagamento: p.status_pagamento,
                               data_pagamento: p.data_pagamento, hora_pagamento: p.hora_pagamento,

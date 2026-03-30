@@ -17,17 +17,28 @@ export function WppCobrancaCell({ pedidoId, initialValue = "", onSaved }: Props)
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!value.trim()) return;
+    const nextValue = value.trim();
+    if (!nextValue) return;
     setSaving(true);
     try {
+      const { error: dbError } = await supabase
+        .from("pedidos")
+        .update({ wpp_cobranca: nextValue })
+        .eq("id", pedidoId);
+
+      if (dbError) throw dbError;
+
       const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_wpp",
-          pedido: { pedido_id: pedidoId, wpp_cobranca: value.trim() },
+          pedido: { pedido_id: pedidoId, wpp_cobranca: nextValue },
         },
       });
+
       if (error) throw error;
       if (data && data.success === false) throw new Error(data.error);
+
+      setValue(nextValue);
       setSaved(true);
       setEditing(false);
       toast.success("Nome WPP salvo!");

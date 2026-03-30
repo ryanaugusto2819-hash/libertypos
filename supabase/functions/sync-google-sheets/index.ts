@@ -395,7 +395,7 @@ serve(async (req) => {
     }
 
     if (action === "update_wpp") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `X${rowIndex}`, [[pedido.wpp_cobranca || ""]]);
       return new Response(
@@ -405,7 +405,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status_cobranca") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Y${rowIndex}`, [[pedido.status_cobranca || "pendente"]]);
       return new Response(
@@ -415,11 +415,21 @@ serve(async (req) => {
     }
 
     if (action === "update_conta_bancaria") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Z${rowIndex}`, [[pedido.conta_bancaria || ""]]);
       return new Response(
         JSON.stringify({ success: true, message: "Conta Bancária atualizada" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_forma_pagamento") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
+      const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
+      await updateRow(accessToken, spreadsheetId, `AA${rowIndex}`, [[pedido.forma_pagamento || ""]]);
+      return new Response(
+        JSON.stringify({ success: true, message: "Forma de pagamento atualizada" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
