@@ -219,9 +219,7 @@ const Pedidos = () => {
   }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateFilter, customDateFrom, customDateTo]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
-    const sheetPedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     try {
-      // Save to Supabase DB first to get the real UUID
       const { data: insertedRow, error: dbError } = await supabase.from("pedidos").insert({
         user_id: user!.id,
         nome: newOrder.nome,
@@ -253,10 +251,10 @@ const Pedidos = () => {
 
       const realId = insertedRow.id;
       const order: Pedido = { ...newOrder, id: realId, afiliado_id: user?.id };
-      setPedidos([order, ...pedidos]);
+      setPedidos((prev) => [order, ...prev]);
 
       await syncOrderToSheets({
-        pedido_id: sheetPedidoId, nome: order.nome, telefone: order.telefone,
+        pedido_id: realId, nome: order.nome, telefone: order.telefone,
         cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
         valor: order.valor, cidade: order.cidade, departamento: order.departamento,
         codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
@@ -267,7 +265,6 @@ const Pedidos = () => {
       });
       toast.success("Pedido criado e sincronizado!");
 
-      // Send webhook in background
       supabase.functions.invoke("send-webhook", {
         body: { pedido: { ...order, id: realId } },
       }).catch((err) => {
