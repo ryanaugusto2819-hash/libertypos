@@ -5,6 +5,7 @@ import { parseLocalDate, setActivePais, nowInSaoPaulo, todayInSaoPaulo } from "@
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
+import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
@@ -50,13 +51,17 @@ const Dashboard = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const { data: dbRows, error } = await supabase
-          .from("pedidos")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (error) throw error;
 
-        const orders: Pedido[] = (dbRows || []).map((row: any) => ({
+        // Fetch from both sources in parallel
+        const [sheetsResult, dbResult] = await Promise.allSettled([
+          fetchOrdersFromSheets(),
+          supabase.from("pedidos").select("*").order("created_at", { ascending: false }),
+        ]);
+
+        const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
+        const dbRows = dbResult.status === "fulfilled" ? (dbResult.value.data || []) : [];
+
+        const dbOrders: Pedido[] = dbRows.map((row: any) => ({
           id: row.id,
           nome: row.nome,
           telefone: row.telefone,
@@ -92,7 +97,23 @@ const Dashboard = () => {
           valor_frete: Number(row.valor_frete ?? 0),
         }));
 
-        setAllPedidos(orders);
+        // Deduplicate by nome+data_entrada (IDs differ between Sheets PED-xxx and DB UUIDs)
+        const dedupeKey = (p: Pedido) => `${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
+        const seen = new Set<string>();
+        const merged: Pedido[] = [];
+
+        // Sheets first (primary source)
+        for (const p of sheetsOrders) {
+          const key = dedupeKey(p);
+          if (!seen.has(key)) { seen.add(key); merged.push(p); }
+        }
+        // Add DB-only orders
+        for (const p of dbOrders) {
+          const key = dedupeKey(p);
+          if (!seen.has(key)) { seen.add(key); merged.push(p); }
+        }
+
+        setAllPedidos(merged);
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
         toast.error("Falha ao carregar dados");
