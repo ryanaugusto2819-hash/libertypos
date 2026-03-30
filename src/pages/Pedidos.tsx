@@ -91,6 +91,7 @@ const Pedidos = () => {
         pais: row.pais,
         user_id: row.user_id,
         wpp_cobranca: row.wpp_cobranca,
+        status_cobranca: row.status_cobranca,
         afiliado_id: row.user_id,
         cep: row.cep,
         rua: row.rua,
