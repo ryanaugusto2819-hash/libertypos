@@ -5,7 +5,6 @@ import { parseLocalDate, setActivePais, nowInSaoPaulo, todayInSaoPaulo } from "@
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
-import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
