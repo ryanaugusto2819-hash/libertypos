@@ -120,13 +120,25 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update status_cobranca
+    // Update status_cobranca in DB + Sheets
     if (statusCobranca) {
+      const { error: dbErr } = await supabase
+        .from("pedidos")
+        .update({ status_cobranca: statusCobranca.toLowerCase() })
+        .eq("id", pedido.id);
+      if (dbErr) console.error("DB update status_cobranca error:", dbErr.message);
+
       await callSyncSheets("update_status_cobranca", { pedido_id: pedido.id, status_cobranca: statusCobranca.toLowerCase() });
     }
 
-    // Update wpp_cobranca
+    // Update wpp_cobranca in DB + Sheets
     if (wppCobranca) {
+      const { error: dbErr } = await supabase
+        .from("pedidos")
+        .update({ wpp_cobranca: wppCobranca })
+        .eq("id", pedido.id);
+      if (dbErr) console.error("DB update wpp_cobranca error:", dbErr.message);
+
       await callSyncSheets("update_wpp", { pedido_id: pedido.id, wpp_cobranca: wppCobranca });
     }
 
