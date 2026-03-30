@@ -21,12 +21,16 @@ export function WppCobrancaCell({ pedidoId, initialValue = "", onSaved }: Props)
     if (!nextValue) return;
     setSaving(true);
     try {
-      const { error: dbError } = await supabase
-        .from("pedidos")
-        .update({ wpp_cobranca: nextValue })
-        .eq("id", pedidoId);
+      const isDatabasePedidoId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pedidoId);
 
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId) {
+        const { error: dbError } = await supabase
+          .from("pedidos")
+          .update({ wpp_cobranca: nextValue })
+          .eq("id", pedidoId);
+
+        if (dbError) throw dbError;
+      }
 
       const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {

@@ -28,6 +28,7 @@ import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
+const isDatabasePedidoId = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 const Pedidos = () => {
   const { country } = useCountry();
@@ -295,12 +296,14 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: "pago",
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
-      }).eq("id", orderId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(orderId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({
+          status_pagamento: "pago",
+          data_pagamento: dataPagamento,
+          hora_pagamento: horaPagamento,
+        }).eq("id", orderId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
@@ -341,12 +344,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: value,
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
-      }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({
+          status_pagamento: value,
+          data_pagamento: dataPagamento,
+          hora_pagamento: horaPagamento,
+        }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: value,
@@ -372,8 +377,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
@@ -446,8 +453,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
@@ -473,8 +482,10 @@ const Pedidos = () => {
     const updatedOrder = { ...currentOrder, [field]: value };
     setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
@@ -499,8 +510,10 @@ const Pedidos = () => {
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     toast.success("Pedido excluído");
     try {
-      const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
       await deleteOrderFromSheets(pedidoId);
       toast.success("Pedido excluído!");
     } catch (err) {
@@ -770,12 +783,14 @@ const Pedidos = () => {
                             ped.id === p.id ? updatedOrder : ped
                           ));
                           try {
-                            const { error: dbError } = await supabase
-                              .from("pedidos")
-                              .update({ codigo_rastreamento: code })
-                              .eq("id", p.id);
+                            if (isDatabasePedidoId(p.id)) {
+                              const { error: dbError } = await supabase
+                                .from("pedidos")
+                                .update({ codigo_rastreamento: code })
+                                .eq("id", p.id);
 
-                            if (dbError) throw dbError;
+                              if (dbError) throw dbError;
+                            }
 
                             await updateOrderStatusInSheets({
                               pedido_id: p.id, status_pagamento: p.status_pagamento,
