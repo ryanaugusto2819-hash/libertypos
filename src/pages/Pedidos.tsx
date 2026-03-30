@@ -296,12 +296,14 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: "pago",
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
-      }).eq("id", orderId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(orderId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({
+          status_pagamento: "pago",
+          data_pagamento: dataPagamento,
+          hora_pagamento: horaPagamento,
+        }).eq("id", orderId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
@@ -342,12 +344,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: value,
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
-      }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({
+          status_pagamento: value,
+          data_pagamento: dataPagamento,
+          hora_pagamento: horaPagamento,
+        }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: value,
@@ -373,8 +377,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
@@ -447,8 +453,10 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
-      const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
-      if (dbError) throw dbError;
+      if (isDatabasePedidoId(pedidoId)) {
+        const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+        if (dbError) throw dbError;
+      }
 
       const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
