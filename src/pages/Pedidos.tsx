@@ -215,41 +215,44 @@ const Pedidos = () => {
   }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateFilter, customDateFrom, customDateTo]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
-    const pedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    const order: Pedido = { ...newOrder, id: pedidoId, afiliado_id: user?.id };
-    setPedidos([order, ...pedidos]);
+    const sheetPedidoId = `PED-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     try {
-      // Also save to Supabase DB for persistence
-      const { error: dbError } = await supabase.from("pedidos").insert({
+      // Save to Supabase DB first to get the real UUID
+      const { data: insertedRow, error: dbError } = await supabase.from("pedidos").insert({
         user_id: user!.id,
-        nome: order.nome,
-        telefone: order.telefone,
-        cedula: order.cedula,
-        produto: order.produto,
-        quantidade: order.quantidade,
-        valor: order.valor,
-        cidade: order.cidade,
-        departamento: order.departamento,
-        codigo_rastreamento: order.codigo_rastreamento,
-        status_pagamento: order.status_pagamento,
-        status_envio: order.status_envio,
-        data_entrada: order.data_entrada,
-        data_envio: order.data_envio,
-        observacoes: order.observacoes,
-        vendedor: order.vendedor,
-        criativo: order.criativo,
-        pais: order.pais,
-        cep: order.cep || "",
-        rua: order.rua || "",
-        numero: order.numero || "",
-        complemento: order.complemento || "",
-        bairro: order.bairro || "",
-        email: order.email || "",
-      });
-      if (dbError) console.error("Erro ao salvar no banco:", dbError);
+        nome: newOrder.nome,
+        telefone: newOrder.telefone,
+        cedula: newOrder.cedula,
+        produto: newOrder.produto,
+        quantidade: newOrder.quantidade,
+        valor: newOrder.valor,
+        cidade: newOrder.cidade,
+        departamento: newOrder.departamento,
+        codigo_rastreamento: newOrder.codigo_rastreamento,
+        status_pagamento: newOrder.status_pagamento,
+        status_envio: newOrder.status_envio,
+        data_entrada: newOrder.data_entrada,
+        data_envio: newOrder.data_envio,
+        observacoes: newOrder.observacoes,
+        vendedor: newOrder.vendedor,
+        criativo: newOrder.criativo,
+        pais: newOrder.pais,
+        cep: newOrder.cep || "",
+        rua: newOrder.rua || "",
+        numero: newOrder.numero || "",
+        complemento: newOrder.complemento || "",
+        bairro: newOrder.bairro || "",
+        email: newOrder.email || "",
+      }).select().single();
+
+      if (dbError) throw dbError;
+
+      const realId = insertedRow.id;
+      const order: Pedido = { ...newOrder, id: realId, afiliado_id: user?.id };
+      setPedidos([order, ...pedidos]);
 
       await syncOrderToSheets({
-        pedido_id: pedidoId, nome: order.nome, telefone: order.telefone,
+        pedido_id: sheetPedidoId, nome: order.nome, telefone: order.telefone,
         cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
         valor: order.valor, cidade: order.cidade, departamento: order.departamento,
         codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
@@ -258,11 +261,11 @@ const Pedidos = () => {
         status_envio: order.status_envio, pais: order.pais,
         afiliado_id: user?.id || "",
       });
-      toast.success("Pedido sincronizado com Google Sheets!");
+      toast.success("Pedido criado e sincronizado!");
 
       // Send webhook in background
       supabase.functions.invoke("send-webhook", {
-        body: { pedido: { ...order, id: pedidoId } },
+        body: { pedido: { ...order, id: realId } },
       }).catch((err) => {
         console.warn("Webhook falhou:", err.message);
       });
@@ -270,7 +273,7 @@ const Pedidos = () => {
       if (order.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(order.status_envio.toLowerCase())) {
         supabase.functions.invoke("send-attendance-webhook", {
           body: {
-            pedido: { ...order, id: pedidoId },
+            pedido: { ...order, id: realId },
             new_status: order.status_envio,
           },
         }).catch((err) => {
@@ -278,8 +281,8 @@ const Pedidos = () => {
         });
       }
     } catch (err) {
-      console.error("Falha ao sincronizar:", err);
-      toast.error("Pedido criado, mas falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao criar pedido:", err);
+      toast.error("Erro ao criar pedido");
     }
   };
 
