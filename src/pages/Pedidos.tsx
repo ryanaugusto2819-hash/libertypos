@@ -295,14 +295,13 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
-      // Update DB
-      await supabase.from("pedidos").update({
+      const { error: dbError } = await supabase.from("pedidos").update({
         status_pagamento: "pago",
         data_pagamento: dataPagamento,
         hora_pagamento: horaPagamento,
       }).eq("id", orderId);
+      if (dbError) throw dbError;
 
-      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
         nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
@@ -342,14 +341,13 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
-      // Update DB
-      await supabase.from("pedidos").update({
+      const { error: dbError } = await supabase.from("pedidos").update({
         status_pagamento: value,
         data_pagamento: dataPagamento,
         hora_pagamento: horaPagamento,
       }).eq("id", pedidoId);
+      if (dbError) throw dbError;
 
-      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: value,
         data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
@@ -374,10 +372,9 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
-      // Update DB
-      await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
 
-      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
         data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
@@ -395,7 +392,6 @@ const Pedidos = () => {
       toast.error("Falhou ao sincronizar com Google Sheets");
     }
 
-    // Send attendance webhook in background for trigger statuses
     if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
       supabase.functions.invoke("send-attendance-webhook", {
         body: {
@@ -414,14 +410,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
-      // Update DB - status_cobranca is not a column in pedidos table, so only sync to Sheets
-      // But we need to persist somewhere - let's update via Sheets
-      await supabase.functions.invoke("sync-google-sheets", {
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_status_cobranca",
           pedido: { pedido_id: pedidoId, status_cobranca: value },
         },
       });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error);
     } catch (err) {
       console.error("Falha ao sincronizar status de cobrança:", err);
       toast.error("Falhou ao sincronizar com Google Sheets");
@@ -432,12 +428,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
     toast.success(`Conta bancária → "${value}"`);
     try {
-      await supabase.functions.invoke("sync-google-sheets", {
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
         body: {
           action: "update_conta_bancaria",
           pedido: { pedido_id: pedidoId, conta_bancaria: value },
         },
       });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error);
     } catch (err) {
       console.error("Falha ao sincronizar conta bancária:", err);
       toast.error("Falhou ao sincronizar com Google Sheets");
@@ -448,7 +446,17 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
-      await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
+        body: {
+          action: "update_forma_pagamento",
+          pedido: { pedido_id: pedidoId, forma_pagamento: value },
+        },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error);
     } catch (err) {
       console.error("Falha ao atualizar forma de pagamento:", err);
       toast.error("Falhou ao salvar forma de pagamento");
