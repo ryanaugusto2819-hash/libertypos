@@ -473,10 +473,9 @@ const Pedidos = () => {
     const updatedOrder = { ...currentOrder, [field]: value };
     setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
     try {
-      // Update DB
-      await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
 
-      // Update Sheets
       await updateOrderStatusInSheets({
         pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
         data_pagamento: updatedOrder.data_pagamento, hora_pagamento: updatedOrder.hora_pagamento,
@@ -500,9 +499,8 @@ const Pedidos = () => {
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     toast.success("Pedido excluído");
     try {
-      // Delete from DB
-      await supabase.from("pedidos").delete().eq("id", pedidoId);
-      // Delete from Sheets
+      const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+      if (dbError) throw dbError;
       await deleteOrderFromSheets(pedidoId);
       toast.success("Pedido excluído!");
     } catch (err) {
