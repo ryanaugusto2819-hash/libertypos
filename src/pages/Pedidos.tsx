@@ -28,6 +28,7 @@ import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
+const isDatabasePedidoId = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 const Pedidos = () => {
   const { country } = useCountry();
