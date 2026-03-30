@@ -41,6 +41,7 @@ export type Database = {
           produto: string
           quantidade: number
           rua: string | null
+          status_cobranca: string
           status_envio: string
           status_pagamento: string
           telefone: string
@@ -77,6 +78,7 @@ export type Database = {
           produto?: string
           quantidade?: number
           rua?: string | null
+          status_cobranca?: string
           status_envio?: string
           status_pagamento?: string
           telefone?: string
@@ -113,6 +115,7 @@ export type Database = {
           produto?: string
           quantidade?: number
           rua?: string | null
+          status_cobranca?: string
           status_envio?: string
           status_pagamento?: string
           telefone?: string
