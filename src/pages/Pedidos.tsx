@@ -128,8 +128,8 @@ const Pedidos = () => {
           comprovante_url: dbOrder.comprovante_url || sheetVersion?.comprovante_url || null,
           etiqueta_envio_url: dbOrder.etiqueta_envio_url || sheetVersion?.etiqueta_envio_url || null,
           forma_pagamento: dbOrder.forma_pagamento || sheetVersion?.forma_pagamento || "",
-          status_cobranca: sheetVersion?.status_cobranca || dbOrder.status_cobranca || "pendente" as any,
-          conta_bancaria: sheetVersion?.conta_bancaria || dbOrder.conta_bancaria || "",
+          status_cobranca: dbOrder.status_cobranca || sheetVersion?.status_cobranca || "pendente" as any,
+          conta_bancaria: dbOrder.conta_bancaria || sheetVersion?.conta_bancaria || "",
           wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
         };
         seenKeys.add(key);
