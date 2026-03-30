@@ -1,6 +1,6 @@
 import { StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
 
-const COTACAO_UYU_BRL = 7.73; // 1 BRL = 7.73 UYU
+const COTACAO_UYU_BRL = 7.77; // 1 BRL = 7.77 UYU
 const COTACAO_ARS_BRL = 268.56; // 1 BRL = 268.56 ARS
 const COTACAO_ARS_USD = 0.00083; // 1 ARS ≈ 0.00083 USD
 
