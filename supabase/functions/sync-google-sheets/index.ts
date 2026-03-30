@@ -72,12 +72,10 @@ async function getSheetData(accessToken: string, spreadsheetId: string, range: s
 }
 
 async function appendRow(accessToken: string, spreadsheetId: string, range: string, values: any[][]) {
-  // First, find the actual last row with data to avoid blank-row gaps
   const existingData = await getSheetData(accessToken, spreadsheetId, "A:A");
   const nextRow = existingData.length + 1;
-  const targetRange = `A${nextRow}:Z${nextRow}`;
+  const targetRange = `A${nextRow}:AA${nextRow}`;
   
-  // Use update (PUT) to write to exact position instead of append
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${targetRange}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: "PUT",
@@ -110,8 +108,9 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
 // Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
 // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
 // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
-// P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
-// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca, Y:status_cobranca, Z:conta_bancaria
+// P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo,
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca,
+// Y:status_cobranca, Z:conta_bancaria, AA:forma_pagamento
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -140,6 +139,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.wpp_cobranca || "",
     pedido.status_cobranca || "pendente",
     pedido.conta_bancaria || "",
+    pedido.forma_pagamento || "",
   ];
 }
 
@@ -172,8 +172,9 @@ async function ensurePedidoInSheet(
     vendedor: dbRow.vendedor || "", criativo: dbRow.criativo || "",
     status_envio: dbRow.status_envio, pais: dbRow.pais, afiliado_id: dbRow.user_id || "",
     wpp_cobranca: dbRow.wpp_cobranca || "",
+    forma_pagamento: dbRow.forma_pagamento || "",
   }, now, true);
-  await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+  await appendRow(accessToken, spreadsheetId, "A:AA", [row]);
   console.log(`[AUTO-CREATE] Pedido ${pedidoId} criado na planilha a partir do banco`);
   // Return the new row index (last row)
   const updatedData = await getSheetData(accessToken, spreadsheetId, "A:A");
@@ -208,9 +209,8 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       
-      // Ensure column X and Y headers exist
       if (allData.length > 0 && allData[0][0] === "pedido_id") {
         const header = allData[0];
         if (!header[23] || header[23] !== "wpp_cobranca") {
@@ -221,6 +221,9 @@ serve(async (req) => {
         }
         if (!header[25] || header[25] !== "conta_bancaria") {
           await updateRow(accessToken, spreadsheetId, "Z1", [["conta_bancaria"]]);
+        }
+        if (!header[26] || header[26] !== "forma_pagamento") {
+          await updateRow(accessToken, spreadsheetId, "AA1", [["forma_pagamento"]]);
         }
       }
       
@@ -267,6 +270,7 @@ serve(async (req) => {
           wpp_cobranca: row[23] || "",
           status_cobranca: validStatusCob.includes(rawStatusCob) ? rawStatusCob : "pendente",
           conta_bancaria: row[25] || "",
+          forma_pagamento: row[26] || "",
           observacoes: "",
         };
       });
@@ -294,7 +298,7 @@ serve(async (req) => {
       const row = buildSheetRow(pedido, now);
 
       console.log(`[CREATE] Adicionando row com ${row.length} colunas para ${pedido.nome}`);
-      await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:AA", [row]);
       console.log(`[CREATE] Sucesso: ${pedido.nome} adicionado à planilha`);
 
       return new Response(
@@ -391,7 +395,7 @@ serve(async (req) => {
     }
 
     if (action === "update_wpp") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `X${rowIndex}`, [[pedido.wpp_cobranca || ""]]);
       return new Response(
@@ -401,7 +405,7 @@ serve(async (req) => {
     }
 
     if (action === "update_status_cobranca") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Y${rowIndex}`, [[pedido.status_cobranca || "pendente"]]);
       return new Response(
@@ -411,11 +415,21 @@ serve(async (req) => {
     }
 
     if (action === "update_conta_bancaria") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
       await updateRow(accessToken, spreadsheetId, `Z${rowIndex}`, [[pedido.conta_bancaria || ""]]);
       return new Response(
         JSON.stringify({ success: true, message: "Conta Bancária atualizada" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_forma_pagamento") {
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
+      const { rowIndex } = await ensurePedidoInSheet(accessToken, spreadsheetId, pedido.pedido_id, allData);
+      await updateRow(accessToken, spreadsheetId, `AA${rowIndex}`, [[pedido.forma_pagamento || ""]]);
+      return new Response(
+        JSON.stringify({ success: true, message: "Forma de pagamento atualizada" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
