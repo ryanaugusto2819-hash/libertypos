@@ -172,8 +172,9 @@ async function ensurePedidoInSheet(
     vendedor: dbRow.vendedor || "", criativo: dbRow.criativo || "",
     status_envio: dbRow.status_envio, pais: dbRow.pais, afiliado_id: dbRow.user_id || "",
     wpp_cobranca: dbRow.wpp_cobranca || "",
+    forma_pagamento: dbRow.forma_pagamento || "",
   }, now, true);
-  await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+  await appendRow(accessToken, spreadsheetId, "A:AA", [row]);
   console.log(`[AUTO-CREATE] Pedido ${pedidoId} criado na planilha a partir do banco`);
   // Return the new row index (last row)
   const updatedData = await getSheetData(accessToken, spreadsheetId, "A:A");
