@@ -72,12 +72,10 @@ async function getSheetData(accessToken: string, spreadsheetId: string, range: s
 }
 
 async function appendRow(accessToken: string, spreadsheetId: string, range: string, values: any[][]) {
-  // First, find the actual last row with data to avoid blank-row gaps
   const existingData = await getSheetData(accessToken, spreadsheetId, "A:A");
   const nextRow = existingData.length + 1;
-  const targetRange = `A${nextRow}:Z${nextRow}`;
+  const targetRange = `A${nextRow}:AA${nextRow}`;
   
-  // Use update (PUT) to write to exact position instead of append
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${targetRange}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: "PUT",
@@ -110,8 +108,9 @@ async function updateRow(accessToken: string, spreadsheetId: string, range: stri
 // Columns: A:pedido_id, B:nome, C:telefone, D:cedula, E:produto, F:quantidade,
 // G:valor, H:cidade, I:departamento, J:codigo_rastreamento, K:status_pagamento,
 // L:data_criacao, M:data_envio, N:data_pagamento, O:hora_pagamento,
-// P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo, 
-// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca, Y:status_cobranca, Z:conta_bancaria
+// P:comprovante_url, Q:ultima_atualizacao, R:Vendedor, S:Criativo,
+// T:status_envio, U:etiqueta_envio_url, V:pais, W:afiliado_id, X:wpp_cobranca,
+// Y:status_cobranca, Z:conta_bancaria, AA:forma_pagamento
 function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
   return [
     pedido.pedido_id,
@@ -140,6 +139,7 @@ function buildSheetRow(pedido: any, now: string, includePaymentFields = false) {
     pedido.wpp_cobranca || "",
     pedido.status_cobranca || "pendente",
     pedido.conta_bancaria || "",
+    pedido.forma_pagamento || "",
   ];
 }
 

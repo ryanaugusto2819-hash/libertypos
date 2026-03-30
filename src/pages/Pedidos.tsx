@@ -110,7 +110,7 @@ const Pedidos = () => {
         sheetsMap.set(normalizeKey(s), s);
       }
 
-      // DB is primary — enrich with Sheets-only fields (status_cobranca, conta_bancaria)
+      // DB is primary — enrich with sheet values when DB is blank, and keep sheet-only fields there
       const seenKeys = new Set<string>();
       const merged: Pedido[] = [];
 
@@ -119,17 +119,21 @@ const Pedidos = () => {
         const sheetVersion = sheetsMap.get(key);
         const enriched: Pedido = {
           ...dbOrder,
-          // Sheets-only fields
+          codigo_rastreamento: dbOrder.codigo_rastreamento || sheetVersion?.codigo_rastreamento || "",
+          data_envio: dbOrder.data_envio || sheetVersion?.data_envio || null,
+          data_pagamento: dbOrder.data_pagamento || sheetVersion?.data_pagamento || null,
+          hora_pagamento: dbOrder.hora_pagamento || sheetVersion?.hora_pagamento || null,
+          comprovante_url: dbOrder.comprovante_url || sheetVersion?.comprovante_url || null,
+          etiqueta_envio_url: dbOrder.etiqueta_envio_url || sheetVersion?.etiqueta_envio_url || null,
+          forma_pagamento: dbOrder.forma_pagamento || sheetVersion?.forma_pagamento || "",
           status_cobranca: sheetVersion?.status_cobranca || dbOrder.status_cobranca || "pendente" as any,
           conta_bancaria: sheetVersion?.conta_bancaria || dbOrder.conta_bancaria || "",
-          // Keep DB wpp_cobranca if it has value, otherwise use Sheets
           wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
         };
         seenKeys.add(key);
         merged.push(enriched);
       }
 
-      // Add Sheets-only orders (not in DB)
       for (const s of sheetsOrders) {
         const key = normalizeKey(s);
         if (!seenKeys.has(key)) {
