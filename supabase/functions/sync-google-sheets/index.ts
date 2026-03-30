@@ -298,7 +298,7 @@ serve(async (req) => {
       const row = buildSheetRow(pedido, now);
 
       console.log(`[CREATE] Adicionando row com ${row.length} colunas para ${pedido.nome}`);
-      await appendRow(accessToken, spreadsheetId, "A:Z", [row]);
+      await appendRow(accessToken, spreadsheetId, "A:AA", [row]);
       console.log(`[CREATE] Sucesso: ${pedido.nome} adicionado à planilha`);
 
       return new Response(
