@@ -97,20 +97,36 @@ const Dashboard = () => {
           valor_frete: Number(row.valor_frete ?? 0),
         }));
 
-        // Deduplicate by nome+data_entrada (IDs differ between Sheets PED-xxx and DB UUIDs)
-        const dedupeKey = (p: Pedido) => `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${p.data_entrada}`;
-        const seen = new Set<string>();
+        // DB is primary source (has accurate frete, dates from webhooks)
+        // Sheets enriches with status_cobranca, conta_bancaria
+        const normalizeKey = (p: Pedido) =>
+          `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
+
+        const sheetsMap = new Map<string, Pedido>();
+        for (const s of sheetsOrders) {
+          sheetsMap.set(normalizeKey(s), s);
+        }
+
+        const seenKeys = new Set<string>();
         const merged: Pedido[] = [];
 
-        // Sheets first (primary source)
-        for (const p of sheetsOrders) {
-          const key = dedupeKey(p);
-          if (!seen.has(key)) { seen.add(key); merged.push(p); }
+        // DB first (primary)
+        for (const dbOrder of dbOrders) {
+          const key = normalizeKey(dbOrder);
+          const sheetVersion = sheetsMap.get(key);
+          merged.push({
+            ...dbOrder,
+            status_cobranca: sheetVersion?.status_cobranca || dbOrder.status_cobranca || "pendente" as any,
+            conta_bancaria: sheetVersion?.conta_bancaria || dbOrder.conta_bancaria || "",
+            wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
+          });
+          seenKeys.add(key);
         }
-        // Add DB-only orders
-        for (const p of dbOrders) {
-          const key = dedupeKey(p);
-          if (!seen.has(key)) { seen.add(key); merged.push(p); }
+
+        // Add Sheets-only orders
+        for (const s of sheetsOrders) {
+          const key = normalizeKey(s);
+          if (!seenKeys.has(key)) { seenKeys.add(key); merged.push(s); }
         }
 
         setAllPedidos(merged);
