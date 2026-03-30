@@ -98,7 +98,7 @@ const Dashboard = () => {
         }));
 
         // Deduplicate by nome+data_entrada (IDs differ between Sheets PED-xxx and DB UUIDs)
-        const dedupeKey = (p: Pedido) => `${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
+        const dedupeKey = (p: Pedido) => `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${p.data_entrada}`;
         const seen = new Set<string>();
         const merged: Pedido[] = [];
 
