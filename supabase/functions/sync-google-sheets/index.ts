@@ -209,9 +209,8 @@ serve(async (req) => {
     const { action, pedido } = await req.json();
 
     if (action === "read") {
-      const allData = await getSheetData(accessToken, spreadsheetId, "A:Z");
+      const allData = await getSheetData(accessToken, spreadsheetId, "A:AA");
       
-      // Ensure column X and Y headers exist
       if (allData.length > 0 && allData[0][0] === "pedido_id") {
         const header = allData[0];
         if (!header[23] || header[23] !== "wpp_cobranca") {
@@ -222,6 +221,9 @@ serve(async (req) => {
         }
         if (!header[25] || header[25] !== "conta_bancaria") {
           await updateRow(accessToken, spreadsheetId, "Z1", [["conta_bancaria"]]);
+        }
+        if (!header[26] || header[26] !== "forma_pagamento") {
+          await updateRow(accessToken, spreadsheetId, "AA1", [["forma_pagamento"]]);
         }
       }
       
@@ -268,6 +270,7 @@ serve(async (req) => {
           wpp_cobranca: row[23] || "",
           status_cobranca: validStatusCob.includes(rawStatusCob) ? rawStatusCob : "pendente",
           conta_bancaria: row[25] || "",
+          forma_pagamento: row[26] || "",
           observacoes: "",
         };
       });
