@@ -56,16 +56,16 @@ const Pedidos = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      // Load from Google Sheets
-      const sheetsOrders = await fetchOrdersFromSheets();
-      
-      // Also load from database to catch webhook-created orders not yet in Sheets
-      const { data: dbRows } = await supabase
-        .from("pedidos")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      const dbOrders: Pedido[] = (dbRows || []).map((row: any) => ({
+      // Fetch from both sources in parallel
+      const [sheetsResult, dbResult] = await Promise.allSettled([
+        fetchOrdersFromSheets(),
+        supabase.from("pedidos").select("*").order("created_at", { ascending: false }),
+      ]);
+
+      const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
+      const dbRows = dbResult.status === "fulfilled" ? (dbResult.value.data || []) : [];
+
+      const dbOrders: Pedido[] = dbRows.map((row: any) => ({
         id: row.id,
         nome: row.nome,
         telefone: row.telefone,
@@ -90,6 +90,7 @@ const Pedidos = () => {
         pais: row.pais,
         user_id: row.user_id,
         wpp_cobranca: row.wpp_cobranca,
+        afiliado_id: row.user_id,
         cep: row.cep,
         rua: row.rua,
         numero: row.numero,
@@ -99,12 +100,44 @@ const Pedidos = () => {
         valor_frete: Number(row.valor_frete ?? 0),
         forma_pagamento: row.forma_pagamento || "",
       }));
-      
-      // Merge: use Sheets as primary, add DB orders not found in Sheets
-      const sheetsIds = new Set(sheetsOrders.map((o) => o.id));
-      const dbOnlyOrders = dbOrders.filter((o) => !sheetsIds.has(o.id));
-      
-      const merged = [...sheetsOrders.reverse(), ...dbOnlyOrders];
+
+      // Build a lookup from Sheets by normalized key for enrichment
+      const normalizeKey = (p: Pedido) =>
+        `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
+
+      const sheetsMap = new Map<string, Pedido>();
+      for (const s of sheetsOrders) {
+        sheetsMap.set(normalizeKey(s), s);
+      }
+
+      // DB is primary — enrich with Sheets-only fields (status_cobranca, conta_bancaria)
+      const seenKeys = new Set<string>();
+      const merged: Pedido[] = [];
+
+      for (const dbOrder of dbOrders) {
+        const key = normalizeKey(dbOrder);
+        const sheetVersion = sheetsMap.get(key);
+        const enriched: Pedido = {
+          ...dbOrder,
+          // Sheets-only fields
+          status_cobranca: sheetVersion?.status_cobranca || dbOrder.status_cobranca || "pendente" as any,
+          conta_bancaria: sheetVersion?.conta_bancaria || dbOrder.conta_bancaria || "",
+          // Keep DB wpp_cobranca if it has value, otherwise use Sheets
+          wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
+        };
+        seenKeys.add(key);
+        merged.push(enriched);
+      }
+
+      // Add Sheets-only orders (not in DB)
+      for (const s of sheetsOrders) {
+        const key = normalizeKey(s);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          merged.push(s);
+        }
+      }
+
       setPedidos(merged);
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
