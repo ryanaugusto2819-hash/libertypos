@@ -46,6 +46,7 @@ export function usePedidos() {
   return useQuery({
     queryKey: ["pedidos", user?.id],
     queryFn: async () => {
+      // Sort by data_entrada (most recent first), then created_at as tiebreaker
       const { data, error } = await supabase
         .from("pedidos")
         .select("*")
