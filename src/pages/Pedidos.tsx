@@ -60,7 +60,11 @@ const Pedidos = () => {
       // Fetch from both sources in parallel
       const [sheetsResult, dbResult] = await Promise.allSettled([
         fetchOrdersFromSheets(),
-        supabase.from("pedidos").select("*").order("created_at", { ascending: false }),
+        supabase
+          .from("pedidos")
+          .select("*")
+          .order("data_entrada", { ascending: false })
+          .order("created_at", { ascending: false }),
       ]);
 
       const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
