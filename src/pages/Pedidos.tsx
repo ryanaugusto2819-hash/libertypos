@@ -148,7 +148,13 @@ const Pedidos = () => {
         }
       }
 
-      setPedidos(merged);
+      setPedidos(
+        merged.sort((a, b) => {
+          const dateCompare = (b.data_entrada || "").localeCompare(a.data_entrada || "");
+          if (dateCompare !== 0) return dateCompare;
+          return (b.id || "").localeCompare(a.id || "");
+        })
+      );
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
       toast.error("Falha ao carregar pedidos");
