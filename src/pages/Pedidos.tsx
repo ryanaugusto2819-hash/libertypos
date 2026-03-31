@@ -60,7 +60,11 @@ const Pedidos = () => {
       // Fetch from both sources in parallel
       const [sheetsResult, dbResult] = await Promise.allSettled([
         fetchOrdersFromSheets(),
-        supabase.from("pedidos").select("*").order("created_at", { ascending: false }),
+        supabase
+          .from("pedidos")
+          .select("*")
+          .order("data_entrada", { ascending: false })
+          .order("created_at", { ascending: false }),
       ]);
 
       const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
@@ -144,7 +148,13 @@ const Pedidos = () => {
         }
       }
 
-      setPedidos(merged);
+      setPedidos(
+        merged.sort((a, b) => {
+          const dateCompare = (b.data_entrada || "").localeCompare(a.data_entrada || "");
+          if (dateCompare !== 0) return dateCompare;
+          return (b.id || "").localeCompare(a.id || "");
+        })
+      );
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
       toast.error("Falha ao carregar pedidos");
