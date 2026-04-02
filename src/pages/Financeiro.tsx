@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { supabase } from "@/integrations/supabase/client";
 import { formatARS, formatBRLFromARS, formatUSD, arsToUsd } from "@/lib/formatters";
 import { Pedido } from "@/types/pedido";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
