@@ -57,20 +57,15 @@ const Pedidos = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      // Fetch from both sources in parallel
-      const [sheetsResult, dbResult] = await Promise.allSettled([
-        fetchOrdersFromSheets(),
-        supabase
-          .from("pedidos")
-          .select("*")
-          .order("data_entrada", { ascending: false })
-          .order("created_at", { ascending: false }),
-      ]);
+      const { data: dbRows, error } = await supabase
+        .from("pedidos")
+        .select("*")
+        .order("data_entrada", { ascending: false })
+        .order("created_at", { ascending: false });
 
-      const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
-      const dbRows = dbResult.status === "fulfilled" ? (dbResult.value.data || []) : [];
+      if (error) throw error;
 
-      const dbOrders: Pedido[] = dbRows.map((row: any) => ({
+      const orders: Pedido[] = (dbRows || []).map((row: any) => ({
         id: row.id,
         nome: row.nome,
         telefone: row.telefone,
@@ -107,54 +102,7 @@ const Pedidos = () => {
         forma_pagamento: row.forma_pagamento || "",
       }));
 
-      // Build a lookup from Sheets by normalized key for enrichment
-      const normalizeKey = (p: Pedido) =>
-        `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
-
-      const sheetsMap = new Map<string, Pedido>();
-      for (const s of sheetsOrders) {
-        sheetsMap.set(normalizeKey(s), s);
-      }
-
-      // DB is primary — enrich with sheet values when DB is blank, and keep sheet-only fields there
-      const seenKeys = new Set<string>();
-      const merged: Pedido[] = [];
-
-      for (const dbOrder of dbOrders) {
-        const key = normalizeKey(dbOrder);
-        const sheetVersion = sheetsMap.get(key);
-        const enriched: Pedido = {
-          ...dbOrder,
-          codigo_rastreamento: dbOrder.codigo_rastreamento || sheetVersion?.codigo_rastreamento || "",
-          data_envio: dbOrder.data_envio || sheetVersion?.data_envio || null,
-          data_pagamento: dbOrder.data_pagamento || sheetVersion?.data_pagamento || null,
-          hora_pagamento: dbOrder.hora_pagamento || sheetVersion?.hora_pagamento || null,
-          comprovante_url: dbOrder.comprovante_url || sheetVersion?.comprovante_url || null,
-          etiqueta_envio_url: dbOrder.etiqueta_envio_url || sheetVersion?.etiqueta_envio_url || null,
-          forma_pagamento: dbOrder.forma_pagamento || sheetVersion?.forma_pagamento || "",
-          status_cobranca: dbOrder.status_cobranca || sheetVersion?.status_cobranca || "pendente" as any,
-          conta_bancaria: dbOrder.conta_bancaria || sheetVersion?.conta_bancaria || "",
-          wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
-        };
-        seenKeys.add(key);
-        merged.push(enriched);
-      }
-
-      for (const s of sheetsOrders) {
-        const key = normalizeKey(s);
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
-          merged.push(s);
-        }
-      }
-
-      setPedidos(
-        merged.sort((a, b) => {
-          const dateCompare = (b.data_entrada || "").localeCompare(a.data_entrada || "");
-          if (dateCompare !== 0) return dateCompare;
-          return (b.id || "").localeCompare(a.id || "");
-        })
-      );
+      setPedidos(orders);
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
       toast.error("Falha ao carregar pedidos");
