@@ -20,7 +20,7 @@ import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, stat
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
-import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets, fetchOrdersFromSheets } from "@/lib/googleSheets";
+
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
