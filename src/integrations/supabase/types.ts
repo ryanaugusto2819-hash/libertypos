@@ -23,6 +23,7 @@ export type Database = {
           codigo_rastreamento: string
           complemento: string | null
           comprovante_url: string | null
+          conta_shopee: string
           created_at: string
           criativo: string | null
           data_entrada: string
@@ -61,6 +62,7 @@ export type Database = {
           codigo_rastreamento?: string
           complemento?: string | null
           comprovante_url?: string | null
+          conta_shopee?: string
           created_at?: string
           criativo?: string | null
           data_entrada?: string
@@ -99,6 +101,7 @@ export type Database = {
           codigo_rastreamento?: string
           complemento?: string | null
           comprovante_url?: string | null
+          conta_shopee?: string
           created_at?: string
           criativo?: string | null
           data_entrada?: string

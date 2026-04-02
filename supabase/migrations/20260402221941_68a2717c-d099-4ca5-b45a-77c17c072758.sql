@@ -1,0 +1,1 @@
+ALTER TABLE public.pedidos ADD COLUMN conta_shopee text NOT NULL DEFAULT '';
