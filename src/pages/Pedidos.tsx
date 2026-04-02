@@ -297,26 +297,11 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
-        data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
-        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
-        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
-        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
-        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
-        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
-        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
-        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: value, pais: currentOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar status de envio:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao atualizar status de envio:", err);
+      toast.error("Falha ao atualizar status de envio");
     }
 
     if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
