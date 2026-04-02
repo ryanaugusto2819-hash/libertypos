@@ -594,6 +594,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Plataforma</TableHead>}
+                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Shopee</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
