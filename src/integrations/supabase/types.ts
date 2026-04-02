@@ -38,6 +38,7 @@ export type Database = {
           numero: string | null
           observacoes: string
           pais: string
+          plataforma: string
           produto: string
           quantidade: number
           rua: string | null
@@ -75,6 +76,7 @@ export type Database = {
           numero?: string | null
           observacoes?: string
           pais?: string
+          plataforma?: string
           produto?: string
           quantidade?: number
           rua?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           numero?: string | null
           observacoes?: string
           pais?: string
+          plataforma?: string
           produto?: string
           quantidade?: number
           rua?: string | null
