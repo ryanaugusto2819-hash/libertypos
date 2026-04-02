@@ -101,6 +101,7 @@ const Pedidos = () => {
         valor_frete: Number(row.valor_frete ?? 0),
         forma_pagamento: row.forma_pagamento || "",
         plataforma: row.plataforma || "",
+        conta_shopee: (row as any).conta_shopee || "",
       }));
 
       setPedidos(orders);
@@ -207,6 +208,7 @@ const Pedidos = () => {
         bairro: newOrder.bairro || "",
         email: newOrder.email || "",
         plataforma: newOrder.plataforma || "",
+        conta_shopee: newOrder.conta_shopee || "",
       }).select().single();
 
       if (dbError) throw dbError;
@@ -592,6 +594,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Plataforma</TableHead>}
+                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Shopee</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
@@ -728,6 +731,32 @@ const Pedidos = () => {
                             <SelectItem value="SHOPEE">SHOPEE</SelectItem>
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                    )}
+                    {country === "BR" && (
+                      <TableCell>
+                        {p.plataforma === "SHOPEE" ? (
+                          <Input
+                            className="h-8 text-xs w-28"
+                            value={p.conta_shopee || ""}
+                            placeholder="Código"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, conta_shopee: val } : ped));
+                            }}
+                            onBlur={async (e) => {
+                              try {
+                                const { error } = await supabase.from("pedidos").update({ conta_shopee: e.target.value } as any).eq("id", p.id);
+                                if (error) throw error;
+                              } catch (err) {
+                                console.error("Falha ao salvar conta shopee:", err);
+                                toast.error("Falha ao salvar conta");
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                     )}
                     <TableCell>

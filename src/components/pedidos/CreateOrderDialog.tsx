@@ -63,6 +63,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     bairro: "",
     email: "",
     plataforma: "",
+    conta_shopee: "",
   });
 
   const handleSave = () => {
@@ -102,6 +103,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       bairro: form.bairro,
       email: form.email,
       plataforma: form.plataforma,
+      conta_shopee: form.conta_shopee,
     });
 
     setForm({
@@ -122,6 +124,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       bairro: "",
       email: "",
       plataforma: "",
+      conta_shopee: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
@@ -275,6 +278,16 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               </SelectContent>
             </Select>
           </div>
+          {form.plataforma === "SHOPEE" && (
+            <div className="space-y-2">
+              <Label>Código da Conta Shopee</Label>
+              <Input
+                value={form.conta_shopee}
+                onChange={(e) => setForm({ ...form, conta_shopee: e.target.value })}
+                placeholder="Código da conta"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Vendedor</Label>
             <Input
