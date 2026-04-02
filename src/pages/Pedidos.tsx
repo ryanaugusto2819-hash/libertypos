@@ -101,6 +101,7 @@ const Pedidos = () => {
         valor_frete: Number(row.valor_frete ?? 0),
         forma_pagamento: row.forma_pagamento || "",
         plataforma: row.plataforma || "",
+        conta_shopee: (row as any).conta_shopee || "",
       }));
 
       setPedidos(orders);
