@@ -733,6 +733,32 @@ const Pedidos = () => {
                         </Select>
                       </TableCell>
                     )}
+                    {country === "BR" && (
+                      <TableCell>
+                        {p.plataforma === "SHOPEE" ? (
+                          <Input
+                            className="h-8 text-xs w-28"
+                            value={p.conta_shopee || ""}
+                            placeholder="Código"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, conta_shopee: val } : ped));
+                            }}
+                            onBlur={async (e) => {
+                              try {
+                                const { error } = await supabase.from("pedidos").update({ conta_shopee: e.target.value } as any).eq("id", p.id);
+                                if (error) throw error;
+                              } catch (err) {
+                                console.error("Falha ao salvar conta shopee:", err);
+                                toast.error("Falha ao salvar conta");
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {isAdmin ? (
                         <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>
