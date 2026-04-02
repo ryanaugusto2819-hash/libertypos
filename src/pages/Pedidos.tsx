@@ -208,6 +208,7 @@ const Pedidos = () => {
         bairro: newOrder.bairro || "",
         email: newOrder.email || "",
         plataforma: newOrder.plataforma || "",
+        conta_shopee: newOrder.conta_shopee || "",
       }).select().single();
 
       if (dbError) throw dbError;
