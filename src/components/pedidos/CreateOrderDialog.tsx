@@ -101,6 +101,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       complemento: form.complemento,
       bairro: form.bairro,
       email: form.email,
+      plataforma: form.plataforma,
     });
 
     setForm({
@@ -120,6 +121,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       complemento: "",
       bairro: "",
       email: "",
+      plataforma: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
