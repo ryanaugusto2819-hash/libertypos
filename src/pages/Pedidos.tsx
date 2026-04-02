@@ -371,17 +371,13 @@ const Pedidos = () => {
   const handleDeleteOrder = async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
-    toast.success("Pedido excluído");
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-      await deleteOrderFromSheets(pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+      if (dbError) throw dbError;
       toast.success("Pedido excluído!");
     } catch (err) {
       console.error("Falha ao excluir:", err);
-      toast.error("Pedido removido localmente, mas falhou ao excluir completamente");
+      toast.error("Falha ao excluir pedido");
     }
   };
 
