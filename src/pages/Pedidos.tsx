@@ -205,6 +205,7 @@ const Pedidos = () => {
         complemento: newOrder.complemento || "",
         bairro: newOrder.bairro || "",
         email: newOrder.email || "",
+        plataforma: newOrder.plataforma || "",
       }).select().single();
 
       if (dbError) throw dbError;

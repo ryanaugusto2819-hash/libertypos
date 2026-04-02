@@ -62,6 +62,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     complemento: "",
     bairro: "",
     email: "",
+    plataforma: "",
   });
 
   const handleSave = () => {
