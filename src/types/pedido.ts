@@ -65,4 +65,5 @@ export interface Pedido {
   forma_pagamento?: string;
   valor_frete?: number;
   plataforma?: string;
+  conta_shopee?: string;
 }

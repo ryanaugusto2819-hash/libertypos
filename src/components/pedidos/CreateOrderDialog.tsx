@@ -124,6 +124,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       bairro: "",
       email: "",
       plataforma: "",
+      conta_shopee: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
