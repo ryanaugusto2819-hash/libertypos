@@ -50,17 +50,15 @@ const Dashboard = () => {
     const load = async () => {
       try {
         setLoading(true);
+        const { data: dbRows, error } = await supabase
+          .from("pedidos")
+          .select("*")
+          .order("data_entrada", { ascending: false })
+          .order("created_at", { ascending: false });
 
-        // Fetch from both sources in parallel
-        const [sheetsResult, dbResult] = await Promise.allSettled([
-          fetchOrdersFromSheets(),
-          supabase.from("pedidos").select("*").order("created_at", { ascending: false }),
-        ]);
+        if (error) throw error;
 
-        const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
-        const dbRows = dbResult.status === "fulfilled" ? (dbResult.value.data || []) : [];
-
-        const dbOrders: Pedido[] = dbRows.map((row: any) => ({
+        const orders: Pedido[] = (dbRows || []).map((row: any) => ({
           id: row.id,
           nome: row.nome,
           telefone: row.telefone,
@@ -94,41 +92,10 @@ const Dashboard = () => {
           email: row.email,
           forma_pagamento: row.forma_pagamento || "",
           valor_frete: Number(row.valor_frete ?? 0),
+          status_cobranca: row.status_cobranca || "pendente",
         }));
 
-        // DB is primary source (has accurate frete, dates from webhooks)
-        // Sheets enriches with status_cobranca, conta_bancaria
-        const normalizeKey = (p: Pedido) =>
-          `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
-
-        const sheetsMap = new Map<string, Pedido>();
-        for (const s of sheetsOrders) {
-          sheetsMap.set(normalizeKey(s), s);
-        }
-
-        const seenKeys = new Set<string>();
-        const merged: Pedido[] = [];
-
-        // DB first (primary)
-        for (const dbOrder of dbOrders) {
-          const key = normalizeKey(dbOrder);
-          const sheetVersion = sheetsMap.get(key);
-          merged.push({
-            ...dbOrder,
-            status_cobranca: sheetVersion?.status_cobranca || dbOrder.status_cobranca || "pendente" as any,
-            conta_bancaria: sheetVersion?.conta_bancaria || dbOrder.conta_bancaria || "",
-            wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
-          });
-          seenKeys.add(key);
-        }
-
-        // Add Sheets-only orders
-        for (const s of sheetsOrders) {
-          const key = normalizeKey(s);
-          if (!seenKeys.has(key)) { seenKeys.add(key); merged.push(s); }
-        }
-
-        setAllPedidos(merged);
+        setAllPedidos(orders);
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err);
         toast.error("Falha ao carregar dados");
