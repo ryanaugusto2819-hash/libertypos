@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchOrdersFromSheets } from "@/lib/googleSheets";
 import { supabase } from "@/integrations/supabase/client";
 import { formatARS, formatBRLFromARS, formatUSD, arsToUsd } from "@/lib/formatters";
 import { Pedido } from "@/types/pedido";
@@ -56,15 +55,20 @@ const Financeiro = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [orders, { data: saquesData }] = await Promise.all([
-        fetchOrdersFromSheets(),
+      const [{ data: pedidosData }, { data: saquesData }] = await Promise.all([
+        supabase.from("pedidos").select("*").eq("user_id", user.id).eq("pais", "AR"),
         supabase
           .from("saques")
           .select("*")
           .eq("user_id", user.id)
           .order("data_solicitacao", { ascending: false }),
       ]);
-      setPedidos(orders.filter((p) => p.afiliado_id === user.id && p.pais === "AR"));
+      setPedidos((pedidosData || []).map((row: any) => ({
+        ...row,
+        valor: Number(row.valor),
+        valor_frete: Number(row.valor_frete ?? 0),
+        afiliado_id: row.user_id,
+      })));
       setSaques((saquesData as Saque[]) ?? []);
     } catch (err) {
       console.error(err);

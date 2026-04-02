@@ -20,7 +20,7 @@ import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, stat
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
-import { syncOrderToSheets, updateOrderStatusInSheets, deleteOrderFromSheets, fetchOrdersFromSheets } from "@/lib/googleSheets";
+
 import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
@@ -28,7 +28,7 @@ import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
-const isDatabasePedidoId = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
 
 const Pedidos = () => {
   const { country } = useCountry();
@@ -57,20 +57,15 @@ const Pedidos = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      // Fetch from both sources in parallel
-      const [sheetsResult, dbResult] = await Promise.allSettled([
-        fetchOrdersFromSheets(),
-        supabase
-          .from("pedidos")
-          .select("*")
-          .order("data_entrada", { ascending: false })
-          .order("created_at", { ascending: false }),
-      ]);
+      const { data: dbRows, error } = await supabase
+        .from("pedidos")
+        .select("*")
+        .order("data_entrada", { ascending: false })
+        .order("created_at", { ascending: false });
 
-      const sheetsOrders: Pedido[] = sheetsResult.status === "fulfilled" ? sheetsResult.value : [];
-      const dbRows = dbResult.status === "fulfilled" ? (dbResult.value.data || []) : [];
+      if (error) throw error;
 
-      const dbOrders: Pedido[] = dbRows.map((row: any) => ({
+      const orders: Pedido[] = (dbRows || []).map((row: any) => ({
         id: row.id,
         nome: row.nome,
         telefone: row.telefone,
@@ -107,54 +102,7 @@ const Pedidos = () => {
         forma_pagamento: row.forma_pagamento || "",
       }));
 
-      // Build a lookup from Sheets by normalized key for enrichment
-      const normalizeKey = (p: Pedido) =>
-        `${(p.cedula || "").replace(/\s/g, "").toLowerCase()}|${(p.nome || "").trim().toLowerCase()}|${p.data_entrada}`;
-
-      const sheetsMap = new Map<string, Pedido>();
-      for (const s of sheetsOrders) {
-        sheetsMap.set(normalizeKey(s), s);
-      }
-
-      // DB is primary — enrich with sheet values when DB is blank, and keep sheet-only fields there
-      const seenKeys = new Set<string>();
-      const merged: Pedido[] = [];
-
-      for (const dbOrder of dbOrders) {
-        const key = normalizeKey(dbOrder);
-        const sheetVersion = sheetsMap.get(key);
-        const enriched: Pedido = {
-          ...dbOrder,
-          codigo_rastreamento: dbOrder.codigo_rastreamento || sheetVersion?.codigo_rastreamento || "",
-          data_envio: dbOrder.data_envio || sheetVersion?.data_envio || null,
-          data_pagamento: dbOrder.data_pagamento || sheetVersion?.data_pagamento || null,
-          hora_pagamento: dbOrder.hora_pagamento || sheetVersion?.hora_pagamento || null,
-          comprovante_url: dbOrder.comprovante_url || sheetVersion?.comprovante_url || null,
-          etiqueta_envio_url: dbOrder.etiqueta_envio_url || sheetVersion?.etiqueta_envio_url || null,
-          forma_pagamento: dbOrder.forma_pagamento || sheetVersion?.forma_pagamento || "",
-          status_cobranca: dbOrder.status_cobranca || sheetVersion?.status_cobranca || "pendente" as any,
-          conta_bancaria: dbOrder.conta_bancaria || sheetVersion?.conta_bancaria || "",
-          wpp_cobranca: dbOrder.wpp_cobranca || sheetVersion?.wpp_cobranca || "",
-        };
-        seenKeys.add(key);
-        merged.push(enriched);
-      }
-
-      for (const s of sheetsOrders) {
-        const key = normalizeKey(s);
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
-          merged.push(s);
-        }
-      }
-
-      setPedidos(
-        merged.sort((a, b) => {
-          const dateCompare = (b.data_entrada || "").localeCompare(a.data_entrada || "");
-          if (dateCompare !== 0) return dateCompare;
-          return (b.id || "").localeCompare(a.id || "");
-        })
-      );
+      setPedidos(orders);
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
       toast.error("Falha ao carregar pedidos");
@@ -265,17 +213,7 @@ const Pedidos = () => {
       const order: Pedido = { ...newOrder, id: realId, afiliado_id: user?.id };
       setPedidos((prev) => [order, ...prev]);
 
-      await syncOrderToSheets({
-        pedido_id: realId, nome: order.nome, telefone: order.telefone,
-        cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
-        valor: order.valor, cidade: order.cidade, departamento: order.departamento,
-        codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
-        data_criacao: order.data_entrada, data_envio: order.data_envio || "",
-        vendedor: order.vendedor || "", criativo: order.criativo || "",
-        status_envio: order.status_envio, pais: order.pais,
-        afiliado_id: user?.id || "",
-      });
-      toast.success("Pedido criado e sincronizado!");
+      toast.success("Pedido criado com sucesso!");
 
       supabase.functions.invoke("send-webhook", {
         body: { pedido: { ...order, id: realId } },
@@ -307,30 +245,16 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
-      if (isDatabasePedidoId(orderId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({
-          status_pagamento: "pago",
-          data_pagamento: dataPagamento,
-          hora_pagamento: horaPagamento,
-        }).eq("id", orderId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
-        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
-        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
-        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
-        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
-        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
-        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
-        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({
+        status_pagamento: "pago",
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", orderId);
+      if (dbError) throw dbError;
       toast.success("Status atualizado!");
     } catch (err) {
       console.error("Falha ao atualizar status:", err);
-      toast.error("Status alterado localmente, mas falhou ao sincronizar");
+      toast.error("Falha ao atualizar status de pagamento");
     }
   };
 
@@ -355,30 +279,15 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({
-          status_pagamento: value,
-          data_pagamento: dataPagamento,
-          hora_pagamento: horaPagamento,
-        }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: pedidoId, status_pagamento: value,
-        data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
-        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
-        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
-        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
-        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
-        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
-        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
-        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({
+        status_pagamento: value,
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar status de pagamento:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao atualizar status de pagamento:", err);
+      toast.error("Falha ao atualizar status de pagamento");
     }
   };
 
@@ -388,26 +297,11 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: pedidoId, status_pagamento: currentOrder.status_pagamento,
-        data_pagamento: currentOrder.data_pagamento, hora_pagamento: currentOrder.hora_pagamento,
-        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
-        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
-        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
-        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
-        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
-        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
-        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: value, pais: currentOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar status de envio:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao atualizar status de envio:", err);
+      toast.error("Falha ao atualizar status de envio");
     }
 
     if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
@@ -428,64 +322,28 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase
-          .from("pedidos")
-          .update({ status_cobranca: value })
-          .eq("id", pedidoId);
-
-        if (dbError) throw dbError;
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_status_cobranca",
-          pedido: { pedido_id: pedidoId, status_cobranca: value },
-        },
-      });
-      if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
+      const { error: dbError } = await supabase
+        .from("pedidos")
+        .update({ status_cobranca: value })
+        .eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar status de cobrança:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao atualizar status de cobrança:", err);
+      toast.error("Falha ao atualizar status de cobrança");
     }
   };
 
   const handleContaBancariaChange = async (pedidoId: string, value: string) => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
     toast.success(`Conta bancária → "${value}"`);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_conta_bancaria",
-          pedido: { pedido_id: pedidoId, conta_bancaria: value },
-        },
-      });
-      if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
-    } catch (err) {
-      console.error("Falha ao sincronizar conta bancária:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
-    }
   };
 
   const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_forma_pagamento",
-          pedido: { pedido_id: pedidoId, forma_pagamento: value },
-        },
-      });
-      if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
+      const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar forma de pagamento:", err);
       toast.error("Falhou ao salvar forma de pagamento");
@@ -502,25 +360,10 @@ const Pedidos = () => {
     const updatedOrder = { ...currentOrder, [field]: value };
     setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
-        data_pagamento: updatedOrder.data_pagamento, hora_pagamento: updatedOrder.hora_pagamento,
-        nome: updatedOrder.nome, telefone: updatedOrder.telefone, cedula: updatedOrder.cedula,
-        produto: updatedOrder.produto, quantidade: updatedOrder.quantidade, valor: updatedOrder.valor,
-        cidade: updatedOrder.cidade, departamento: updatedOrder.departamento,
-        codigo_rastreamento: updatedOrder.codigo_rastreamento, data_criacao: updatedOrder.data_entrada,
-        data_envio: updatedOrder.data_envio || "", comprovante_url: updatedOrder.comprovante_url || "",
-        etiqueta_envio_url: updatedOrder.etiqueta_envio_url || "",
-        vendedor: updatedOrder.vendedor || "", criativo: updatedOrder.criativo || "",
-        status_envio: updatedOrder.status_envio, pais: updatedOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar anexo:", err);
+      console.error("Falha ao salvar anexo:", err);
       toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
     }
   }, [pedidos]);
@@ -528,17 +371,13 @@ const Pedidos = () => {
   const handleDeleteOrder = async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
-    toast.success("Pedido excluído");
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-      await deleteOrderFromSheets(pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+      if (dbError) throw dbError;
       toast.success("Pedido excluído!");
     } catch (err) {
       console.error("Falha ao excluir:", err);
-      toast.error("Pedido removido localmente, mas falhou ao excluir completamente");
+      toast.error("Falha ao excluir pedido");
     }
   };
 
@@ -803,30 +642,14 @@ const Pedidos = () => {
                             ped.id === p.id ? updatedOrder : ped
                           ));
                           try {
-                            if (isDatabasePedidoId(p.id)) {
                               const { error: dbError } = await supabase
                                 .from("pedidos")
                                 .update({ codigo_rastreamento: code })
                                 .eq("id", p.id);
-
                               if (dbError) throw dbError;
-                            }
-
-                            await updateOrderStatusInSheets({
-                              pedido_id: p.id, status_pagamento: p.status_pagamento,
-                              data_pagamento: p.data_pagamento, hora_pagamento: p.hora_pagamento,
-                              nome: p.nome, telefone: p.telefone, cedula: p.cedula,
-                              produto: p.produto, quantidade: p.quantidade, valor: p.valor,
-                              cidade: p.cidade, departamento: p.departamento,
-                              codigo_rastreamento: code, data_criacao: p.data_entrada,
-                              data_envio: p.data_envio || "", comprovante_url: p.comprovante_url || "",
-                              etiqueta_envio_url: p.etiqueta_envio_url || "",
-                              vendedor: p.vendedor || "", criativo: p.criativo || "",
-                              status_envio: p.status_envio, pais: p.pais,
-                            });
                           } catch (err) {
-                            console.error("Falha ao sincronizar rastreamento:", err);
-                            toast.error("Código salvo localmente, mas falhou ao sincronizar");
+                            console.error("Falha ao salvar rastreamento:", err);
+                            toast.error("Falha ao salvar código de rastreamento");
                           }
                         }}
                       />
