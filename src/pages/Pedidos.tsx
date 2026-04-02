@@ -213,17 +213,7 @@ const Pedidos = () => {
       const order: Pedido = { ...newOrder, id: realId, afiliado_id: user?.id };
       setPedidos((prev) => [order, ...prev]);
 
-      await syncOrderToSheets({
-        pedido_id: realId, nome: order.nome, telefone: order.telefone,
-        cedula: order.cedula, produto: order.produto, quantidade: order.quantidade,
-        valor: order.valor, cidade: order.cidade, departamento: order.departamento,
-        codigo_rastreamento: order.codigo_rastreamento, status_pagamento: order.status_pagamento,
-        data_criacao: order.data_entrada, data_envio: order.data_envio || "",
-        vendedor: order.vendedor || "", criativo: order.criativo || "",
-        status_envio: order.status_envio, pais: order.pais,
-        afiliado_id: user?.id || "",
-      });
-      toast.success("Pedido criado e sincronizado!");
+      toast.success("Pedido criado com sucesso!");
 
       supabase.functions.invoke("send-webhook", {
         body: { pedido: { ...order, id: realId } },
