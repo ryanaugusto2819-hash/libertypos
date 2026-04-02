@@ -100,6 +100,7 @@ const Pedidos = () => {
         email: row.email,
         valor_frete: Number(row.valor_frete ?? 0),
         forma_pagamento: row.forma_pagamento || "",
+        plataforma: row.plataforma || "",
       }));
 
       setPedidos(orders);
