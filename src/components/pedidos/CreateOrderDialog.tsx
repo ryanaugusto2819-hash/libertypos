@@ -103,6 +103,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       bairro: form.bairro,
       email: form.email,
       plataforma: form.plataforma,
+      conta_shopee: form.conta_shopee,
     });
 
     setForm({
