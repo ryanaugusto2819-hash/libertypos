@@ -245,30 +245,16 @@ const Pedidos = () => {
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
-      if (isDatabasePedidoId(orderId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({
-          status_pagamento: "pago",
-          data_pagamento: dataPagamento,
-          hora_pagamento: horaPagamento,
-        }).eq("id", orderId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: orderId, status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
-        nome: currentOrder.nome, telefone: currentOrder.telefone, cedula: currentOrder.cedula,
-        produto: currentOrder.produto, quantidade: currentOrder.quantidade, valor: currentOrder.valor,
-        cidade: currentOrder.cidade, departamento: currentOrder.departamento,
-        codigo_rastreamento: currentOrder.codigo_rastreamento, data_criacao: currentOrder.data_entrada,
-        data_envio: currentOrder.data_envio || "", comprovante_url: currentOrder.comprovante_url || "",
-        etiqueta_envio_url: currentOrder.etiqueta_envio_url || "",
-        vendedor: currentOrder.vendedor || "", criativo: currentOrder.criativo || "",
-        status_envio: currentOrder.status_envio, pais: currentOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({
+        status_pagamento: "pago",
+        data_pagamento: dataPagamento,
+        hora_pagamento: horaPagamento,
+      }).eq("id", orderId);
+      if (dbError) throw dbError;
       toast.success("Status atualizado!");
     } catch (err) {
       console.error("Falha ao atualizar status:", err);
-      toast.error("Status alterado localmente, mas falhou ao sincronizar");
+      toast.error("Falha ao atualizar status de pagamento");
     }
   };
 
