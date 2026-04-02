@@ -704,6 +704,32 @@ const Pedidos = () => {
                         </Badge>
                       )}
                     </TableCell>
+                    {country === "BR" && (
+                      <TableCell>
+                        <Select
+                          value={p.plataforma || ""}
+                          onValueChange={async (v) => {
+                            setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, plataforma: v } : ped));
+                            try {
+                              const { error } = await supabase.from("pedidos").update({ plataforma: v }).eq("id", p.id);
+                              if (error) throw error;
+                              toast.success(`Plataforma → ${v}`);
+                            } catch (err) {
+                              console.error("Falha ao atualizar plataforma:", err);
+                              toast.error("Falha ao salvar plataforma");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="LOGZZ">LOGZZ</SelectItem>
+                            <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {isAdmin ? (
                         <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>
