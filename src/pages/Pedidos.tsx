@@ -100,6 +100,7 @@ const Pedidos = () => {
         email: row.email,
         valor_frete: Number(row.valor_frete ?? 0),
         forma_pagamento: row.forma_pagamento || "",
+        plataforma: row.plataforma || "",
       }));
 
       setPedidos(orders);
@@ -205,6 +206,7 @@ const Pedidos = () => {
         complemento: newOrder.complemento || "",
         bairro: newOrder.bairro || "",
         email: newOrder.email || "",
+        plataforma: newOrder.plataforma || "",
       }).select().single();
 
       if (dbError) throw dbError;
@@ -589,6 +591,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
+                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Plataforma</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
@@ -701,6 +704,32 @@ const Pedidos = () => {
                         </Badge>
                       )}
                     </TableCell>
+                    {country === "BR" && (
+                      <TableCell>
+                        <Select
+                          value={p.plataforma || ""}
+                          onValueChange={async (v) => {
+                            setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, plataforma: v } : ped));
+                            try {
+                              const { error } = await supabase.from("pedidos").update({ plataforma: v }).eq("id", p.id);
+                              if (error) throw error;
+                              toast.success(`Plataforma → ${v}`);
+                            } catch (err) {
+                              console.error("Falha ao atualizar plataforma:", err);
+                              toast.error("Falha ao salvar plataforma");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="LOGZZ">LOGZZ</SelectItem>
+                            <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {isAdmin ? (
                         <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>

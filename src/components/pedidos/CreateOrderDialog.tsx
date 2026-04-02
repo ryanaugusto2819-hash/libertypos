@@ -62,6 +62,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     complemento: "",
     bairro: "",
     email: "",
+    plataforma: "",
   });
 
   const handleSave = () => {
@@ -100,6 +101,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       complemento: form.complemento,
       bairro: form.bairro,
       email: form.email,
+      plataforma: form.plataforma,
     });
 
     setForm({
@@ -119,6 +121,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       complemento: "",
       bairro: "",
       email: "",
+      plataforma: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
@@ -260,6 +263,18 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               </div>
             </>
           )}
+          <div className="space-y-2">
+            <Label>Plataforma</Label>
+            <Select value={form.plataforma} onValueChange={(v) => setForm({ ...form, plataforma: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOGZZ">LOGZZ</SelectItem>
+                <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label>Vendedor</Label>
             <Input

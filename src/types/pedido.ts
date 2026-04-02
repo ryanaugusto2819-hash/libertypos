@@ -64,4 +64,5 @@ export interface Pedido {
   email?: string;
   forma_pagamento?: string;
   valor_frete?: number;
+  plataforma?: string;
 }
