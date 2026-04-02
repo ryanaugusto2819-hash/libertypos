@@ -322,26 +322,14 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase
-          .from("pedidos")
-          .update({ status_cobranca: value })
-          .eq("id", pedidoId);
-
-        if (dbError) throw dbError;
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_status_cobranca",
-          pedido: { pedido_id: pedidoId, status_cobranca: value },
-        },
-      });
-      if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
+      const { error: dbError } = await supabase
+        .from("pedidos")
+        .update({ status_cobranca: value })
+        .eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar status de cobrança:", err);
-      toast.error("Falhou ao sincronizar com Google Sheets");
+      console.error("Falha ao atualizar status de cobrança:", err);
+      toast.error("Falha ao atualizar status de cobrança");
     }
   };
 
