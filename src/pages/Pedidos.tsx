@@ -342,19 +342,8 @@ const Pedidos = () => {
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-google-sheets", {
-        body: {
-          action: "update_forma_pagamento",
-          pedido: { pedido_id: pedidoId, forma_pagamento: value },
-        },
-      });
-      if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
+      const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar forma de pagamento:", err);
       toast.error("Falhou ao salvar forma de pagamento");
