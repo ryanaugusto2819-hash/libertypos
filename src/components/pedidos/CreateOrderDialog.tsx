@@ -278,6 +278,16 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               </SelectContent>
             </Select>
           </div>
+          {form.plataforma === "SHOPEE" && (
+            <div className="space-y-2">
+              <Label>Código da Conta Shopee</Label>
+              <Input
+                value={form.conta_shopee}
+                onChange={(e) => setForm({ ...form, conta_shopee: e.target.value })}
+                placeholder="Código da conta"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Vendedor</Label>
             <Input
