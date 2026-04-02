@@ -642,30 +642,14 @@ const Pedidos = () => {
                             ped.id === p.id ? updatedOrder : ped
                           ));
                           try {
-                            if (isDatabasePedidoId(p.id)) {
                               const { error: dbError } = await supabase
                                 .from("pedidos")
                                 .update({ codigo_rastreamento: code })
                                 .eq("id", p.id);
-
                               if (dbError) throw dbError;
-                            }
-
-                            await updateOrderStatusInSheets({
-                              pedido_id: p.id, status_pagamento: p.status_pagamento,
-                              data_pagamento: p.data_pagamento, hora_pagamento: p.hora_pagamento,
-                              nome: p.nome, telefone: p.telefone, cedula: p.cedula,
-                              produto: p.produto, quantidade: p.quantidade, valor: p.valor,
-                              cidade: p.cidade, departamento: p.departamento,
-                              codigo_rastreamento: code, data_criacao: p.data_entrada,
-                              data_envio: p.data_envio || "", comprovante_url: p.comprovante_url || "",
-                              etiqueta_envio_url: p.etiqueta_envio_url || "",
-                              vendedor: p.vendedor || "", criativo: p.criativo || "",
-                              status_envio: p.status_envio, pais: p.pais,
-                            });
                           } catch (err) {
-                            console.error("Falha ao sincronizar rastreamento:", err);
-                            toast.error("Código salvo localmente, mas falhou ao sincronizar");
+                            console.error("Falha ao salvar rastreamento:", err);
+                            toast.error("Falha ao salvar código de rastreamento");
                           }
                         }}
                       />
