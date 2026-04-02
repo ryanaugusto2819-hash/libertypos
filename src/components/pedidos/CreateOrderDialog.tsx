@@ -264,6 +264,18 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
             </>
           )}
           <div className="space-y-2">
+            <Label>Plataforma</Label>
+            <Select value={form.plataforma} onValueChange={(v) => setForm({ ...form, plataforma: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOGZZ">LOGZZ</SelectItem>
+                <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Vendedor</Label>
             <Input
               value={form.vendedor}
