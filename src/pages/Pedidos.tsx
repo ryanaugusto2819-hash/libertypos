@@ -360,25 +360,10 @@ const Pedidos = () => {
     const updatedOrder = { ...currentOrder, [field]: value };
     setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
     try {
-      if (isDatabasePedidoId(pedidoId)) {
-        const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
-        if (dbError) throw dbError;
-      }
-
-      await updateOrderStatusInSheets({
-        pedido_id: pedidoId, status_pagamento: updatedOrder.status_pagamento,
-        data_pagamento: updatedOrder.data_pagamento, hora_pagamento: updatedOrder.hora_pagamento,
-        nome: updatedOrder.nome, telefone: updatedOrder.telefone, cedula: updatedOrder.cedula,
-        produto: updatedOrder.produto, quantidade: updatedOrder.quantidade, valor: updatedOrder.valor,
-        cidade: updatedOrder.cidade, departamento: updatedOrder.departamento,
-        codigo_rastreamento: updatedOrder.codigo_rastreamento, data_criacao: updatedOrder.data_entrada,
-        data_envio: updatedOrder.data_envio || "", comprovante_url: updatedOrder.comprovante_url || "",
-        etiqueta_envio_url: updatedOrder.etiqueta_envio_url || "",
-        vendedor: updatedOrder.vendedor || "", criativo: updatedOrder.criativo || "",
-        status_envio: updatedOrder.status_envio, pais: updatedOrder.pais,
-      });
+      const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
     } catch (err) {
-      console.error("Falha ao sincronizar anexo:", err);
+      console.error("Falha ao salvar anexo:", err);
       toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
     }
   }, [pedidos]);
