@@ -798,7 +798,7 @@ const Pedidos = () => {
                                 <SelectItem value="pedido entregue">Pedido Entregue</SelectItem>
                               </>
                             ) : (
-                              <>
+                  </React.Fragment>
                                 <SelectItem value="pendente">Pendente</SelectItem>
                                 <SelectItem value="pre enviado">Pré Enviado</SelectItem>
                                 <SelectItem value="funil enviado">Funil Enviado</SelectItem>
