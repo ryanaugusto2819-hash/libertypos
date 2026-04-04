@@ -591,6 +591,7 @@ const Pedidos = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
+                <TableHead className="w-10"></TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Cliente</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Cédula</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
