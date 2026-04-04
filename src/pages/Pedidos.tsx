@@ -978,7 +978,7 @@ const Pedidos = () => {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                  </React.Fragment>
                 );
               })}
               {filtered.length === 0 && (
