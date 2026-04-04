@@ -617,8 +617,8 @@ const Pedidos = () => {
               {filtered.map((p) => {
                 const overdue = isOverdue(p);
                 return (
+                  <React.Fragment key={p.id}>
                   <TableRow
-                    key={p.id}
                     className={cn(
                       "transition-all hover:bg-primary/5 border-b border-primary/10",
                       overdue && "bg-destructive/10 border-l-4 border-l-destructive"
