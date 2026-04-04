@@ -624,6 +624,20 @@ const Pedidos = () => {
                       overdue && "bg-destructive/10 border-l-4 border-l-destructive"
                     )}
                   >
+                    <TableCell className="w-10 px-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-lg"
+                        onClick={() => toggleExpand(p.id)}
+                      >
+                        {expandedRows.has(p.id) ? (
+                          <ChevronDown className="h-4 w-4 text-primary" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </TableCell>
                     <TableCell className="text-sm font-medium">
                       <div>
                         {p.nome}
