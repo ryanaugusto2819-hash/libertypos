@@ -19,7 +19,7 @@ import {
 const navItems = [
   { title: "Cobrança", url: "/", icon: LayoutDashboard },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
-  { title: "Financeiro", url: "/financeiro", icon: Wallet },
+  
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
