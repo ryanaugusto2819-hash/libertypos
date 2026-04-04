@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark, Calendar } from "lucide-react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark, Calendar, ChevronDown, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,16 @@ const Pedidos = () => {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
+  const toggleExpand = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   useEffect(() => { setActivePais(country); }, [country]);
 
   useEffect(() => {
@@ -582,6 +591,7 @@ const Pedidos = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
+                <TableHead className="w-10"></TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Cliente</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Cédula</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
@@ -607,13 +617,27 @@ const Pedidos = () => {
               {filtered.map((p) => {
                 const overdue = isOverdue(p);
                 return (
+                  <React.Fragment key={p.id}>
                   <TableRow
-                    key={p.id}
                     className={cn(
                       "transition-all hover:bg-primary/5 border-b border-primary/10",
                       overdue && "bg-destructive/10 border-l-4 border-l-destructive"
                     )}
                   >
+                    <TableCell className="w-10 px-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-lg"
+                        onClick={() => toggleExpand(p.id)}
+                      >
+                        {expandedRows.has(p.id) ? (
+                          <ChevronDown className="h-4 w-4 text-primary" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </TableCell>
                     <TableCell className="text-sm font-medium">
                       <div>
                         {p.nome}
@@ -774,7 +798,7 @@ const Pedidos = () => {
                                 <SelectItem value="pedido entregue">Pedido Entregue</SelectItem>
                               </>
                             ) : (
-                              <>
+                  <>
                                 <SelectItem value="pendente">Pendente</SelectItem>
                                 <SelectItem value="pre enviado">Pré Enviado</SelectItem>
                                 <SelectItem value="funil enviado">Funil Enviado</SelectItem>
@@ -853,6 +877,108 @@ const Pedidos = () => {
                       </Button>
                     </TableCell>
                   </TableRow>
+                  {expandedRows.has(p.id) && (
+                    <TableRow className="bg-muted/30 hover:bg-muted/40">
+                      <TableCell colSpan={20} className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 text-sm">
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Nome Completo</p>
+                            <p className="font-medium">{p.nome}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Telefone</p>
+                            <p className="font-medium">{p.telefone}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Cédula</p>
+                            <p className="font-medium font-mono">{p.cedula}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Email</p>
+                            <p className="font-medium">{p.email || "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Produto</p>
+                            <p className="font-medium">{p.produto} (Qtd: {p.quantidade})</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Valor</p>
+                            <p className="font-medium">{formatCurrency(p.valor)}</p>
+                          </div>
+                          {p.valor_frete > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Frete</p>
+                              <p className="font-medium">{formatCurrency(p.valor_frete)}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Cidade / Departamento</p>
+                            <p className="font-medium">{p.cidade} — {p.departamento}</p>
+                          </div>
+                          {(p.rua || p.cep) && (
+                            <div className="col-span-2">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Endereço</p>
+                              <p className="font-medium">
+                                {[p.rua, p.numero, p.complemento, p.bairro].filter(Boolean).join(", ")}
+                                {p.cep && ` — CEP: ${p.cep}`}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data de Entrada</p>
+                            <p className="font-medium">{formatDate(p.data_entrada)}</p>
+                          </div>
+                          {p.data_envio && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data de Envio</p>
+                              <p className="font-medium">{formatDate(p.data_envio)}</p>
+                            </div>
+                          )}
+                          {p.data_pagamento && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data Pagamento</p>
+                              <p className="font-medium">{formatDate(p.data_pagamento)} {p.hora_pagamento}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Rastreamento</p>
+                            <p className="font-medium font-mono">{p.codigo_rastreamento || "—"}</p>
+                          </div>
+                          {p.plataforma && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Plataforma</p>
+                              <p className="font-medium">{p.plataforma}</p>
+                            </div>
+                          )}
+                          {p.plataforma === "SHOPEE" && p.conta_shopee && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Conta Shopee</p>
+                              <p className="font-medium font-mono">{p.conta_shopee}</p>
+                            </div>
+                          )}
+                          {p.vendedor && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Vendedor</p>
+                              <p className="font-medium">{p.vendedor}</p>
+                            </div>
+                          )}
+                          {p.criativo && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Criativo</p>
+                              <p className="font-medium">{p.criativo}</p>
+                            </div>
+                          )}
+                          {p.observacoes && (
+                            <div className="col-span-2">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observações</p>
+                              <p className="font-medium">{p.observacoes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </React.Fragment>
                 );
               })}
               {filtered.length === 0 && (
