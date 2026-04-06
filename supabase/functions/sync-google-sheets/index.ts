@@ -230,7 +230,7 @@ serve(async (req) => {
       const rows = allData.length > 0 && allData[0][0] === "pedido_id" ? allData.slice(1) : allData;
       
       const validStatusPag = ["pago", "pendente"];
-      const validStatusEnv = ["não enviado", "enviado", "a retirar", "retirado", "a enviar", "saldo de expedição insuficiente", "em separação", "entregue", "em devolução", "devolvido", "sem estoque"];
+      const validStatusEnv = ["não enviado", "enviado", "a retirar", "retirado", "a enviar", "saldo de expedição insuficiente", "em separação", "entregue", "em devolução", "devolvido", "sem estoque", "aguardando retirada"];
       const validStatusCob = [
         "pendente", "pre enviado", "funil enviado", "funil a retirar", "funil retirado",
         "1-follow (a retirar)", "2-follow (a retirar)", "3-follow (a retirar)", "4-follow (a retirar)",

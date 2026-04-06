@@ -16,6 +16,7 @@ const statusMap: Record<string, string> = {
   "em devolução": "em devolução",
   "devolvido": "devolvido",
   "sem estoque": "sem estoque",
+  "aguardando retirada": "aguardando retirada",
   "estoque insuficiente": "sem estoque",
   "sem unidades disponíveis": "sem estoque",
   "erro no leilão": "sem estoque",
