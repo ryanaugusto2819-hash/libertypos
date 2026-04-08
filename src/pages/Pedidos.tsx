@@ -43,6 +43,7 @@ const Pedidos = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [dateField, setDateField] = useState<"data_entrada" | "data_pagamento">("data_entrada");
   const [dateFilter, setDateFilter] = useState<string>("todos");
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
@@ -153,8 +154,10 @@ const Pedidos = () => {
       // Date filter — all dates anchored to São Paulo timezone (UTC-3)
       let matchDate = true;
       if (dateFilter !== "todos") {
-        const entryDate = parseLocalDate(p.data_entrada);
-        const todaySP = todayInSaoPaulo(); // "YYYY-MM-DD" in SP
+        const rawDate = dateField === "data_pagamento" ? p.data_pagamento : p.data_entrada;
+        if (!rawDate) return false;
+        const theDate = parseLocalDate(rawDate);
+        const todaySP = todayInSaoPaulo();
         const spDate = (dateStr: string, time: "start" | "end") =>
           new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
         const subtractDays = (dateStr: string, n: number): string => {
@@ -164,26 +167,26 @@ const Pedidos = () => {
         };
         const tomorrowSP = subtractDays(todaySP, -1);
         if (dateFilter === "7") {
-          matchDate = entryDate >= spDate(subtractDays(todaySP, 7), "start") && entryDate <= spDate(tomorrowSP, "end");
+          matchDate = theDate >= spDate(subtractDays(todaySP, 7), "start") && theDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "15") {
-          matchDate = entryDate >= spDate(subtractDays(todaySP, 15), "start") && entryDate <= spDate(tomorrowSP, "end");
+          matchDate = theDate >= spDate(subtractDays(todaySP, 15), "start") && theDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "30") {
-          matchDate = entryDate >= spDate(subtractDays(todaySP, 30), "start") && entryDate <= spDate(tomorrowSP, "end");
+          matchDate = theDate >= spDate(subtractDays(todaySP, 30), "start") && theDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "custom") {
           if (customDateFrom) {
             const s = customDateFrom.toLocaleDateString("sv-SE");
-            matchDate = entryDate >= spDate(s, "start");
+            matchDate = theDate >= spDate(s, "start");
           }
           if (matchDate && customDateTo) {
             const e = customDateTo.toLocaleDateString("sv-SE");
-            matchDate = entryDate <= spDate(e, "end");
+            matchDate = theDate <= spDate(e, "end");
           }
         }
       }
 
       return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateFilter, customDateFrom, customDateTo]);
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
@@ -516,6 +519,23 @@ const Pedidos = () => {
         </Select>
         <div className="flex items-center gap-1.5 flex-wrap">
           <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Button
+            size="sm"
+            variant={dateField === "data_entrada" ? "default" : "outline"}
+            className="h-8 rounded-lg text-xs font-semibold"
+            onClick={() => setDateField("data_entrada")}
+          >
+            Entrada
+          </Button>
+          <Button
+            size="sm"
+            variant={dateField === "data_pagamento" ? "default" : "outline"}
+            className="h-8 rounded-lg text-xs font-semibold"
+            onClick={() => setDateField("data_pagamento")}
+          >
+            Pagamento
+          </Button>
+          <div className="w-px h-5 bg-border mx-1" />
           {[
             { label: "Todos", value: "todos" },
             { label: "7 dias", value: "7" },
