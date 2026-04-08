@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { parseLocalDate, setActivePais, todayInSaoPaulo } from "@/lib/formatters";
+import { setActivePais, todayInSaoPaulo } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
@@ -122,53 +122,38 @@ const Dashboard = () => {
       }
     }
 
-    // Sempre usa datas de SP para não depender do timezone do Windows
-    const todaySP = todayInSaoPaulo(); // "YYYY-MM-DD"
+    // Compara strings "YYYY-MM-DD" diretamente — elimina qualquer problema de timezone.
+    // data_entrada e data_pagamento são colunas DATE no banco → sempre retornam "YYYY-MM-DD".
+    const todaySP = todayInSaoPaulo();
 
-    // Subtrai N dias de uma string "YYYY-MM-DD" e retorna nova string "YYYY-MM-DD"
     const subtractDays = (dateStr: string, n: number): string => {
       const [y, m, d] = dateStr.split("-").map(Number);
       const dt = new Date(y, m - 1, d - n);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
     };
 
-    const spStart = (dateStr: string) => new Date(`${dateStr}T00:00:00-03:00`);
-    const spEnd   = (dateStr: string) => new Date(`${dateStr}T23:59:59.999-03:00`);
-
-    const getDateValue = (p: Pedido): Date | null => {
-      if (dateField === "data_pagamento") {
-        return p.data_pagamento ? parseLocalDate(p.data_pagamento) : null;
-      }
-      return parseLocalDate(p.data_entrada);
+    const getDateStr = (p: Pedido): string | null => {
+      if (dateField === "data_pagamento") return p.data_pagamento || null;
+      return p.data_entrada || null;
     };
 
     if (activeFilter === "custom" && customStart && customEnd) {
       const startStr = format(customStart, "yyyy-MM-dd");
       const endStr   = format(customEnd, "yyyy-MM-dd");
-      return list.filter((p) => {
-        const d = getDateValue(p);
-        return d && d >= spStart(startStr) && d <= spEnd(endStr);
-      });
+      return list.filter((p) => { const d = getDateStr(p); return !!d && d >= startStr && d <= endStr; });
     }
 
     if (activeFilter === "custom") return list;
 
     if (activeFilter === "ontem") {
-      const yesterdayStr = subtractDays(todaySP, 1);
-      return list.filter((p) => {
-        const d = getDateValue(p);
-        return d && d >= spStart(yesterdayStr) && d <= spEnd(yesterdayStr);
-      });
+      const y = subtractDays(todaySP, 1);
+      return list.filter((p) => { const d = getDateStr(p); return d === y; });
     }
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
-    const days = daysMap[activeFilter];
-    const startStr = subtractDays(todaySP, days);
+    const startStr = subtractDays(todaySP, daysMap[activeFilter]);
 
-    return list.filter((p) => {
-      const d = getDateValue(p);
-      return d && d >= spStart(startStr) && d <= spEnd(todaySP);
-    });
+    return list.filter((p) => { const d = getDateStr(p); return !!d && d >= startStr && d <= todaySP; });
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
 
   const total = filteredPedidos.length;
@@ -201,20 +186,18 @@ const Dashboard = () => {
       const dt = new Date(y, m - 1, d - n);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
     };
-    const spStart = (s: string) => new Date(`${s}T00:00:00-03:00`);
-    const spEnd   = (s: string) => new Date(`${s}T23:59:59.999-03:00`);
     if (activeFilter === "custom" && customStart && customEnd) {
       const s = format(customStart, "yyyy-MM-dd"), e = format(customEnd, "yyyy-MM-dd");
-      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(s) && d <= spEnd(e); });
+      return list.filter((p) => !!p.data_entrada && p.data_entrada >= s && p.data_entrada <= e);
     }
     if (activeFilter === "custom") return list;
     if (activeFilter === "ontem") {
       const y = subtractDays(todaySP, 1);
-      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(y) && d <= spEnd(y); });
+      return list.filter((p) => p.data_entrada === y);
     }
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const startStr = subtractDays(todaySP, daysMap[activeFilter]);
-    return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(startStr) && d <= spEnd(todaySP); });
+    return list.filter((p) => !!p.data_entrada && p.data_entrada >= startStr && p.data_entrada <= todaySP);
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
 
   const totalFaturamento = pedidosFaturamento.reduce((sum, p) => sum + p.valor, 0);
