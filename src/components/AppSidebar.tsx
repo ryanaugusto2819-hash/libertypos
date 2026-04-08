@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { title: "Cobrança", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   
   { title: "Configurações", url: "/configuracoes", icon: Settings },
@@ -72,7 +72,7 @@ export function AppSidebar() {
                 Group Liberty
               </p>
               <p className="text-[11px] mt-0.5" style={{ color: "hsl(270 15% 50%)" }}>
-                Sistema de Cobranças
+                Sistema de Gestão
               </p>
             </div>
           )}

@@ -174,10 +174,44 @@ const Dashboard = () => {
   const retirados = filteredPedidos.filter((p) => p.status_envio === "retirado");
   const aRetirar = filteredPedidos.filter((p) => p.status_envio === "a retirar");
   const enviados = filteredPedidos.filter((p) => p.status_envio === "enviado");
+  const aEnviar = filteredPedidos.filter((p) => p.status_envio === "a enviar");
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
-  const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
+
+  // totalFaturamento sempre usa data_entrada para não excluir pedidos pendentes
+  // (que não têm data_pagamento) quando o filtro está em "Data Pagamento"
+  const pedidosFaturamento = useMemo(() => {
+    let list = allPedidos.filter((p) => p.pais === country);
+    if (!isAdmin) {
+      list = list.filter((p) => p.afiliado_id === user?.id);
+    } else {
+      if (ownerFilter === "meus") {
+        list = list.filter((p) => !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id);
+      } else if (ownerFilter === "afiliados") {
+        list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
+      }
+    }
+    const now = nowInSaoPaulo();
+    now.setHours(23, 59, 59, 999);
+    if (activeFilter === "custom" && customStart && customEnd) {
+      const start = new Date(customStart); start.setHours(0, 0, 0, 0);
+      const end = new Date(customEnd); end.setHours(23, 59, 59, 999);
+      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= start && d <= end; });
+    }
+    if (activeFilter === "custom") return list;
+    if (activeFilter === "ontem") {
+      const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1); yesterday.setHours(0, 0, 0, 0);
+      const yesterdayEnd = new Date(yesterday); yesterdayEnd.setHours(23, 59, 59, 999);
+      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= yesterday && d <= yesterdayEnd; });
+    }
+    const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
+    const days = daysMap[activeFilter];
+    const start = new Date(now); start.setDate(start.getDate() - days); start.setHours(0, 0, 0, 0);
+    return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= start && d <= now; });
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
+
+  const totalFaturamento = pedidosFaturamento.reduce((sum, p) => sum + p.valor, 0);
 
   const pagosPix = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "pix");
   const pagosCartao = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "cartão" || p.forma_pagamento?.toLowerCase() === "cartao");
@@ -200,9 +234,9 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard de Cobranças</h1>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Visão geral do sistema de cobranças pós-pagamento
+            Visão geral dos pedidos e faturamento
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -260,10 +294,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <KpiCard title="Pedidos Pagos" value={pagos.length} percentage={total ? Math.round((pagos.length / total) * 100) : 0} icon={CheckCircle2} variant="success" trend="up" delay={0} />
         <KpiCard title="Pedidos Retirados" value={retirados.length} percentage={total ? Math.round((retirados.length / total) * 100) : 0} icon={Truck} variant="warning" trend="neutral" delay={100} />
         <KpiCard title="Pedidos Enviados" value={enviados.length} percentage={total ? Math.round((enviados.length / total) * 100) : 0} icon={Send} variant="info" trend="up" delay={200} />
+        <KpiCard title="A Enviar" value={aEnviar.length} percentage={total ? Math.round((aEnviar.length / total) * 100) : 0} icon={PackageCheck} variant="info" trend="neutral" delay={250} />
         <KpiCard title="A Retirar" value={aRetirar.length} percentage={total ? Math.round((aRetirar.length / total) * 100) : 0} icon={AlertTriangle} variant="danger" trend="down" delay={300} />
       </div>
 
