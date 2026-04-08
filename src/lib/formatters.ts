@@ -95,12 +95,8 @@ export function nowInSaoPaulo(): Date {
  * Returns today's date string (YYYY-MM-DD) in São Paulo timezone
  */
 export function todayInSaoPaulo(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  // sv-SE locale always returns "YYYY-MM-DD" — same format used when saving data_pagamento
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 }
 
 export function formatDate(date: string | null): string {

@@ -169,43 +169,7 @@ const Dashboard = () => {
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
-
-  // totalFaturamento sempre usa data_entrada para não excluir pedidos pendentes
-  // (que não têm data_pagamento) quando o filtro está em "Data Pagamento"
-  const pedidosFaturamento = useMemo(() => {
-    let list = allPedidos.filter((p) => p.pais === country);
-    if (!isAdmin) {
-      list = list.filter((p) => p.afiliado_id === user?.id);
-    } else {
-      if (ownerFilter === "meus") {
-        list = list.filter((p) => !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id);
-      } else if (ownerFilter === "afiliados") {
-        list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
-      }
-    }
-    const todaySP = todayInSaoPaulo();
-    const spDate = (dateStr: string, time: "start" | "end") =>
-      new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
-    const subtractDays = (dateStr: string, n: number): string => {
-      const [y, m, d] = dateStr.split("-").map(Number);
-      const dt = new Date(y, m - 1, d - n);
-      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-    };
-    if (activeFilter === "custom" && customStart && customEnd) {
-      const s = format(customStart, "yyyy-MM-dd"), e = format(customEnd, "yyyy-MM-dd");
-      return list.filter((p) => { const d = p.data_entrada ? parseLocalDate(p.data_entrada) : null; return !!d && d >= spDate(s, "start") && d <= spDate(e, "end"); });
-    }
-    if (activeFilter === "custom") return list;
-    if (activeFilter === "ontem") {
-      const y = subtractDays(todaySP, 1);
-      return list.filter((p) => { const d = p.data_entrada ? parseLocalDate(p.data_entrada) : null; return !!d && d >= spDate(y, "start") && d <= spDate(y, "end"); });
-    }
-    const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
-    const startStr = subtractDays(todaySP, daysMap[activeFilter]);
-    return list.filter((p) => { const d = p.data_entrada ? parseLocalDate(p.data_entrada) : null; return !!d && d >= spDate(startStr, "start") && d <= spDate(todaySP, "end"); });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
-
-  const totalFaturamento = pedidosFaturamento.reduce((sum, p) => sum + p.valor, 0);
+  const totalFaturamento = filteredPedidos.reduce((sum, p) => sum + p.valor, 0);
 
   const pagosPix = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "pix");
   const pagosCartao = pagos.filter((p) => p.forma_pagamento?.toLowerCase() === "cartão" || p.forma_pagamento?.toLowerCase() === "cartao");
@@ -299,8 +263,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <FinanceCard title="Total Recebido" value={formatCurrency(totalRecebido)} subtitle={`${pagos.length} pedidos pagos`} icon={Wallet} variant="received" delay={200} />
         <FinanceCard title="Total a Receber" value={formatCurrency(totalAReceber)} subtitle={`${total - pagos.length} pedidos pendentes`} icon={DollarSign} variant="pending" delay={300} />
-        <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${pedidosFaturamento.length} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
-        <FinanceCard title="Quantidade de Vendas" value={String(pedidosFaturamento.length)} subtitle={`${pagos.length} pagos · ${total - pagos.length} pendentes`} icon={ShoppingBag} variant="vendas" delay={450} />
+        <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${total} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
+        <FinanceCard title="Quantidade de Vendas" value={String(total)} subtitle={`${pagos.length} pagos · ${pendentes.length} pendentes`} icon={ShoppingBag} variant="vendas" delay={450} />
       </div>
 
       {country === "BR" && (
