@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
-import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark, Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Search, Filter, Package, CreditCard, Truck, CircleDot, Trash2, Loader2, Landmark, Calendar, ChevronDown, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,8 @@ const Pedidos = () => {
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
   const [dateField, setDateField] = useState<"data_entrada" | "data_pagamento">("data_entrada");
+  const [sortField, setSortField] = useState<"data_entrada" | "data_pagamento" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [dateFilter, setDateFilter] = useState<string>("todos");
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
@@ -125,7 +127,7 @@ const Pedidos = () => {
 
   const filtered = useMemo(() => {
     const normalize = (s: string) => s.replace(/[\s\-\+\(\)]/g, "");
-    return pedidos.filter((p) => {
+    const result = pedidos.filter((p) => {
       const matchCountry = p.pais === country;
       const searchLower = search.toLowerCase();
       const matchSearch =
@@ -186,7 +188,17 @@ const Pedidos = () => {
 
       return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo]);
+
+    if (sortField) {
+      result.sort((a, b) => {
+        const da = a[sortField] ? parseLocalDate(a[sortField]!).getTime() : 0;
+        const db = b[sortField] ? parseLocalDate(b[sortField]!).getTime() : 0;
+        return sortDir === "asc" ? da - db : db - da;
+      });
+    }
+
+    return result;
+  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
@@ -391,6 +403,22 @@ const Pedidos = () => {
       console.error("Falha ao excluir:", err);
       toast.error("Falha ao excluir pedido");
     }
+  };
+
+  const handleSort = (field: "data_entrada" | "data_pagamento") => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: "data_entrada" | "data_pagamento" }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="h-3 w-3 ml-1 text-primary" />
+      : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
   const totalPedidos = filtered.length;
@@ -608,7 +636,9 @@ const Pedidos = () => {
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
                 <TableHead className="w-10"></TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Cliente</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase cursor-pointer select-none" onClick={() => handleSort("data_entrada")}>
+                  <span className="flex items-center">Cliente <SortIcon field="data_entrada" /></span>
+                </TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Cédula</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Telefone</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Produto</TableHead>
@@ -616,11 +646,11 @@ const Pedidos = () => {
                 {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase text-right">Frete</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Cidade</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Rastreamento</TableHead>
-                <TableHead className="text-xs font-bold text-primary uppercase">Pagamento</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase cursor-pointer select-none" onClick={() => handleSort("data_pagamento")}>
+                  <span className="flex items-center">Pagamento <SortIcon field="data_pagamento" /></span>
+                </TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
-                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Plataforma</TableHead>}
-                {country === "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Shopee</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
@@ -747,58 +777,6 @@ const Pedidos = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    {country === "BR" && (
-                      <TableCell>
-                        <Select
-                          value={p.plataforma || ""}
-                          onValueChange={async (v) => {
-                            setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, plataforma: v } : ped));
-                            try {
-                              const { error } = await supabase.from("pedidos").update({ plataforma: v }).eq("id", p.id);
-                              if (error) throw error;
-                              toast.success(`Plataforma → ${v}`);
-                            } catch (err) {
-                              console.error("Falha ao atualizar plataforma:", err);
-                              toast.error("Falha ao salvar plataforma");
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="LOGZZ">LOGZZ</SelectItem>
-                            <SelectItem value="SHOPEE">SHOPEE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    )}
-                    {country === "BR" && (
-                      <TableCell>
-                        {p.plataforma === "SHOPEE" ? (
-                          <Input
-                            className="h-8 text-xs w-28"
-                            value={p.conta_shopee || ""}
-                            placeholder="Código"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setPedidos(pedidos.map((ped) => ped.id === p.id ? { ...ped, conta_shopee: val } : ped));
-                            }}
-                            onBlur={async (e) => {
-                              try {
-                                const { error } = await supabase.from("pedidos").update({ conta_shopee: e.target.value } as any).eq("id", p.id);
-                                if (error) throw error;
-                              } catch (err) {
-                                console.error("Falha ao salvar conta shopee:", err);
-                                toast.error("Falha ao salvar conta");
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                    )}
                     <TableCell>
                       {isAdmin ? (
                         <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>
