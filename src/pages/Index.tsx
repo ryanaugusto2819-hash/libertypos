@@ -155,8 +155,11 @@ const Dashboard = () => {
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const startStr = subtractDays(todaySP, daysMap[activeFilter]);
+    // +1 dia de margem: pedidos entrados após meia-noite UTC mas antes de meia-noite SP
+    // têm data_entrada = amanhã em SP. Incluímos para não perder esses pedidos.
+    const tomorrowSP = subtractDays(todaySP, -1);
 
-    return list.filter((p) => { const d = getDate(p); return !!d && d >= spDate(startStr, "start") && d <= spDate(todaySP, "end"); });
+    return list.filter((p) => { const d = getDate(p); return !!d && d >= spDate(startStr, "start") && d <= spDate(tomorrowSP, "end"); });
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
 
   const total = filteredPedidos.length;
@@ -252,15 +255,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* DEBUG TEMPORÁRIO — remover após diagnóstico */}
-      <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs font-mono space-y-1">
-        <p>🔍 allPedidos: <b>{allPedidos.length}</b> | filteredPedidos: <b>{total}</b> | country: <b>{country}</b> | dateField: <b>{dateField}</b> | today: <b>{todayInSaoPaulo()}</b></p>
-        {allPedidos.slice(0, 3).map((p, i) => (
-          <p key={i}>pedido[{i}]: pais=<b>{p.pais ?? "null"}</b> data_entrada=<b>{p.data_entrada ?? "null"}</b> data_pagamento=<b>{p.data_pagamento ?? "null"}</b></p>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <KpiCard title="Pedidos Pagos" value={pagos.length} percentage={total ? Math.round((pagos.length / total) * 100) : 0} icon={CheckCircle2} variant="success" trend="up" delay={0} />
         <KpiCard title="Pedidos Retirados" value={retirados.length} percentage={total ? Math.round((retirados.length / total) * 100) : 0} icon={Truck} variant="warning" trend="neutral" delay={100} />
         <KpiCard title="Pedidos Enviados" value={enviados.length} percentage={total ? Math.round((enviados.length / total) * 100) : 0} icon={Send} variant="info" trend="up" delay={200} />

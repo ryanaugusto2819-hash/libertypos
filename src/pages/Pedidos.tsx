@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pedido, StatusPagamento, StatusEnvio, StatusCobranca } from "@/types/pedido";
-import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais, statusEnvioUY, statusEnvioBR } from "@/lib/formatters";
+import { formatCurrency, formatDate, parseLocalDate, statusPagamentoConfig, statusEnvioConfig, statusCobrancaConfig, setActivePais, statusEnvioUY, statusEnvioBR, todayInSaoPaulo } from "@/lib/formatters";
 import { CreateOrderDialog } from "@/components/pedidos/CreateOrderDialog";
 import { PaymentDialog } from "@/components/pedidos/PaymentDialog";
 import { cn } from "@/lib/utils";
@@ -150,37 +150,33 @@ const Pedidos = () => {
         else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
       }
 
-      // Date filter
+      // Date filter — all dates anchored to São Paulo timezone (UTC-3)
       let matchDate = true;
       if (dateFilter !== "todos") {
         const entryDate = parseLocalDate(p.data_entrada);
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
+        const todaySP = todayInSaoPaulo(); // "YYYY-MM-DD" in SP
+        const spDate = (dateStr: string, time: "start" | "end") =>
+          new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
+        const subtractDays = (dateStr: string, n: number): string => {
+          const [y, m, d] = dateStr.split("-").map(Number);
+          const dt = new Date(y, m - 1, d - n);
+          return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+        };
+        const tomorrowSP = subtractDays(todaySP, -1);
         if (dateFilter === "7") {
-          const from = new Date(today);
-          from.setDate(from.getDate() - 7);
-          from.setHours(0, 0, 0, 0);
-          matchDate = entryDate >= from && entryDate <= today;
+          matchDate = entryDate >= spDate(subtractDays(todaySP, 7), "start") && entryDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "15") {
-          const from = new Date(today);
-          from.setDate(from.getDate() - 15);
-          from.setHours(0, 0, 0, 0);
-          matchDate = entryDate >= from && entryDate <= today;
+          matchDate = entryDate >= spDate(subtractDays(todaySP, 15), "start") && entryDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "30") {
-          const from = new Date(today);
-          from.setDate(from.getDate() - 30);
-          from.setHours(0, 0, 0, 0);
-          matchDate = entryDate >= from && entryDate <= today;
+          matchDate = entryDate >= spDate(subtractDays(todaySP, 30), "start") && entryDate <= spDate(tomorrowSP, "end");
         } else if (dateFilter === "custom") {
           if (customDateFrom) {
-            const from = new Date(customDateFrom);
-            from.setHours(0, 0, 0, 0);
-            matchDate = entryDate >= from;
+            const s = customDateFrom.toLocaleDateString("sv-SE");
+            matchDate = entryDate >= spDate(s, "start");
           }
           if (matchDate && customDateTo) {
-            const to = new Date(customDateTo);
-            to.setHours(23, 59, 59, 999);
-            matchDate = entryDate <= to;
+            const e = customDateTo.toLocaleDateString("sv-SE");
+            matchDate = entryDate <= spDate(e, "end");
           }
         }
       }
@@ -286,8 +282,8 @@ const Pedidos = () => {
     const currentOrder = pedidos.find((p) => p.id === pedidoId);
     if (!currentOrder) return;
     const now = new Date();
-    const dataPagamento = value === "pago" ? now.toISOString().split("T")[0] : null;
-    const horaPagamento = value === "pago" ? now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : null;
+    const dataPagamento = value === "pago" ? now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) : null;
+    const horaPagamento = value === "pago" ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : null;
     const updated = { ...currentOrder, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento };
     setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
