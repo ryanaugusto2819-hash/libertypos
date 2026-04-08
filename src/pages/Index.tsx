@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { parseLocalDate, setActivePais, nowInSaoPaulo, todayInSaoPaulo } from "@/lib/formatters";
+import { parseLocalDate, setActivePais, todayInSaoPaulo } from "@/lib/formatters";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
-  PackageCheck,
+  PackageCheck, ShoppingBag,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
@@ -54,7 +54,8 @@ const Dashboard = () => {
           .from("pedidos")
           .select("*")
           .order("data_entrada", { ascending: false })
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .limit(10000);
 
         if (error) throw error;
 
@@ -121,8 +122,18 @@ const Dashboard = () => {
       }
     }
 
-    const now = nowInSaoPaulo();
-    now.setHours(23, 59, 59, 999);
+    // Sempre usa datas de SP para não depender do timezone do Windows
+    const todaySP = todayInSaoPaulo(); // "YYYY-MM-DD"
+
+    // Subtrai N dias de uma string "YYYY-MM-DD" e retorna nova string "YYYY-MM-DD"
+    const subtractDays = (dateStr: string, n: number): string => {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const dt = new Date(y, m - 1, d - n);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    const spStart = (dateStr: string) => new Date(`${dateStr}T00:00:00-03:00`);
+    const spEnd   = (dateStr: string) => new Date(`${dateStr}T23:59:59.999-03:00`);
 
     const getDateValue = (p: Pedido): Date | null => {
       if (dateField === "data_pagamento") {
@@ -132,39 +143,31 @@ const Dashboard = () => {
     };
 
     if (activeFilter === "custom" && customStart && customEnd) {
-      const start = new Date(customStart);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(customEnd);
-      end.setHours(23, 59, 59, 999);
+      const startStr = format(customStart, "yyyy-MM-dd");
+      const endStr   = format(customEnd, "yyyy-MM-dd");
       return list.filter((p) => {
         const d = getDateValue(p);
-        return d && d >= start && d <= end;
+        return d && d >= spStart(startStr) && d <= spEnd(endStr);
       });
     }
 
     if (activeFilter === "custom") return list;
 
     if (activeFilter === "ontem") {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      const yesterdayEnd = new Date(yesterday);
-      yesterdayEnd.setHours(23, 59, 59, 999);
+      const yesterdayStr = subtractDays(todaySP, 1);
       return list.filter((p) => {
         const d = getDateValue(p);
-        return d && d >= yesterday && d <= yesterdayEnd;
+        return d && d >= spStart(yesterdayStr) && d <= spEnd(yesterdayStr);
       });
     }
 
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
     const days = daysMap[activeFilter];
-    const start = new Date(now);
-    start.setDate(start.getDate() - days);
-    start.setHours(0, 0, 0, 0);
+    const startStr = subtractDays(todaySP, days);
 
     return list.filter((p) => {
       const d = getDateValue(p);
-      return d && d >= start && d <= now;
+      return d && d >= spStart(startStr) && d <= spEnd(todaySP);
     });
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
 
@@ -192,23 +195,26 @@ const Dashboard = () => {
         list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
       }
     }
-    const now = nowInSaoPaulo();
-    now.setHours(23, 59, 59, 999);
+    const todaySP = todayInSaoPaulo();
+    const subtractDays = (dateStr: string, n: number): string => {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const dt = new Date(y, m - 1, d - n);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+    const spStart = (s: string) => new Date(`${s}T00:00:00-03:00`);
+    const spEnd   = (s: string) => new Date(`${s}T23:59:59.999-03:00`);
     if (activeFilter === "custom" && customStart && customEnd) {
-      const start = new Date(customStart); start.setHours(0, 0, 0, 0);
-      const end = new Date(customEnd); end.setHours(23, 59, 59, 999);
-      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= start && d <= end; });
+      const s = format(customStart, "yyyy-MM-dd"), e = format(customEnd, "yyyy-MM-dd");
+      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(s) && d <= spEnd(e); });
     }
     if (activeFilter === "custom") return list;
     if (activeFilter === "ontem") {
-      const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1); yesterday.setHours(0, 0, 0, 0);
-      const yesterdayEnd = new Date(yesterday); yesterdayEnd.setHours(23, 59, 59, 999);
-      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= yesterday && d <= yesterdayEnd; });
+      const y = subtractDays(todaySP, 1);
+      return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(y) && d <= spEnd(y); });
     }
     const daysMap: Record<string, number> = { hoje: 0, "7": 7, "15": 15, "30": 30 };
-    const days = daysMap[activeFilter];
-    const start = new Date(now); start.setDate(start.getDate() - days); start.setHours(0, 0, 0, 0);
-    return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= start && d <= now; });
+    const startStr = subtractDays(todaySP, daysMap[activeFilter]);
+    return list.filter((p) => { const d = parseLocalDate(p.data_entrada); return d && d >= spStart(startStr) && d <= spEnd(todaySP); });
   }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user]);
 
   const totalFaturamento = pedidosFaturamento.reduce((sum, p) => sum + p.valor, 0);
@@ -302,10 +308,11 @@ const Dashboard = () => {
         <KpiCard title="A Retirar" value={aRetirar.length} percentage={total ? Math.round((aRetirar.length / total) * 100) : 0} icon={AlertTriangle} variant="danger" trend="down" delay={300} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <FinanceCard title="Total Recebido" value={formatCurrency(totalRecebido)} subtitle={`${pagos.length} pedidos pagos`} icon={Wallet} variant="received" delay={200} />
         <FinanceCard title="Total a Receber" value={formatCurrency(totalAReceber)} subtitle={`${total - pagos.length} pedidos pendentes`} icon={DollarSign} variant="pending" delay={300} />
-        <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${total} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
+        <FinanceCard title="Receita Agendada (Faturamento)" value={formatCurrency(totalFaturamento)} subtitle={`${pedidosFaturamento.length} pedidos no período`} icon={CalendarClock} variant="scheduled" delay={400} />
+        <FinanceCard title="Quantidade de Vendas" value={String(pedidosFaturamento.length)} subtitle={`${pagos.length} pagos · ${total - pagos.length} pendentes`} icon={ShoppingBag} variant="vendas" delay={450} />
       </div>
 
       {country === "BR" && (

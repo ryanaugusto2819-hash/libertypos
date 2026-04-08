@@ -6,7 +6,7 @@ interface FinanceCardProps {
   value: string;
   subtitle?: string;
   icon: LucideIcon;
-  variant: "received" | "pending" | "scheduled" | "pix" | "cartao" | "boleto";
+  variant: "received" | "pending" | "scheduled" | "pix" | "cartao" | "boleto" | "vendas";
   delay?: number;
 }
 
@@ -58,6 +58,14 @@ const variantConfig = {
     border: "hsl(30 80% 52% / 0.25)",
     iconColor: "hsl(30 80% 45%)",
     label: "Boleto",
+  },
+  vendas: {
+    gradient: "linear-gradient(135deg, hsl(271 76% 58%), hsl(220 76% 50%))",
+    glow: "hsl(271 76% 53% / 0.20)",
+    lightBg: "hsl(271 76% 53% / 0.08)",
+    border: "hsl(271 76% 53% / 0.25)",
+    iconColor: "hsl(271 76% 58%)",
+    label: "Vendas",
   },
 };
 
