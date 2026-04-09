@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CountrySelector } from "@/components/CountrySelector";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCountry, countryConfig } from "@/contexts/CountryContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, RefreshCw } from "lucide-react";
 
@@ -39,7 +40,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex-1" />
 
             <div className="flex items-center gap-2">
-              {isAdmin && <CountrySelector />}
+              {isAdmin && !useCountry().isCountryLocked && <CountrySelector />}
+              {isAdmin && useCountry().isCountryLocked && (
+                <span className="px-3 py-1.5 rounded-xl border-2 border-primary/30 font-bold text-sm">
+                  {countryConfig[useCountry().country].flag} {countryConfig[useCountry().country].label}
+                </span>
+              )}
 
               {/* Divider */}
               <div className="hidden sm:block h-6 w-px mx-1" style={{ background: "hsl(var(--border))" }} />
