@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN country_lock text DEFAULT NULL;
