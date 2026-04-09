@@ -13,6 +13,7 @@ interface CountryContextType {
   country: Country;
   setCountry: (c: Country) => void;
   config: typeof countryConfig[Country];
+  isCountryLocked: boolean;
 }
 
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
@@ -44,7 +45,7 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CountryContext.Provider value={{ country, setCountry: handleSetCountry, config: countryConfig[country] }}>
+    <CountryContext.Provider value={{ country, setCountry: handleSetCountry, config: countryConfig[country], isCountryLocked }}>
       {children}
     </CountryContext.Provider>
   );
