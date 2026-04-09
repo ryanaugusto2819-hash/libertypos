@@ -13,34 +13,39 @@ interface CountryContextType {
   country: Country;
   setCountry: (c: Country) => void;
   config: typeof countryConfig[Country];
+  isCountryLocked: boolean;
 }
 
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export function CountryProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, countryLock, loading } = useAuth();
 
   const [country, setCountry] = useState<Country>("UY");
 
-  // Set country based on role once auth is loaded
+  const isCountryLocked = !!countryLock;
+
+  // Set country based on role and country_lock once auth is loaded
   useEffect(() => {
     if (loading) return;
-    if (!isAdmin) {
+    if (countryLock && countryConfig[countryLock as Country]) {
+      setCountry(countryLock as Country);
+    } else if (!isAdmin) {
       setCountry("AR");
     } else {
       const saved = localStorage.getItem("selected-country") as Country;
       setCountry(saved && countryConfig[saved] ? saved : "UY");
     }
-  }, [loading, isAdmin]);
+  }, [loading, isAdmin, countryLock]);
 
   const handleSetCountry = (c: Country) => {
-    if (!isAdmin) return; // affiliates can't change country
+    if (isCountryLocked || !isAdmin) return;
     setCountry(c);
     localStorage.setItem("selected-country", c);
   };
 
   return (
-    <CountryContext.Provider value={{ country, setCountry: handleSetCountry, config: countryConfig[country] }}>
+    <CountryContext.Provider value={{ country, setCountry: handleSetCountry, config: countryConfig[country], isCountryLocked }}>
       {children}
     </CountryContext.Provider>
   );
