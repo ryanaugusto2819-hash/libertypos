@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   role: AppRole | null;
   displayName: string;
+  countryLock: string | null;
   loading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [countryLock, setCountryLock] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,14 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const { data: profileData } = await supabase
               .from("profiles")
-              .select("display_name")
+              .select("display_name, country_lock")
               .eq("user_id", session.user.id)
               .single();
             setDisplayName(profileData?.display_name ?? session.user.email ?? "");
+            setCountryLock((profileData as any)?.country_lock ?? null);
           }, 0);
         } else {
           setRole(null);
           setDisplayName("");
+          setCountryLock(null);
         }
         setLoading(false);
       }
@@ -69,10 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setRole(null);
     setDisplayName("");
+    setCountryLock(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, displayName, loading, isAdmin: role === "admin", signOut }}>
+    <AuthContext.Provider value={{ user, session, role, displayName, countryLock, loading, isAdmin: role === "admin", signOut }}>
       {children}
     </AuthContext.Provider>
   );
