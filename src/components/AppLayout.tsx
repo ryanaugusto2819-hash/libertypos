@@ -8,6 +8,7 @@ import { LogOut, RefreshCw } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role, isAdmin, signOut } = useAuth();
+  const { country, isCountryLocked } = useCountry();
 
   return (
     <SidebarProvider>
@@ -40,10 +41,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex-1" />
 
             <div className="flex items-center gap-2">
-              {isAdmin && !useCountry().isCountryLocked && <CountrySelector />}
-              {isAdmin && useCountry().isCountryLocked && (
+              {isAdmin && !isCountryLocked && <CountrySelector />}
+              {isAdmin && isCountryLocked && (
                 <span className="px-3 py-1.5 rounded-xl border-2 border-primary/30 font-bold text-sm">
-                  {countryConfig[useCountry().country].flag} {countryConfig[useCountry().country].label}
+                  {countryConfig[country].flag} {countryConfig[country].label}
                 </span>
               )}
 
