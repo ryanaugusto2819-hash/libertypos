@@ -275,6 +275,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
               <SelectContent>
                 <SelectItem value="LOGZZ">LOGZZ</SelectItem>
                 <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+                <SelectItem value="TIKTOK">TIKTOK</SelectItem>
               </SelectContent>
             </Select>
           </div>

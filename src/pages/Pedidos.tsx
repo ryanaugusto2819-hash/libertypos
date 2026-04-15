@@ -374,6 +374,18 @@ const Pedidos = () => {
     }
   };
 
+  const handlePlataformaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, plataforma: value } : ped));
+    toast.success(`Logística → "${value}"`);
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ plataforma: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao atualizar logística:", err);
+      toast.error("Falha ao salvar logística");
+    }
+  };
+
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
@@ -650,6 +662,7 @@ const Pedidos = () => {
                   <span className="flex items-center">Pagamento <SortIcon field="data_pagamento" /></span>
                 </TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Logística</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
@@ -756,6 +769,18 @@ const Pedidos = () => {
                           <SelectItem value="pix">PIX</SelectItem>
                           <SelectItem value="cartao">Cartão</SelectItem>
                           <SelectItem value="boleto">Boleto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={p.plataforma || ""} onValueChange={(v) => handlePlataformaChange(p.id, v)}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LOGZZ">LOGZZ</SelectItem>
+                          <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+                          <SelectItem value="TIKTOK">TIKTOK</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
