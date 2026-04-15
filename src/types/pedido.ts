@@ -67,4 +67,5 @@ export interface Pedido {
   valor_frete?: number;
   plataforma?: string;
   conta_shopee?: string;
+  codigo_conta?: string;
 }

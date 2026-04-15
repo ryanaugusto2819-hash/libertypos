@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
+import { CodigoContaCell } from "@/components/pedidos/CodigoContaCell";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
@@ -114,6 +115,7 @@ const Pedidos = () => {
         forma_pagamento: row.forma_pagamento || "",
         plataforma: row.plataforma || "",
         conta_shopee: (row as any).conta_shopee || "",
+        codigo_conta: (row as any).codigo_conta || "",
       }));
 
       setPedidos(orders);
@@ -229,6 +231,7 @@ const Pedidos = () => {
         email: newOrder.email || "",
         plataforma: newOrder.plataforma || "",
         conta_shopee: newOrder.conta_shopee || "",
+        codigo_conta: newOrder.codigo_conta || "",
       }).select().single();
 
       if (dbError) throw dbError;
@@ -383,6 +386,17 @@ const Pedidos = () => {
     } catch (err) {
       console.error("Falha ao atualizar logística:", err);
       toast.error("Falha ao salvar logística");
+    }
+  };
+
+  const handleCodigoContaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, codigo_conta: value } : ped));
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ codigo_conta: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao atualizar código da conta:", err);
+      toast.error("Falha ao salvar código da conta");
     }
   };
 
@@ -663,6 +677,7 @@ const Pedidos = () => {
                 </TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Forma Pgto</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Logística</TableHead>
+                <TableHead className="text-xs font-bold text-primary uppercase">Cód. Conta</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Envio</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Status Cobrança</TableHead>
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
@@ -783,6 +798,12 @@ const Pedidos = () => {
                           <SelectItem value="TIKTOK">TIKTOK</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <CodigoContaCell
+                        value={p.codigo_conta || ""}
+                        onChange={(v) => handleCodigoContaChange(p.id, v)}
+                      />
                     </TableCell>
                     <TableCell>
                       {isAdmin ? (
@@ -973,6 +994,12 @@ const Pedidos = () => {
                             <div>
                               <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Conta Shopee</p>
                               <p className="font-medium font-mono">{p.conta_shopee}</p>
+                            </div>
+                          )}
+                          {p.codigo_conta && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Código da Conta</p>
+                              <p className="font-medium font-mono">{p.codigo_conta}</p>
                             </div>
                           )}
                           {p.vendedor && (

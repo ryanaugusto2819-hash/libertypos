@@ -64,6 +64,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     email: "",
     plataforma: "",
     conta_shopee: "",
+    codigo_conta: "",
   });
 
   const handleSave = () => {
@@ -104,6 +105,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       email: form.email,
       plataforma: form.plataforma,
       conta_shopee: form.conta_shopee,
+      codigo_conta: form.codigo_conta,
     });
 
     setForm({
@@ -125,6 +127,7 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       email: "",
       plataforma: "",
       conta_shopee: "",
+      codigo_conta: "",
     });
     toast.success("Pedido criado com sucesso!");
     onOpenChange(false);
@@ -286,6 +289,16 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
                 value={form.conta_shopee}
                 onChange={(e) => setForm({ ...form, conta_shopee: e.target.value })}
                 placeholder="Código da conta"
+              />
+            </div>
+          )}
+          {form.plataforma && (
+            <div className="space-y-2">
+              <Label>Código da Conta</Label>
+              <Input
+                value={form.codigo_conta}
+                onChange={(e) => setForm({ ...form, codigo_conta: e.target.value })}
+                placeholder="#422"
               />
             </div>
           )}
