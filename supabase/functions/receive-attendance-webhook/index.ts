@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         const text = await res.text();
         console.log(`Sync (${action}) [${res.status}]:`, text.substring(0, 300));
       } catch (e) {
-        console.error(`Sync (${action}) fetch error:`, e.message);
+        console.error(`Sync (${action}) fetch error:`, (e as Error).message);
       }
     }
 
@@ -167,10 +167,11 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Erro no webhook de atendimento:", error.message);
-    await logWebhook(supabase, { body: {}, success: false, error_message: error.message, status_recebido: "erro" });
+    const msg = (error as Error).message;
+    console.error("Erro no webhook de atendimento:", msg);
+    await logWebhook(supabase, { body: {}, success: false, error_message: msg, status_recebido: "erro" });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -201,6 +202,6 @@ async function logWebhook(supabase: any, data: {
       status_mapeado: data.status_mapeado || null,
     });
   } catch (e) {
-    console.error("Erro ao salvar log:", e.message);
+    console.error("Erro ao salvar log:", (e as Error).message);
   }
 }

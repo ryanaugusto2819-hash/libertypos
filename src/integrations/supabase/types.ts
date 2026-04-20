@@ -20,6 +20,7 @@ export type Database = {
           cedula: string
           cep: string | null
           cidade: string
+          codigo_conta: string
           codigo_rastreamento: string
           complemento: string | null
           comprovante_url: string | null
@@ -59,6 +60,7 @@ export type Database = {
           cedula?: string
           cep?: string | null
           cidade?: string
+          codigo_conta?: string
           codigo_rastreamento?: string
           complemento?: string | null
           comprovante_url?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           cedula?: string
           cep?: string | null
           cidade?: string
+          codigo_conta?: string
           codigo_rastreamento?: string
           complemento?: string | null
           comprovante_url?: string | null
