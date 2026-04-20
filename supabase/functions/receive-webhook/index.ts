@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
         return null;
       } catch (fetchError) {
         console.error("Erro ao chamar sync-google-sheets:", fetchError);
-        return `Fetch error: ${fetchError.message}`;
+        return `Fetch error: ${(fetchError as Error).message}`;
       }
     }
 
@@ -395,6 +395,6 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Erro no webhook:", error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
