@@ -137,8 +137,14 @@ const Pedidos = () => {
         p.nome.toLowerCase().includes(searchLower) ||
         normalize(p.telefone).includes(normalize(search)) ||
         p.cedula.includes(search) ||
-        p.codigo_rastreamento.toLowerCase().includes(search.toLowerCase()) ||
-        p.cidade.toLowerCase().includes(search.toLowerCase());
+        p.codigo_rastreamento.toLowerCase().includes(searchLower) ||
+        p.cidade.toLowerCase().includes(searchLower) ||
+        (p.rua || "").toLowerCase().includes(searchLower) ||
+        (p.bairro || "").toLowerCase().includes(searchLower) ||
+        (p.numero || "").toLowerCase().includes(searchLower) ||
+        (p.complemento || "").toLowerCase().includes(searchLower) ||
+        (p.departamento || "").toLowerCase().includes(searchLower) ||
+        normalize(p.cep || "").includes(normalize(search));
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
       const matchEnvio =
@@ -515,7 +521,7 @@ const Pedidos = () => {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, telefone, cédula, cidade ou rastreamento..."
+            placeholder="Buscar por nome, telefone, cédula, endereço (rua, bairro, cidade, CEP) ou rastreamento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 border-2 border-primary/30 focus-visible:border-primary rounded-xl"
