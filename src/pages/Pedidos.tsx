@@ -137,8 +137,14 @@ const Pedidos = () => {
         p.nome.toLowerCase().includes(searchLower) ||
         normalize(p.telefone).includes(normalize(search)) ||
         p.cedula.includes(search) ||
-        p.codigo_rastreamento.toLowerCase().includes(search.toLowerCase()) ||
-        p.cidade.toLowerCase().includes(search.toLowerCase());
+        p.codigo_rastreamento.toLowerCase().includes(searchLower) ||
+        p.cidade.toLowerCase().includes(searchLower) ||
+        (p.rua || "").toLowerCase().includes(searchLower) ||
+        (p.bairro || "").toLowerCase().includes(searchLower) ||
+        (p.numero || "").toLowerCase().includes(searchLower) ||
+        (p.complemento || "").toLowerCase().includes(searchLower) ||
+        (p.departamento || "").toLowerCase().includes(searchLower) ||
+        normalize(p.cep || "").includes(normalize(search));
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
       const matchEnvio =
