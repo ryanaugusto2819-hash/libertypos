@@ -189,66 +189,6 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
 
     proceedSave();
   };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _unused = () => {
-
-    onSave({
-      nome: form.nome,
-      telefone: form.telefone,
-      cedula: form.cedula,
-      produto: form.produto,
-      quantidade: parseInt(form.quantidade) || 1,
-      valor: parseFloat(form.valor) || 0,
-      cidade: form.cidade,
-      departamento: form.departamento,
-      codigo_rastreamento: "",
-      status_pagamento: "pendente",
-      status_envio: country === "BR" ? "a enviar" : "não enviado",
-      data_entrada: todaySP,
-      data_envio: todaySP,
-      data_pagamento: null,
-      hora_pagamento: null,
-      comprovante_url: null,
-      etiqueta_envio_url: null,
-      observacoes: "",
-      vendedor: form.vendedor,
-      criativo: form.criativo,
-      pais: country,
-      cep: form.cep,
-      rua: form.rua,
-      numero: form.numero,
-      complemento: form.complemento,
-      bairro: form.bairro,
-      email: form.email,
-      plataforma: form.plataforma,
-      conta_shopee: form.conta_shopee,
-      codigo_conta: form.codigo_conta,
-    });
-
-    setForm({
-      nome: "",
-      telefone: "",
-      cedula: "",
-      produto: "",
-      quantidade: "1",
-      valor: "",
-      cidade: "",
-      departamento: "",
-      vendedor: "",
-      criativo: "",
-      cep: "",
-      rua: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      email: "",
-      plataforma: "",
-      conta_shopee: "",
-      codigo_conta: "",
-    });
-    toast.success("Pedido criado com sucesso!");
-    onOpenChange(false);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
