@@ -20,6 +20,17 @@ import {
 } from "@/components/ui/select";
 import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CreateOrderDialogProps {
   open: boolean;
@@ -66,13 +77,12 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     conta_shopee: "",
     codigo_conta: "",
   });
+  const [duplicates, setDuplicates] = useState<Array<{ nome: string; telefone: string; cedula: string; produto: string; data_entrada: string; matched: string[] }>>([]);
+  const [showDupAlert, setShowDupAlert] = useState(false);
 
-  const handleSave = () => {
-    if (!form.nome || !form.telefone || !form.produto || !form.valor) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
+  const normalize = (v: string) => (v || "").replace(/\D/g, "");
 
+  const proceedSave = () => {
     const todaySP = todayInSaoPaulo();
 
     onSave({
@@ -130,10 +140,58 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
       codigo_conta: "",
     });
     toast.success("Pedido criado com sucesso!");
+    setShowDupAlert(false);
     onOpenChange(false);
   };
 
+  const handleSave = async () => {
+    if (!form.nome || !form.telefone || !form.produto || !form.valor) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    // Verifica duplicidade por nome, telefone ou cédula
+    try {
+      const nomeTrim = form.nome.trim();
+      const telNorm = normalize(form.telefone);
+      const cedNorm = normalize(form.cedula);
+
+      const filters: string[] = [];
+      if (nomeTrim) filters.push(`nome.ilike.${nomeTrim}`);
+      if (form.telefone.trim()) filters.push(`telefone.eq.${form.telefone.trim()}`);
+      if (form.cedula.trim()) filters.push(`cedula.eq.${form.cedula.trim()}`);
+
+      if (filters.length > 0) {
+        const { data } = await supabase
+          .from("pedidos")
+          .select("nome, telefone, cedula, produto, data_entrada")
+          .eq("pais", country)
+          .or(filters.join(","))
+          .limit(20);
+
+        const matches = (data || []).filter((p) => {
+          const m: string[] = [];
+          if (nomeTrim && (p.nome || "").trim().toLowerCase() === nomeTrim.toLowerCase()) m.push("nome");
+          if (telNorm && normalize(p.telefone || "") === telNorm) m.push("telefone");
+          if (cedNorm && normalize(p.cedula || "") === cedNorm) m.push("cédula");
+          return m.length > 0 ? ((p as any).__m = m, true) : false;
+        }).map((p: any) => ({ ...p, matched: p.__m }));
+
+        if (matches.length > 0) {
+          setDuplicates(matches);
+          setShowDupAlert(true);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao verificar duplicidade:", e);
+    }
+
+    proceedSave();
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -327,5 +385,34 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={showDupAlert} onOpenChange={setShowDupAlert}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>⚠️ Pedido duplicado encontrado</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>Já existe(m) {duplicates.length} pedido(s) com os mesmos dados:</p>
+              <ul className="text-sm space-y-1 max-h-48 overflow-y-auto">
+                {duplicates.map((d, i) => (
+                  <li key={i} className="border-l-2 border-primary pl-2">
+                    <strong>{d.nome}</strong> — {d.produto} ({d.data_entrada})
+                    <br />
+                    <span className="text-xs text-muted-foreground">
+                      Coincide por: {d.matched.join(", ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="pt-2">Deseja criar o pedido mesmo assim?</p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={proceedSave}>Criar mesmo assim</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
