@@ -77,14 +77,120 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
     conta_shopee: "",
     codigo_conta: "",
   });
+  const [duplicates, setDuplicates] = useState<Array<{ nome: string; telefone: string; cedula: string; produto: string; data_entrada: string; matched: string[] }>>([]);
+  const [showDupAlert, setShowDupAlert] = useState(false);
 
-  const handleSave = () => {
+  const normalize = (v: string) => (v || "").replace(/\D/g, "");
+
+  const proceedSave = () => {
+    const todaySP = todayInSaoPaulo();
+
+    onSave({
+      nome: form.nome,
+      telefone: form.telefone,
+      cedula: form.cedula,
+      produto: form.produto,
+      quantidade: parseInt(form.quantidade) || 1,
+      valor: parseFloat(form.valor) || 0,
+      cidade: form.cidade,
+      departamento: form.departamento,
+      codigo_rastreamento: "",
+      status_pagamento: "pendente",
+      status_envio: country === "BR" ? "a enviar" : "não enviado",
+      data_entrada: todaySP,
+      data_envio: todaySP,
+      data_pagamento: null,
+      hora_pagamento: null,
+      comprovante_url: null,
+      etiqueta_envio_url: null,
+      observacoes: "",
+      vendedor: form.vendedor,
+      criativo: form.criativo,
+      pais: country,
+      cep: form.cep,
+      rua: form.rua,
+      numero: form.numero,
+      complemento: form.complemento,
+      bairro: form.bairro,
+      email: form.email,
+      plataforma: form.plataforma,
+      conta_shopee: form.conta_shopee,
+      codigo_conta: form.codigo_conta,
+    });
+
+    setForm({
+      nome: "",
+      telefone: "",
+      cedula: "",
+      produto: "",
+      quantidade: "1",
+      valor: "",
+      cidade: "",
+      departamento: "",
+      vendedor: "",
+      criativo: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      email: "",
+      plataforma: "",
+      conta_shopee: "",
+      codigo_conta: "",
+    });
+    toast.success("Pedido criado com sucesso!");
+    setShowDupAlert(false);
+    onOpenChange(false);
+  };
+
+  const handleSave = async () => {
     if (!form.nome || !form.telefone || !form.produto || !form.valor) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    const todaySP = todayInSaoPaulo();
+    // Verifica duplicidade por nome, telefone ou cédula
+    try {
+      const nomeTrim = form.nome.trim();
+      const telNorm = normalize(form.telefone);
+      const cedNorm = normalize(form.cedula);
+
+      const filters: string[] = [];
+      if (nomeTrim) filters.push(`nome.ilike.${nomeTrim}`);
+      if (form.telefone.trim()) filters.push(`telefone.eq.${form.telefone.trim()}`);
+      if (form.cedula.trim()) filters.push(`cedula.eq.${form.cedula.trim()}`);
+
+      if (filters.length > 0) {
+        const { data } = await supabase
+          .from("pedidos")
+          .select("nome, telefone, cedula, produto, data_entrada")
+          .eq("pais", country)
+          .or(filters.join(","))
+          .limit(20);
+
+        const matches = (data || []).filter((p) => {
+          const m: string[] = [];
+          if (nomeTrim && (p.nome || "").trim().toLowerCase() === nomeTrim.toLowerCase()) m.push("nome");
+          if (telNorm && normalize(p.telefone || "") === telNorm) m.push("telefone");
+          if (cedNorm && normalize(p.cedula || "") === cedNorm) m.push("cédula");
+          return m.length > 0 ? ((p as any).__m = m, true) : false;
+        }).map((p: any) => ({ ...p, matched: p.__m }));
+
+        if (matches.length > 0) {
+          setDuplicates(matches);
+          setShowDupAlert(true);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao verificar duplicidade:", e);
+    }
+
+    proceedSave();
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _unused = () => {
 
     onSave({
       nome: form.nome,
