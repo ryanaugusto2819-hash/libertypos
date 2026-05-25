@@ -384,5 +384,34 @@ export function CreateOrderDialog({ open, onOpenChange, onSave }: CreateOrderDia
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={showDupAlert} onOpenChange={setShowDupAlert}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>⚠️ Pedido duplicado encontrado</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>Já existe(m) {duplicates.length} pedido(s) com os mesmos dados:</p>
+              <ul className="text-sm space-y-1 max-h-48 overflow-y-auto">
+                {duplicates.map((d, i) => (
+                  <li key={i} className="border-l-2 border-primary pl-2">
+                    <strong>{d.nome}</strong> — {d.produto} ({d.data_entrada})
+                    <br />
+                    <span className="text-xs text-muted-foreground">
+                      Coincide por: {d.matched.join(", ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="pt-2">Deseja criar o pedido mesmo assim?</p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={proceedSave}>Criar mesmo assim</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
