@@ -20,6 +20,17 @@ import {
 } from "@/components/ui/select";
 import { Pedido } from "@/types/pedido";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CreateOrderDialogProps {
   open: boolean;
