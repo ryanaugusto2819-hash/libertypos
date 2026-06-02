@@ -117,7 +117,7 @@ const Pedidos = () => {
     updateScrollMetrics();
     window.addEventListener("resize", updateScrollMetrics);
     return () => window.removeEventListener("resize", updateScrollMetrics);
-  }, [filtered.length, country, updateScrollMetrics]);
+  }, [pedidos.length, country, updateScrollMetrics]);
 
   useEffect(() => {
     if (country !== "UY") return;
