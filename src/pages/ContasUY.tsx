@@ -422,7 +422,7 @@ export default function ContasUY() {
                       )}
                     </TableRow>
                     {isOpen && renderHistoryRows(c.nome)}
-                  </>
+                  </React.Fragment>
                 );
               })}
               {(semConta.pago > 0 || semConta.pendente > 0) && (
