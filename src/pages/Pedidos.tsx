@@ -778,32 +778,34 @@ const Pedidos = () => {
           className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
           onScroll={() => {
-            syncHorizontalScroll("table");
             updateScrollMetrics();
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
             const el = e.currentTarget;
-            const startX = e.pageX - el.offsetLeft;
+            const startX = e.clientX;
             const startScroll = el.scrollLeft;
             let moved = false;
-            const onMove = (ev: MouseEvent) => {
-              const x = ev.pageX - el.offsetLeft;
-              const dx = x - startX;
+            const previousUserSelect = document.body.style.userSelect;
+            const onMove = (ev: PointerEvent) => {
+              const dx = ev.clientX - startX;
               if (Math.abs(dx) > 3) moved = true;
               el.scrollLeft = startScroll - dx;
+              updateScrollMetrics();
             };
             const onUp = () => {
-              window.removeEventListener("mousemove", onMove);
-              window.removeEventListener("mouseup", onUp);
+              document.body.style.userSelect = previousUserSelect;
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onUp);
               if (moved) {
                 const block = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); window.removeEventListener("click", block, true); };
                 window.addEventListener("click", block, true);
               }
             };
-            window.addEventListener("mousemove", onMove);
-            window.addEventListener("mouseup", onUp);
+            document.body.style.userSelect = "none";
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp, { once: true });
           }}
         >
           <table className="w-full min-w-[2400px] caption-bottom text-sm">
