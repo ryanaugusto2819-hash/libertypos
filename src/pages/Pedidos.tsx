@@ -52,6 +52,14 @@ const Pedidos = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [contasUY, setContasUY] = useState<{ id: string; nome: string; ativo: boolean }[]>([]);
+
+  useEffect(() => {
+    if (country !== "UY") return;
+    supabase.from("contas_uy").select("id,nome,ativo").order("nome").then(({ data }) => {
+      if (data) setContasUY(data as any);
+    });
+  }, [country]);
 
   const toggleExpand = (id: string) => {
     setExpandedRows((prev) => {
