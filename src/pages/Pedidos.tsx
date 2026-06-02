@@ -55,12 +55,62 @@ const Pedidos = () => {
   const [contasUY, setContasUY] = useState<{ id: string; nome: string; ativo: boolean }[]>([]);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
+  const [scrollMetrics, setScrollMetrics] = useState({ scrollLeft: 0, scrollWidth: 1, clientWidth: 1 });
+
+  const updateScrollMetrics = useCallback(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    setScrollMetrics({
+      scrollLeft: el.scrollLeft,
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    });
+  }, []);
 
   const syncHorizontalScroll = useCallback((source: "top" | "table") => {
     const from = source === "top" ? topScrollRef.current : tableScrollRef.current;
     const to = source === "top" ? tableScrollRef.current : topScrollRef.current;
     if (!from || !to || to.scrollLeft === from.scrollLeft) return;
     to.scrollLeft = from.scrollLeft;
+    updateScrollMetrics();
+  }, [updateScrollMetrics]);
+
+  const scrollThumbWidth = Math.max((scrollMetrics.clientWidth / scrollMetrics.scrollWidth) * 100, 10);
+  const scrollThumbLeft = scrollMetrics.scrollWidth <= scrollMetrics.clientWidth
+    ? 0
+    : (scrollMetrics.scrollLeft / (scrollMetrics.scrollWidth - scrollMetrics.clientWidth)) * (100 - scrollThumbWidth);
+
+  const handleScrollbarDrag = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const table = tableScrollRef.current;
+    const track = topScrollRef.current;
+    if (!table || !track) return;
+    const rect = track.getBoundingClientRect();
+    const thumbWidthPx = Math.max((table.clientWidth / table.scrollWidth) * rect.width, 44);
+    const startX = event.clientX;
+    const startLeft = table.scrollLeft;
+    const maxScrollLeft = table.scrollWidth - table.clientWidth;
+    const maxThumbLeft = rect.width - thumbWidthPx;
+
+    const moveTo = (clientX: number) => {
+      const nextThumbLeft = Math.min(Math.max(((startLeft / maxScrollLeft) * maxThumbLeft) + clientX - startX, 0), maxThumbLeft);
+      table.scrollLeft = maxThumbLeft > 0 ? (nextThumbLeft / maxThumbLeft) * maxScrollLeft : 0;
+      updateScrollMetrics();
+    };
+
+    const onMove = (ev: MouseEvent) => moveTo(ev.clientX);
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    event.preventDefault();
+    if ((event.target as HTMLElement).dataset.scrollTrack === "true") {
+      const clickLeft = event.clientX - rect.left - thumbWidthPx / 2;
+      table.scrollLeft = maxThumbLeft > 0 ? (Math.min(Math.max(clickLeft, 0), maxThumbLeft) / maxThumbLeft) * maxScrollLeft : 0;
+      updateScrollMetrics();
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }, []);
 
   useEffect(() => {
