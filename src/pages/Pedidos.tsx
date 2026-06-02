@@ -367,9 +367,16 @@ const Pedidos = () => {
     }
   };
 
-  const handleContaBancariaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
-    toast.success(`Conta bancária → "${value}"`);
+  const handleContaUsadaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
+    toast.success(`Conta usada → "${value}"`);
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ conta_usada: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao atualizar conta usada:", err);
+      toast.error("Falha ao salvar conta usada");
+    }
   };
 
   const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
