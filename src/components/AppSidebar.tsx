@@ -27,6 +27,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { theme, setTheme } = useTheme();
+  const { country } = useCountry();
+
+  const navItems = [
+    ...baseNavItems.slice(0, 2),
+    ...(country === "UY" ? [{ title: "Contas Bancárias", url: "/contas", icon: Landmark }] : []),
+    ...baseNavItems.slice(2),
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
