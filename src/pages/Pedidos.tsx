@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -80,7 +80,7 @@ const Pedidos = () => {
     ? 0
     : (scrollMetrics.scrollLeft / (scrollMetrics.scrollWidth - scrollMetrics.clientWidth)) * (100 - scrollThumbWidth);
 
-  const handleScrollbarDrag = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+  const handleScrollbarDrag = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const table = tableScrollRef.current;
     const track = topScrollRef.current;
     if (!table || !track || table.scrollWidth <= table.clientWidth) return;
@@ -97,20 +97,23 @@ const Pedidos = () => {
       updateScrollMetrics();
     };
 
-    const onMove = (ev: MouseEvent) => moveTo(ev.clientX);
+    const previousUserSelect = document.body.style.userSelect;
+    const onMove = (ev: PointerEvent) => moveTo(ev.clientX);
     const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
     };
 
     event.preventDefault();
+    document.body.style.userSelect = "none";
     if ((event.target as HTMLElement).dataset.scrollTrack === "true") {
       const clickLeft = event.clientX - rect.left - thumbWidthPx / 2;
       table.scrollLeft = maxThumbLeft > 0 ? (Math.min(Math.max(clickLeft, 0), maxThumbLeft) / maxThumbLeft) * maxScrollLeft : 0;
       updateScrollMetrics();
     }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
   }, [updateScrollMetrics]);
 
   useEffect(() => {
@@ -762,7 +765,7 @@ const Pedidos = () => {
             ref={topScrollRef}
             data-scroll-track="true"
             className="relative h-4 cursor-pointer rounded-full bg-background/80 ring-1 ring-primary/30"
-            onMouseDown={handleScrollbarDrag}
+            onPointerDown={handleScrollbarDrag}
           >
             <div
               className="absolute top-1/2 h-3 -translate-y-1/2 cursor-grab rounded-full bg-primary shadow-sm active:cursor-grabbing"
@@ -775,35 +778,37 @@ const Pedidos = () => {
           className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
           onScroll={() => {
-            syncHorizontalScroll("table");
             updateScrollMetrics();
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
             const el = e.currentTarget;
-            const startX = e.pageX - el.offsetLeft;
+            const startX = e.clientX;
             const startScroll = el.scrollLeft;
             let moved = false;
-            const onMove = (ev: MouseEvent) => {
-              const x = ev.pageX - el.offsetLeft;
-              const dx = x - startX;
+            const previousUserSelect = document.body.style.userSelect;
+            const onMove = (ev: PointerEvent) => {
+              const dx = ev.clientX - startX;
               if (Math.abs(dx) > 3) moved = true;
               el.scrollLeft = startScroll - dx;
+              updateScrollMetrics();
             };
             const onUp = () => {
-              window.removeEventListener("mousemove", onMove);
-              window.removeEventListener("mouseup", onUp);
+              document.body.style.userSelect = previousUserSelect;
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onUp);
               if (moved) {
                 const block = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); window.removeEventListener("click", block, true); };
                 window.addEventListener("click", block, true);
               }
             };
-            window.addEventListener("mousemove", onMove);
-            window.addEventListener("mouseup", onUp);
+            document.body.style.userSelect = "none";
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp, { once: true });
           }}
         >
-          <Table className="min-w-[1600px]">
+          <table className="w-full min-w-[2400px] caption-bottom text-sm">
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
                 <TableHead className="w-10"></TableHead>
@@ -1181,7 +1186,7 @@ const Pedidos = () => {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </div>
       )}
