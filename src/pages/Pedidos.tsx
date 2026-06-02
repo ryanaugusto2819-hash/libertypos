@@ -907,15 +907,15 @@ const Pedidos = () => {
                     <TableCell>
                       <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
                     </TableCell>
-                    {country !== "BR" && (
+                    {country === "UY" && (
                       <TableCell>
-                        <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
+                        <Select value={p.conta_usada || ""} onValueChange={(v) => handleContaUsadaChange(p.id, v)}>
                           <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
                             <SelectValue placeholder="Selecionar" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Pablo">Pablo</SelectItem>
-                            <SelectItem value="Mulher">Mulher</SelectItem>
+                            <SelectItem value="Shirley">Shirley</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
