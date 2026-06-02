@@ -679,7 +679,34 @@ const Pedidos = () => {
         </div>
       ) : (
       <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:h-3 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary/60 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary"
+          style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
+          onMouseDown={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
+            const el = e.currentTarget;
+            const startX = e.pageX - el.offsetLeft;
+            const startScroll = el.scrollLeft;
+            let moved = false;
+            const onMove = (ev: MouseEvent) => {
+              const x = ev.pageX - el.offsetLeft;
+              const dx = x - startX;
+              if (Math.abs(dx) > 3) moved = true;
+              el.scrollLeft = startScroll - dx;
+            };
+            const onUp = () => {
+              window.removeEventListener("mousemove", onMove);
+              window.removeEventListener("mouseup", onUp);
+              if (moved) {
+                const block = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); window.removeEventListener("click", block, true); };
+                window.addEventListener("click", block, true);
+              }
+            };
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", onUp);
+          }}
+        >
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
