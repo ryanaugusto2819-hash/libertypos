@@ -116,6 +116,7 @@ const Pedidos = () => {
         plataforma: row.plataforma || "",
         conta_shopee: (row as any).conta_shopee || "",
         codigo_conta: (row as any).codigo_conta || "",
+        conta_usada: (row as any).conta_usada || "",
       }));
 
       setPedidos(orders);
@@ -366,9 +367,16 @@ const Pedidos = () => {
     }
   };
 
-  const handleContaBancariaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_bancaria: value } : ped));
-    toast.success(`Conta bancária → "${value}"`);
+  const handleContaUsadaChange = async (pedidoId: string, value: string) => {
+    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
+    toast.success(`Conta usada → "${value}"`);
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ conta_usada: value }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao atualizar conta usada:", err);
+      toast.error("Falha ao salvar conta usada");
+    }
   };
 
   const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
@@ -689,7 +697,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
-                {country !== "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>}
+                {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Usada</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -899,15 +907,15 @@ const Pedidos = () => {
                     <TableCell>
                       <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
                     </TableCell>
-                    {country !== "BR" && (
+                    {country === "UY" && (
                       <TableCell>
-                        <Select value={p.conta_bancaria || ""} onValueChange={(v) => handleContaBancariaChange(p.id, v)}>
+                        <Select value={p.conta_usada || ""} onValueChange={(v) => handleContaUsadaChange(p.id, v)}>
                           <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
                             <SelectValue placeholder="Selecionar" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Pablo">Pablo</SelectItem>
-                            <SelectItem value="Mulher">Mulher</SelectItem>
+                            <SelectItem value="Shirley">Shirley</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

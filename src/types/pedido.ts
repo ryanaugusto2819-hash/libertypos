@@ -68,4 +68,5 @@ export interface Pedido {
   plataforma?: string;
   conta_shopee?: string;
   codigo_conta?: string;
+  conta_usada?: string;
 }
