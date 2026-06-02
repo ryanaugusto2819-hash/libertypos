@@ -922,8 +922,9 @@ const Pedidos = () => {
                             <SelectValue placeholder="Selecionar" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Pablo">Pablo</SelectItem>
-                            <SelectItem value="Shirley">Shirley</SelectItem>
+                            {contasUY.filter((c) => c.ativo || c.nome === p.conta_usada).map((c) => (
+                              <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
