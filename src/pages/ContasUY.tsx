@@ -363,7 +363,7 @@ export default function ContasUY() {
                 const s = stats[c.nome] || { pago: 0, pendente: 0, countPago: 0, countPendente: 0, ultimaEntrada: null };
                 const isOpen = expanded.has(c.nome);
                 return (
-                  <>
+                  <React.Fragment key={c.id}>
                     <TableRow
                       key={c.id}
                       className={cn(
