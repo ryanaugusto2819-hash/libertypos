@@ -83,7 +83,7 @@ const Pedidos = () => {
   const handleScrollbarDrag = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const table = tableScrollRef.current;
     const track = topScrollRef.current;
-    if (!table || !track) return;
+    if (!table || !track || table.scrollWidth <= table.clientWidth) return;
     const rect = track.getBoundingClientRect();
     const thumbWidthPx = Math.max((table.clientWidth / table.scrollWidth) * rect.width, 44);
     const startX = event.clientX;
@@ -111,7 +111,13 @@ const Pedidos = () => {
     }
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, []);
+  }, [updateScrollMetrics]);
+
+  useEffect(() => {
+    updateScrollMetrics();
+    window.addEventListener("resize", updateScrollMetrics);
+    return () => window.removeEventListener("resize", updateScrollMetrics);
+  }, [filtered.length, country, updateScrollMetrics]);
 
   useEffect(() => {
     if (country !== "UY") return;
