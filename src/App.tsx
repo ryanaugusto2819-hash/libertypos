@@ -72,6 +72,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/contas"
+        element={
+          <ProtectedRoute>
+            <AppLayout><ContasUY /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/configuracoes"
         element={
           <ProtectedRoute>
