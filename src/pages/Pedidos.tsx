@@ -114,10 +114,23 @@ const Pedidos = () => {
   }, [updateScrollMetrics]);
 
   useEffect(() => {
-    updateScrollMetrics();
-    window.addEventListener("resize", updateScrollMetrics);
-    return () => window.removeEventListener("resize", updateScrollMetrics);
-  }, [pedidos.length, country, updateScrollMetrics]);
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const run = () => updateScrollMetrics();
+    run();
+    const raf1 = requestAnimationFrame(run);
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(run));
+    const ro = new ResizeObserver(run);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild as Element);
+    window.addEventListener("resize", run);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      ro.disconnect();
+      window.removeEventListener("resize", run);
+    };
+  }, [pedidos.length, country, loading, updateScrollMetrics]);
 
   useEffect(() => {
     if (country !== "UY") return;
