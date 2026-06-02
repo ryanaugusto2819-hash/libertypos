@@ -697,7 +697,7 @@ const Pedidos = () => {
                 <TableHead className="text-xs font-bold text-primary uppercase">Comprovante</TableHead>
                 {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Etiqueta de Envio</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase">WPP Cobrança</TableHead>
-                {country !== "BR" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Bancária</TableHead>}
+                {country === "UY" && <TableHead className="text-xs font-bold text-primary uppercase">Conta Usada</TableHead>}
                 <TableHead className="text-xs font-bold text-primary uppercase text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
