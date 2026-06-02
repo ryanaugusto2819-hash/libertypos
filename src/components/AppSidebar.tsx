@@ -1,8 +1,9 @@
-import { LayoutDashboard, ShoppingCart, Wallet, Settings, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Wallet, Settings, Sun, Moon, Landmark } from "lucide-react";
 import sidebarLogo from "@/assets/sidebar-logo.png";
 import { useTheme } from "next-themes";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
+import { useCountry } from "@/contexts/CountryContext";
 import {
   Sidebar,
   SidebarContent,
@@ -16,10 +17,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navItems = [
+const baseNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
-  
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
@@ -27,6 +27,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { theme, setTheme } = useTheme();
+  const { country } = useCountry();
+
+  const navItems = [
+    ...baseNavItems.slice(0, 2),
+    ...(country === "UY" ? [{ title: "Contas Bancárias", url: "/contas", icon: Landmark }] : []),
+    ...baseNavItems.slice(2),
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
