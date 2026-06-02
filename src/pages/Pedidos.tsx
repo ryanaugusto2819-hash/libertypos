@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
@@ -53,6 +53,15 @@ const Pedidos = () => {
   const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [contasUY, setContasUY] = useState<{ id: string; nome: string; ativo: boolean }[]>([]);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+
+  const syncHorizontalScroll = useCallback((source: "top" | "table") => {
+    const from = source === "top" ? topScrollRef.current : tableScrollRef.current;
+    const to = source === "top" ? tableScrollRef.current : topScrollRef.current;
+    if (!from || !to || to.scrollLeft === from.scrollLeft) return;
+    to.scrollLeft = from.scrollLeft;
+  }, []);
 
   useEffect(() => {
     if (country !== "UY") return;
@@ -680,8 +689,18 @@ const Pedidos = () => {
       ) : (
       <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg overflow-hidden">
         <div
+          ref={topScrollRef}
+          className="sticky top-0 z-20 h-5 overflow-x-scroll overflow-y-hidden bg-card [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+          style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
+          onScroll={() => syncHorizontalScroll("top")}
+        >
+          <div className="h-1 min-w-[1600px]" />
+        </div>
+        <div
+          ref={tableScrollRef}
           className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
+          onScroll={() => syncHorizontalScroll("table")}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
