@@ -687,14 +687,14 @@ const Pedidos = () => {
           <span className="ml-3 text-muted-foreground font-medium">Carregando pedidos...</span>
         </div>
       ) : (
-      <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg overflow-hidden">
+      <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg">
         <div
           ref={topScrollRef}
-          className="sticky top-0 z-20 h-5 overflow-x-scroll overflow-y-hidden bg-card [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+          className="h-4 overflow-x-scroll overflow-y-hidden bg-muted rounded-t-2xl border-b border-primary/20"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
           onScroll={() => syncHorizontalScroll("top")}
         >
-          <div className="h-1 min-w-[1600px]" />
+          <div className="h-px min-w-[1600px]" />
         </div>
         <div
           ref={tableScrollRef}
