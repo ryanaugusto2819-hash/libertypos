@@ -680,7 +680,7 @@ const Pedidos = () => {
       ) : (
       <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg overflow-hidden">
         <div
-          className="overflow-x-scroll overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+          className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
