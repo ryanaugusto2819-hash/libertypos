@@ -744,19 +744,27 @@ const Pedidos = () => {
         </div>
       ) : (
       <div className="rounded-2xl border-2 border-primary/20 bg-card shadow-lg">
-        <div
-          ref={topScrollRef}
-          className="h-4 overflow-x-scroll overflow-y-hidden bg-muted rounded-t-2xl border-b border-primary/20"
-          style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
-          onScroll={() => syncHorizontalScroll("top")}
-        >
-          <div className="h-px min-w-[1600px]" />
+        <div className="rounded-t-2xl border-b border-primary/20 bg-muted px-2 py-2">
+          <div
+            ref={topScrollRef}
+            data-scroll-track="true"
+            className="relative h-4 cursor-pointer rounded-full bg-background/80 ring-1 ring-primary/30"
+            onMouseDown={handleScrollbarDrag}
+          >
+            <div
+              className="absolute top-1/2 h-3 -translate-y-1/2 cursor-grab rounded-full bg-primary shadow-sm active:cursor-grabbing"
+              style={{ left: `${scrollThumbLeft}%`, width: `${scrollThumbWidth}%` }}
+            />
+          </div>
         </div>
         <div
           ref={tableScrollRef}
           className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
-          onScroll={() => syncHorizontalScroll("table")}
+          onScroll={() => {
+            syncHorizontalScroll("table");
+            updateScrollMetrics();
+          }}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
