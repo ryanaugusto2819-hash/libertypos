@@ -116,6 +116,7 @@ const Pedidos = () => {
         plataforma: row.plataforma || "",
         conta_shopee: (row as any).conta_shopee || "",
         codigo_conta: (row as any).codigo_conta || "",
+        conta_usada: (row as any).conta_usada || "",
       }));
 
       setPedidos(orders);
