@@ -218,6 +218,36 @@ const Pedidos = () => {
     const searchLower = debouncedSearch.toLowerCase();
     const searchNorm = normalize(debouncedSearch);
     const hasSearch = !!debouncedSearch;
+
+    // Precompute date filter bounds once, outside .filter()
+    let dateLo: Date | null = null;
+    let dateHi: Date | null = null;
+    if (dateFilter !== "todos") {
+      const todaySP = todayInSaoPaulo();
+      const spDate = (dateStr: string, time: "start" | "end") =>
+        new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
+      const subtractDays = (dateStr: string, n: number): string => {
+        const [y, m, d] = dateStr.split("-").map(Number);
+        const dt = new Date(y, m - 1, d - n);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      };
+      const tomorrowSP = subtractDays(todaySP, -1);
+      if (dateFilter === "7") {
+        dateLo = spDate(subtractDays(todaySP, 7), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "15") {
+        dateLo = spDate(subtractDays(todaySP, 15), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "30") {
+        dateLo = spDate(subtractDays(todaySP, 30), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "custom") {
+        if (customDateFrom) dateLo = spDate(customDateFrom.toLocaleDateString("sv-SE"), "start");
+        if (customDateTo) dateHi = spDate(customDateTo.toLocaleDateString("sv-SE"), "end");
+      }
+    }
+    const hasDateFilter = dateFilter !== "todos";
+
     const result = pedidos.filter((p) => {
       const matchSearch =
         !hasSearch ||
@@ -232,56 +262,26 @@ const Pedidos = () => {
         (p.complemento || "").toLowerCase().includes(searchLower) ||
         (p.departamento || "").toLowerCase().includes(searchLower) ||
         normalize(p.cep || "").includes(searchNorm);
-      const matchStatus =
-        statusFilter === "todos" || p.status_pagamento === statusFilter;
-      const matchEnvio =
-        envioFilter === "todos" || p.status_envio === envioFilter;
-      const matchCobranca =
-        cobrancaFilter === "todos" || (p.status_cobranca || "pendente") === cobrancaFilter;
+      if (!matchSearch) return false;
+      if (statusFilter !== "todos" && p.status_pagamento !== statusFilter) return false;
+      if (envioFilter !== "todos" && p.status_envio !== envioFilter) return false;
+      if (cobrancaFilter !== "todos" && (p.status_cobranca || "pendente") !== cobrancaFilter) return false;
 
-      // Owner filter
-      let matchOwner = true;
       if (!isAdmin) {
-        matchOwner = p.afiliado_id === user?.id;
+        if (p.afiliado_id !== user?.id) return false;
       } else {
-        if (ownerFilter === "meus") matchOwner = !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id;
-        else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
+        if (ownerFilter === "meus" && !(!p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id)) return false;
+        if (ownerFilter === "afiliados" && !(!!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id)) return false;
       }
 
-      // Date filter — all dates anchored to São Paulo timezone (UTC-3)
-      let matchDate = true;
-      if (dateFilter !== "todos") {
+      if (hasDateFilter) {
         const rawDate = dateField === "data_pagamento" ? p.data_pagamento : p.data_entrada;
         if (!rawDate) return false;
         const theDate = parseLocalDate(rawDate);
-        const todaySP = todayInSaoPaulo();
-        const spDate = (dateStr: string, time: "start" | "end") =>
-          new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
-        const subtractDays = (dateStr: string, n: number): string => {
-          const [y, m, d] = dateStr.split("-").map(Number);
-          const dt = new Date(y, m - 1, d - n);
-          return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-        };
-        const tomorrowSP = subtractDays(todaySP, -1);
-        if (dateFilter === "7") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 7), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "15") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 15), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "30") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 30), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "custom") {
-          if (customDateFrom) {
-            const s = customDateFrom.toLocaleDateString("sv-SE");
-            matchDate = theDate >= spDate(s, "start");
-          }
-          if (matchDate && customDateTo) {
-            const e = customDateTo.toLocaleDateString("sv-SE");
-            matchDate = theDate <= spDate(e, "end");
-          }
-        }
+        if (dateLo && theDate < dateLo) return false;
+        if (dateHi && theDate > dateHi) return false;
       }
-
-      return matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
+      return true;
     });
 
     if (sortField) {
@@ -301,6 +301,20 @@ const Pedidos = () => {
   }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
 
   const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
+
+  // Precompute overdue set so isOverdue is O(1) and stable per render of filtered
+  const overdueSet = useMemo(() => {
+    const now = Date.now();
+    const s = new Set<string>();
+    for (const p of visibleRows) {
+      if (p.status_pagamento !== "pago") {
+        const diffDays = Math.floor((now - parseLocalDate(p.data_entrada).getTime()) / 86400000);
+        if (diffDays > 7) s.add(p.id);
+      }
+    }
+    return s;
+  }, [visibleRows]);
+
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
