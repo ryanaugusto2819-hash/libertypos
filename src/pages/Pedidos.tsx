@@ -26,6 +26,7 @@ import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { CodigoContaCell } from "@/components/pedidos/CodigoContaCell";
+import { PedidoRow } from "@/components/pedidos/PedidoRow";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
