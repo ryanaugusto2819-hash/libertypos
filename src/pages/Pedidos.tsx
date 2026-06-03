@@ -688,6 +688,18 @@ const Pedidos = () => {
             <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={produtoFilter} onValueChange={setProdutoFilter}>
+          <SelectTrigger className="w-full sm:w-52">
+            <Package className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Produto: Todos</SelectItem>
+            {produtosUnicos.map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-1.5 flex-wrap">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <Button
