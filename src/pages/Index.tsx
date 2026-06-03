@@ -112,6 +112,12 @@ const Dashboard = () => {
     load();
   }, [country]);
 
+  const produtosUnicos = useMemo(() => {
+    const set = new Set<string>();
+    allPedidos.forEach((p) => { if (p.produto) set.add(p.produto); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [allPedidos]);
+
   const filteredPedidos = useMemo(() => {
     let list = allPedidos.filter((p) => p.pais === country);
 
@@ -125,6 +131,10 @@ const Dashboard = () => {
       } else if (ownerFilter === "afiliados") {
         list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
       }
+    }
+
+    if (produtoFilter !== "todos") {
+      list = list.filter((p) => (p.produto || "") === produtoFilter);
     }
 
     // Usa parseLocalDate para suportar qualquer formato (DATE ou TIMESTAMP) retornado pelo Supabase.
@@ -165,7 +175,7 @@ const Dashboard = () => {
     const tomorrowSP = subtractDays(todaySP, -1);
 
     return list.filter((p) => { const d = getDate(p); return !!d && d >= spDate(startStr, "start") && d <= spDate(tomorrowSP, "end"); });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField, produtoFilter]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
