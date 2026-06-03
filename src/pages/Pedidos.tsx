@@ -37,6 +37,7 @@ const Pedidos = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [envioFilter, setEnvioFilter] = useState<string>("todos");
   const [cobrancaFilter, setCobrancaFilter] = useState<string>("todos");
@@ -53,9 +54,16 @@ const Pedidos = () => {
   const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [contasUY, setContasUY] = useState<{ id: string; nome: string; ativo: boolean }[]>([]);
+  const [displayLimit, setDisplayLimit] = useState(100);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input to avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Update thumb position via direct DOM manipulation (no React re-renders on scroll)
   const updateThumb = useCallback(() => {
