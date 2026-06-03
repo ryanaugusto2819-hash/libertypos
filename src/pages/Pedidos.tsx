@@ -780,36 +780,9 @@ const Pedidos = () => {
         </div>
         <div
           ref={tableScrollRef}
-          className="overflow-scroll cursor-grab active:cursor-grabbing max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+          className="overflow-scroll max-h-[calc(100vh-220px)] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-muted [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           style={{ scrollbarWidth: "auto", scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))" }}
           onScroll={updateThumb}
-          onPointerDown={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.closest("button, a, input, select, textarea, [role=checkbox], [role=button]")) return;
-            const el = e.currentTarget;
-            const startX = e.clientX;
-            const startScroll = el.scrollLeft;
-            let moved = false;
-            const previousUserSelect = document.body.style.userSelect;
-            const onMove = (ev: PointerEvent) => {
-              const dx = ev.clientX - startX;
-              if (Math.abs(dx) > 3) moved = true;
-              el.scrollLeft = startScroll - dx;
-              updateThumb();
-            };
-            const onUp = () => {
-              document.body.style.userSelect = previousUserSelect;
-              window.removeEventListener("pointermove", onMove);
-              window.removeEventListener("pointerup", onUp);
-              if (moved) {
-                const block = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); window.removeEventListener("click", block, true); };
-                window.addEventListener("click", block, true);
-              }
-            };
-            document.body.style.userSelect = "none";
-            window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onUp, { once: true });
-          }}
         >
           <table className="w-full min-w-[2400px] caption-bottom text-sm">
             <TableHeader>
