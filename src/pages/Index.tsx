@@ -53,6 +53,7 @@ const Dashboard = () => {
         const { data: dbRows, error } = await supabase
           .from("pedidos")
           .select("*")
+          .eq("pais", country)
           .order("data_entrada", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(10000);
@@ -105,7 +106,7 @@ const Dashboard = () => {
       }
     };
     load();
-  }, []);
+  }, [country]);
 
   const filteredPedidos = useMemo(() => {
     let list = allPedidos.filter((p) => p.pais === country);

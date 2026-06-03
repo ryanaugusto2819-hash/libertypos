@@ -37,6 +37,7 @@ const Pedidos = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [envioFilter, setEnvioFilter] = useState<string>("todos");
   const [cobrancaFilter, setCobrancaFilter] = useState<string>("todos");
@@ -53,9 +54,16 @@ const Pedidos = () => {
   const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [contasUY, setContasUY] = useState<{ id: string; nome: string; ativo: boolean }[]>([]);
+  const [displayLimit, setDisplayLimit] = useState(100);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input to avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Update thumb position via direct DOM manipulation (no React re-renders on scroll)
   const updateThumb = useCallback(() => {
@@ -141,7 +149,7 @@ const Pedidos = () => {
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [country]);
 
   const loadOrders = async () => {
     try {
@@ -149,6 +157,7 @@ const Pedidos = () => {
       const { data: dbRows, error } = await supabase
         .from("pedidos")
         .select("*")
+        .eq("pais", country)
         .order("data_entrada", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -206,14 +215,15 @@ const Pedidos = () => {
 
   const filtered = useMemo(() => {
     const normalize = (s: string) => s.replace(/[\s\-\+\(\)]/g, "");
+    const searchLower = debouncedSearch.toLowerCase();
+    const searchNorm = normalize(debouncedSearch);
+    const hasSearch = !!debouncedSearch;
     const result = pedidos.filter((p) => {
-      const matchCountry = p.pais === country;
-      const searchLower = search.toLowerCase();
       const matchSearch =
-        !search ||
+        !hasSearch ||
         p.nome.toLowerCase().includes(searchLower) ||
-        normalize(p.telefone).includes(normalize(search)) ||
-        p.cedula.includes(search) ||
+        normalize(p.telefone).includes(searchNorm) ||
+        p.cedula.includes(debouncedSearch) ||
         p.codigo_rastreamento.toLowerCase().includes(searchLower) ||
         p.cidade.toLowerCase().includes(searchLower) ||
         (p.rua || "").toLowerCase().includes(searchLower) ||
@@ -221,7 +231,7 @@ const Pedidos = () => {
         (p.numero || "").toLowerCase().includes(searchLower) ||
         (p.complemento || "").toLowerCase().includes(searchLower) ||
         (p.departamento || "").toLowerCase().includes(searchLower) ||
-        normalize(p.cep || "").includes(normalize(search));
+        normalize(p.cep || "").includes(searchNorm);
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
       const matchEnvio =
@@ -271,7 +281,7 @@ const Pedidos = () => {
         }
       }
 
-      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
+      return matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
 
     if (sortField) {
@@ -283,7 +293,14 @@ const Pedidos = () => {
     }
 
     return result;
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+
+  // Reset render limit when filters change
+  useEffect(() => {
+    setDisplayLimit(100);
+  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
+
+  const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
@@ -824,7 +841,7 @@ const Pedidos = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => {
+              {visibleRows.map((p) => {
                 const overdue = isOverdue(p);
                 return (
                   <React.Fragment key={p.id}>
@@ -1174,6 +1191,17 @@ const Pedidos = () => {
             </TableBody>
           </table>
         </div>
+        {visibleRows.length < filtered.length && (
+          <div className="flex justify-center py-4">
+            <Button
+              variant="outline"
+              onClick={() => setDisplayLimit((n) => n + 100)}
+              className="border-primary/30 hover:bg-primary/10"
+            >
+              Carregar mais ({filtered.length - visibleRows.length} restantes)
+            </Button>
+          </div>
+        )}
       </div>
       )}
 
