@@ -306,6 +306,12 @@ const Pedidos = () => {
 
   const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
 
+  const produtosUnicos = useMemo(() => {
+    const set = new Set<string>();
+    pedidos.forEach((p) => { if (p.produto) set.add(p.produto); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pedidos]);
+
   // Precompute overdue set so isOverdue is O(1) and stable per render of filtered
   const overdueSet = useMemo(() => {
     const now = Date.now();
