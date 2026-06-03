@@ -841,7 +841,7 @@ const Pedidos = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => {
+              {visibleRows.map((p) => {
                 const overdue = isOverdue(p);
                 return (
                   <React.Fragment key={p.id}>
