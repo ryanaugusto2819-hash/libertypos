@@ -106,7 +106,7 @@ const Dashboard = () => {
       }
     };
     load();
-  }, []);
+  }, [country]);
 
   const filteredPedidos = useMemo(() => {
     let list = allPedidos.filter((p) => p.pais === country);
