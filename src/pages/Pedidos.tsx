@@ -378,18 +378,14 @@ const Pedidos = () => {
     }
   };
 
-  const handlePayment = async (orderId: string) => {
-    const currentOrder = pedidos.find((p) => p.id === orderId);
-    if (!currentOrder) { toast.error("Pedido não encontrado"); return; }
+  const handlePayment = useCallback(async (orderId: string) => {
     const now = new Date();
     const dataPagamento = now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-    setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
+    setPedidos((prev) => prev.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: "pago",
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
+        status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
       }).eq("id", orderId);
       if (dbError) throw dbError;
       toast.success("Status atualizado!");
@@ -397,45 +393,31 @@ const Pedidos = () => {
       console.error("Falha ao atualizar status:", err);
       toast.error("Falha ao atualizar status de pagamento");
     }
-  };
+  }, []);
 
-  const openPaymentDialog = (id: string, nome: string) => {
-    setSelectedOrder({ id, nome });
-    setPaymentOpen(true);
-  };
-
-  const isOverdue = (p: Pedido) => {
-    if (p.status_pagamento === "pago") return false;
-    const diffDays = Math.floor((Date.now() - parseLocalDate(p.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays > 7;
-  };
-
-  const handleStatusPagChange = async (pedidoId: string, value: StatusPagamento) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
+  const handleStatusPagChange = useCallback(async (pedidoId: string, value: StatusPagamento) => {
     const now = new Date();
     const dataPagamento = value === "pago" ? now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) : null;
     const horaPagamento = value === "pago" ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : null;
-    const updated = { ...currentOrder, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento };
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: value,
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
+        status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
       }).eq("id", pedidoId);
       if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar status de pagamento:", err);
       toast.error("Falha ao atualizar status de pagamento");
     }
-  };
+  }, []);
 
-  const handleStatusEnvChange = async (pedidoId: string, value: StatusEnvio) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
+  const handleStatusEnvChange = useCallback(async (pedidoId: string, value: StatusEnvio) => {
+    let currentOrder: Pedido | undefined;
+    setPedidos((prev) => {
+      currentOrder = prev.find((p) => p.id === pedidoId);
+      return prev.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped);
+    });
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
@@ -444,38 +426,27 @@ const Pedidos = () => {
       console.error("Falha ao atualizar status de envio:", err);
       toast.error("Falha ao atualizar status de envio");
     }
-
-    if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
+    if (currentOrder?.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
       supabase.functions.invoke("send-attendance-webhook", {
-        body: {
-          pedido: { ...currentOrder, status_envio: value },
-          new_status: value,
-        },
-      }).catch((err) => {
-        console.warn("Webhook de atendimento falhou:", err.message);
-      });
+        body: { pedido: { ...currentOrder, status_envio: value }, new_status: value },
+      }).catch((err) => console.warn("Webhook de atendimento falhou:", err.message));
     }
-  };
+  }, []);
 
-  const handleStatusCobChange = async (pedidoId: string, value: StatusCobranca) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
+  const handleStatusCobChange = useCallback(async (pedidoId: string, value: StatusCobranca) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase
-        .from("pedidos")
-        .update({ status_cobranca: value })
-        .eq("id", pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").update({ status_cobranca: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar status de cobrança:", err);
       toast.error("Falha ao atualizar status de cobrança");
     }
-  };
+  }, []);
 
-  const handleContaUsadaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
+  const handleContaUsadaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
     toast.success(`Conta usada → "${value}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ conta_usada: value }).eq("id", pedidoId);
@@ -484,10 +455,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar conta usada:", err);
       toast.error("Falha ao salvar conta usada");
     }
-  };
+  }, []);
 
-  const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
+  const handleFormaPagamentoChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
@@ -496,10 +467,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar forma de pagamento:", err);
       toast.error("Falhou ao salvar forma de pagamento");
     }
-  };
+  }, []);
 
-  const handlePlataformaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, plataforma: value } : ped));
+  const handlePlataformaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, plataforma: value } : ped));
     toast.success(`Logística → "${value}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ plataforma: value }).eq("id", pedidoId);
@@ -508,10 +479,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar logística:", err);
       toast.error("Falha ao salvar logística");
     }
-  };
+  }, []);
 
-  const handleCodigoContaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, codigo_conta: value } : ped));
+  const handleCodigoContaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, codigo_conta: value } : ped));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ codigo_conta: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
@@ -519,17 +490,25 @@ const Pedidos = () => {
       console.error("Falha ao atualizar código da conta:", err);
       toast.error("Falha ao salvar código da conta");
     }
-  };
+  }, []);
+
+  const handleTrackingChange = useCallback(async (pedidoId: string, code: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, codigo_rastreamento: code } : ped));
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ codigo_rastreamento: code }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao salvar rastreamento:", err);
+      toast.error("Falha ao salvar código de rastreamento");
+    }
+  }, []);
 
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
     value: string | null,
   ) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    const updatedOrder = { ...currentOrder, [field]: value };
-    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
+    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? { ...ped, [field]: value } : ped)));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
@@ -537,9 +516,9 @@ const Pedidos = () => {
       console.error("Falha ao salvar anexo:", err);
       toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
     }
-  }, [pedidos]);
+  }, []);
 
-  const handleDeleteOrder = async (pedidoId: string, nome: string) => {
+  const handleDeleteOrder = useCallback(async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     try {
@@ -550,7 +529,8 @@ const Pedidos = () => {
       console.error("Falha ao excluir:", err);
       toast.error("Falha ao excluir pedido");
     }
-  };
+  }, []);
+
 
   const handleSort = (field: "data_entrada" | "data_pagamento") => {
     if (sortField === field) {
