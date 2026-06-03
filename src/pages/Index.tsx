@@ -8,8 +8,11 @@ import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
-  PackageCheck, ShoppingBag,
+  PackageCheck, ShoppingBag, Package,
 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
