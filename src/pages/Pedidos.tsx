@@ -26,6 +26,7 @@ import { TrackingCell } from "@/components/pedidos/TrackingCell";
 import { ImageUploadCell } from "@/components/pedidos/ImageUploadCell";
 import { WppCobrancaCell } from "@/components/pedidos/WppCobrancaCell";
 import { CodigoContaCell } from "@/components/pedidos/CodigoContaCell";
+import { PedidoRow } from "@/components/pedidos/PedidoRow";
 import { supabase } from "@/integrations/supabase/client";
 
 const ATTENDANCE_TRIGGER_STATUSES = ["a enviar", "enviado", "entregue"];
@@ -137,14 +138,15 @@ const Pedidos = () => {
     });
   }, [country]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
+
   useEffect(() => { setActivePais(country); }, [country]);
 
   useEffect(() => {
@@ -218,6 +220,36 @@ const Pedidos = () => {
     const searchLower = debouncedSearch.toLowerCase();
     const searchNorm = normalize(debouncedSearch);
     const hasSearch = !!debouncedSearch;
+
+    // Precompute date filter bounds once, outside .filter()
+    let dateLo: Date | null = null;
+    let dateHi: Date | null = null;
+    if (dateFilter !== "todos") {
+      const todaySP = todayInSaoPaulo();
+      const spDate = (dateStr: string, time: "start" | "end") =>
+        new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
+      const subtractDays = (dateStr: string, n: number): string => {
+        const [y, m, d] = dateStr.split("-").map(Number);
+        const dt = new Date(y, m - 1, d - n);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      };
+      const tomorrowSP = subtractDays(todaySP, -1);
+      if (dateFilter === "7") {
+        dateLo = spDate(subtractDays(todaySP, 7), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "15") {
+        dateLo = spDate(subtractDays(todaySP, 15), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "30") {
+        dateLo = spDate(subtractDays(todaySP, 30), "start");
+        dateHi = spDate(tomorrowSP, "end");
+      } else if (dateFilter === "custom") {
+        if (customDateFrom) dateLo = spDate(customDateFrom.toLocaleDateString("sv-SE"), "start");
+        if (customDateTo) dateHi = spDate(customDateTo.toLocaleDateString("sv-SE"), "end");
+      }
+    }
+    const hasDateFilter = dateFilter !== "todos";
+
     const result = pedidos.filter((p) => {
       const matchSearch =
         !hasSearch ||
@@ -232,56 +264,26 @@ const Pedidos = () => {
         (p.complemento || "").toLowerCase().includes(searchLower) ||
         (p.departamento || "").toLowerCase().includes(searchLower) ||
         normalize(p.cep || "").includes(searchNorm);
-      const matchStatus =
-        statusFilter === "todos" || p.status_pagamento === statusFilter;
-      const matchEnvio =
-        envioFilter === "todos" || p.status_envio === envioFilter;
-      const matchCobranca =
-        cobrancaFilter === "todos" || (p.status_cobranca || "pendente") === cobrancaFilter;
+      if (!matchSearch) return false;
+      if (statusFilter !== "todos" && p.status_pagamento !== statusFilter) return false;
+      if (envioFilter !== "todos" && p.status_envio !== envioFilter) return false;
+      if (cobrancaFilter !== "todos" && (p.status_cobranca || "pendente") !== cobrancaFilter) return false;
 
-      // Owner filter
-      let matchOwner = true;
       if (!isAdmin) {
-        matchOwner = p.afiliado_id === user?.id;
+        if (p.afiliado_id !== user?.id) return false;
       } else {
-        if (ownerFilter === "meus") matchOwner = !p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id;
-        else if (ownerFilter === "afiliados") matchOwner = !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id;
+        if (ownerFilter === "meus" && !(!p.afiliado_id || p.afiliado_id === "" || p.afiliado_id === user?.id)) return false;
+        if (ownerFilter === "afiliados" && !(!!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id)) return false;
       }
 
-      // Date filter — all dates anchored to São Paulo timezone (UTC-3)
-      let matchDate = true;
-      if (dateFilter !== "todos") {
+      if (hasDateFilter) {
         const rawDate = dateField === "data_pagamento" ? p.data_pagamento : p.data_entrada;
         if (!rawDate) return false;
         const theDate = parseLocalDate(rawDate);
-        const todaySP = todayInSaoPaulo();
-        const spDate = (dateStr: string, time: "start" | "end") =>
-          new Date(`${dateStr}T${time === "start" ? "00:00:00.000" : "23:59:59.999"}-03:00`);
-        const subtractDays = (dateStr: string, n: number): string => {
-          const [y, m, d] = dateStr.split("-").map(Number);
-          const dt = new Date(y, m - 1, d - n);
-          return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-        };
-        const tomorrowSP = subtractDays(todaySP, -1);
-        if (dateFilter === "7") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 7), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "15") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 15), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "30") {
-          matchDate = theDate >= spDate(subtractDays(todaySP, 30), "start") && theDate <= spDate(tomorrowSP, "end");
-        } else if (dateFilter === "custom") {
-          if (customDateFrom) {
-            const s = customDateFrom.toLocaleDateString("sv-SE");
-            matchDate = theDate >= spDate(s, "start");
-          }
-          if (matchDate && customDateTo) {
-            const e = customDateTo.toLocaleDateString("sv-SE");
-            matchDate = theDate <= spDate(e, "end");
-          }
-        }
+        if (dateLo && theDate < dateLo) return false;
+        if (dateHi && theDate > dateHi) return false;
       }
-
-      return matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
+      return true;
     });
 
     if (sortField) {
@@ -301,6 +303,20 @@ const Pedidos = () => {
   }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
 
   const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
+
+  // Precompute overdue set so isOverdue is O(1) and stable per render of filtered
+  const overdueSet = useMemo(() => {
+    const now = Date.now();
+    const s = new Set<string>();
+    for (const p of visibleRows) {
+      if (p.status_pagamento !== "pago") {
+        const diffDays = Math.floor((now - parseLocalDate(p.data_entrada).getTime()) / 86400000);
+        if (diffDays > 7) s.add(p.id);
+      }
+    }
+    return s;
+  }, [visibleRows]);
+
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
@@ -364,18 +380,14 @@ const Pedidos = () => {
     }
   };
 
-  const handlePayment = async (orderId: string) => {
-    const currentOrder = pedidos.find((p) => p.id === orderId);
-    if (!currentOrder) { toast.error("Pedido não encontrado"); return; }
+  const handlePayment = useCallback(async (orderId: string) => {
     const now = new Date();
     const dataPagamento = now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
     const horaPagamento = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-    setPedidos(pedidos.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
+    setPedidos((prev) => prev.map((p) => p.id === orderId ? { ...p, status_pagamento: "pago" as StatusPagamento, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : p));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: "pago",
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
+        status_pagamento: "pago", data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
       }).eq("id", orderId);
       if (dbError) throw dbError;
       toast.success("Status atualizado!");
@@ -383,45 +395,31 @@ const Pedidos = () => {
       console.error("Falha ao atualizar status:", err);
       toast.error("Falha ao atualizar status de pagamento");
     }
-  };
+  }, []);
 
-  const openPaymentDialog = (id: string, nome: string) => {
-    setSelectedOrder({ id, nome });
-    setPaymentOpen(true);
-  };
-
-  const isOverdue = (p: Pedido) => {
-    if (p.status_pagamento === "pago") return false;
-    const diffDays = Math.floor((Date.now() - parseLocalDate(p.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays > 7;
-  };
-
-  const handleStatusPagChange = async (pedidoId: string, value: StatusPagamento) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
+  const handleStatusPagChange = useCallback(async (pedidoId: string, value: StatusPagamento) => {
     const now = new Date();
     const dataPagamento = value === "pago" ? now.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) : null;
     const horaPagamento = value === "pago" ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : null;
-    const updated = { ...currentOrder, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento };
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? updated : ped));
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento } : ped));
     toast.success(`Status de pagamento → "${statusPagamentoConfig[value].label}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({
-        status_pagamento: value,
-        data_pagamento: dataPagamento,
-        hora_pagamento: horaPagamento,
+        status_pagamento: value, data_pagamento: dataPagamento, hora_pagamento: horaPagamento,
       }).eq("id", pedidoId);
       if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar status de pagamento:", err);
       toast.error("Falha ao atualizar status de pagamento");
     }
-  };
+  }, []);
 
-  const handleStatusEnvChange = async (pedidoId: string, value: StatusEnvio) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped));
+  const handleStatusEnvChange = useCallback(async (pedidoId: string, value: StatusEnvio) => {
+    let currentOrder: Pedido | undefined;
+    setPedidos((prev) => {
+      currentOrder = prev.find((p) => p.id === pedidoId);
+      return prev.map((ped) => ped.id === pedidoId ? { ...ped, status_envio: value } : ped);
+    });
     toast.success(`Status de envio → "${statusEnvioConfig[value].label}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ status_envio: value }).eq("id", pedidoId);
@@ -430,38 +428,27 @@ const Pedidos = () => {
       console.error("Falha ao atualizar status de envio:", err);
       toast.error("Falha ao atualizar status de envio");
     }
-
-    if (currentOrder.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
+    if (currentOrder?.pais === "BR" && ATTENDANCE_TRIGGER_STATUSES.includes(value.toLowerCase())) {
       supabase.functions.invoke("send-attendance-webhook", {
-        body: {
-          pedido: { ...currentOrder, status_envio: value },
-          new_status: value,
-        },
-      }).catch((err) => {
-        console.warn("Webhook de atendimento falhou:", err.message);
-      });
+        body: { pedido: { ...currentOrder, status_envio: value }, new_status: value },
+      }).catch((err) => console.warn("Webhook de atendimento falhou:", err.message));
     }
-  };
+  }, []);
 
-  const handleStatusCobChange = async (pedidoId: string, value: StatusCobranca) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
+  const handleStatusCobChange = useCallback(async (pedidoId: string, value: StatusCobranca) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, status_cobranca: value } : ped));
     toast.success(`Status de cobrança → "${statusCobrancaConfig[value].label}"`);
     try {
-      const { error: dbError } = await supabase
-        .from("pedidos")
-        .update({ status_cobranca: value })
-        .eq("id", pedidoId);
+      const { error: dbError } = await supabase.from("pedidos").update({ status_cobranca: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
     } catch (err) {
       console.error("Falha ao atualizar status de cobrança:", err);
       toast.error("Falha ao atualizar status de cobrança");
     }
-  };
+  }, []);
 
-  const handleContaUsadaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
+  const handleContaUsadaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, conta_usada: value } : ped));
     toast.success(`Conta usada → "${value}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ conta_usada: value }).eq("id", pedidoId);
@@ -470,10 +457,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar conta usada:", err);
       toast.error("Falha ao salvar conta usada");
     }
-  };
+  }, []);
 
-  const handleFormaPagamentoChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
+  const handleFormaPagamentoChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, forma_pagamento: value } : ped));
     toast.success(`Forma de pagamento → "${value.toUpperCase()}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ forma_pagamento: value }).eq("id", pedidoId);
@@ -482,10 +469,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar forma de pagamento:", err);
       toast.error("Falhou ao salvar forma de pagamento");
     }
-  };
+  }, []);
 
-  const handlePlataformaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, plataforma: value } : ped));
+  const handlePlataformaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, plataforma: value } : ped));
     toast.success(`Logística → "${value}"`);
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ plataforma: value }).eq("id", pedidoId);
@@ -494,10 +481,10 @@ const Pedidos = () => {
       console.error("Falha ao atualizar logística:", err);
       toast.error("Falha ao salvar logística");
     }
-  };
+  }, []);
 
-  const handleCodigoContaChange = async (pedidoId: string, value: string) => {
-    setPedidos(pedidos.map((ped) => ped.id === pedidoId ? { ...ped, codigo_conta: value } : ped));
+  const handleCodigoContaChange = useCallback(async (pedidoId: string, value: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, codigo_conta: value } : ped));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ codigo_conta: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
@@ -505,17 +492,25 @@ const Pedidos = () => {
       console.error("Falha ao atualizar código da conta:", err);
       toast.error("Falha ao salvar código da conta");
     }
-  };
+  }, []);
+
+  const handleTrackingChange = useCallback(async (pedidoId: string, code: string) => {
+    setPedidos((prev) => prev.map((ped) => ped.id === pedidoId ? { ...ped, codigo_rastreamento: code } : ped));
+    try {
+      const { error: dbError } = await supabase.from("pedidos").update({ codigo_rastreamento: code }).eq("id", pedidoId);
+      if (dbError) throw dbError;
+    } catch (err) {
+      console.error("Falha ao salvar rastreamento:", err);
+      toast.error("Falha ao salvar código de rastreamento");
+    }
+  }, []);
 
   const handleAttachmentChange = useCallback(async (
     pedidoId: string,
     field: "comprovante_url" | "etiqueta_envio_url",
     value: string | null,
   ) => {
-    const currentOrder = pedidos.find((p) => p.id === pedidoId);
-    if (!currentOrder) return;
-    const updatedOrder = { ...currentOrder, [field]: value };
-    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? updatedOrder : ped)));
+    setPedidos((prev) => prev.map((ped) => (ped.id === pedidoId ? { ...ped, [field]: value } : ped)));
     try {
       const { error: dbError } = await supabase.from("pedidos").update({ [field]: value }).eq("id", pedidoId);
       if (dbError) throw dbError;
@@ -523,9 +518,9 @@ const Pedidos = () => {
       console.error("Falha ao salvar anexo:", err);
       toast.error("Arquivo enviado, mas falhou ao salvar no pedido");
     }
-  }, [pedidos]);
+  }, []);
 
-  const handleDeleteOrder = async (pedidoId: string, nome: string) => {
+  const handleDeleteOrder = useCallback(async (pedidoId: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o pedido de "${nome}"?`)) return;
     setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     try {
@@ -536,7 +531,8 @@ const Pedidos = () => {
       console.error("Falha ao excluir:", err);
       toast.error("Falha ao excluir pedido");
     }
-  };
+  }, []);
+
 
   const handleSort = (field: "data_entrada" | "data_pagamento") => {
     if (sortField === field) {
@@ -554,10 +550,16 @@ const Pedidos = () => {
       : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
-  const totalPedidos = filtered.length;
-  const totalPagos = filtered.filter((p) => p.status_pagamento === "pago").length;
-  const totalPendentes = filtered.filter((p) => p.status_pagamento === "pendente").length;
-  const totalValor = filtered.reduce((sum, p) => sum + p.valor, 0);
+  const { totalPedidos, totalPagos, totalPendentes, totalValor } = useMemo(() => {
+    let pagos = 0, pendentes = 0, valor = 0;
+    for (const p of filtered) {
+      if (p.status_pagamento === "pago") pagos++;
+      else if (p.status_pagamento === "pendente") pendentes++;
+      valor += p.valor;
+    }
+    return { totalPedidos: filtered.length, totalPagos: pagos, totalPendentes: pendentes, totalValor: valor };
+  }, [filtered]);
+
 
   return (
     <div className="space-y-6">
@@ -814,346 +816,29 @@ const Pedidos = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visibleRows.map((p) => {
-                const overdue = isOverdue(p);
-                return (
-                  <React.Fragment key={p.id}>
-                  <TableRow
-                    className={cn(
-                      "transition-all hover:bg-primary/5 border-b border-primary/10",
-                      overdue && "bg-destructive/10 border-l-4 border-l-destructive"
-                    )}
-                  >
-                    <TableCell className="w-10 px-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-lg"
-                        onClick={() => toggleExpand(p.id)}
-                      >
-                        {expandedRows.has(p.id) ? (
-                          <ChevronDown className="h-4 w-4 text-primary" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      <div>
-                        {p.nome}
-                        {overdue && <span className="ml-2 text-xs text-destructive">⚠ Atraso</span>}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{formatDate(p.data_entrada)}</div>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium font-mono">{p.cedula}</TableCell>
-                    <TableCell className="text-sm font-medium">{p.telefone}</TableCell>
-                    <TableCell className="text-sm font-medium">
-                      <div>{p.produto}</div>
-                      <div className="text-xs text-muted-foreground">Qtd: {p.quantidade}</div>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium text-right">
-                      {formatCurrency(p.valor)}
-                    </TableCell>
-                    {country === "BR" && (
-                      <TableCell className="text-sm font-medium text-right text-muted-foreground">
-                        {p.valor_frete ? formatCurrency(p.valor_frete) : "—"}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-sm font-medium">
-                      <div>{p.cidade}</div>
-                      <div className="text-xs text-muted-foreground">{p.departamento}</div>
-                    </TableCell>
-                    <TableCell>
-                      <TrackingCell
-                        value={p.codigo_rastreamento}
-                        onChange={async (code) => {
-                          const updatedOrder = { ...p, codigo_rastreamento: code };
-                          setPedidos(pedidos.map((ped) =>
-                            ped.id === p.id ? updatedOrder : ped
-                          ));
-                          try {
-                              const { error: dbError } = await supabase
-                                .from("pedidos")
-                                .update({ codigo_rastreamento: code })
-                                .eq("id", p.id);
-                              if (dbError) throw dbError;
-                          } catch (err) {
-                            console.error("Falha ao salvar rastreamento:", err);
-                            toast.error("Falha ao salvar código de rastreamento");
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {isAdmin ? (
-                        <Select value={p.status_pagamento} onValueChange={(v: StatusPagamento) => handleStatusPagChange(p.id, v)}>
-                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm", statusPagamentoConfig[p.status_pagamento]?.className)}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pendente">Pendente</SelectItem>
-                            <SelectItem value="pago">Pago</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant={p.status_pagamento === "pago" ? "default" : "secondary"} className={cn("text-xs font-bold", statusPagamentoConfig[p.status_pagamento]?.className)}>
-                          {statusPagamentoConfig[p.status_pagamento]?.label ?? p.status_pagamento}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Select value={p.forma_pagamento || ""} onValueChange={(v) => handleFormaPagamentoChange(p.id, v)}>
-                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pix">PIX</SelectItem>
-                          <SelectItem value="cartao">Cartão</SelectItem>
-                          <SelectItem value="boleto">Boleto</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select value={p.plataforma || ""} onValueChange={(v) => handlePlataformaChange(p.id, v)}>
-                        <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="LOGZZ">LOGZZ</SelectItem>
-                          <SelectItem value="SHOPEE">SHOPEE</SelectItem>
-                          <SelectItem value="TIKTOK">TIKTOK</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <CodigoContaCell
-                        value={p.codigo_conta || ""}
-                        onChange={(v) => handleCodigoContaChange(p.id, v)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {isAdmin ? (
-                        <Select value={p.status_envio} onValueChange={(v: StatusEnvio) => handleStatusEnvChange(p.id, v)}>
-                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusEnvioConfig[p.status_envio]?.className)}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(country === "BR" ? statusEnvioBR : statusEnvioUY).map((s) => (
-                              <SelectItem key={s} value={s}>{statusEnvioConfig[s]?.label ?? s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="secondary" className={cn("text-xs font-bold", statusEnvioConfig[p.status_envio]?.className)}>
-                          {statusEnvioConfig[p.status_envio]?.label ?? p.status_envio}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isAdmin ? (
-                        <Select value={p.status_cobranca || "pendente"} onValueChange={(v: StatusCobranca) => handleStatusCobChange(p.id, v)}>
-                          <SelectTrigger className={cn("h-8 text-xs font-bold border-2 w-32 rounded-xl shadow-sm", statusCobrancaConfig[p.status_cobranca || "pendente"]?.className)}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {p.pais === "BR" ? (
-                              <>
-                                <SelectItem value="pendente">Pendente</SelectItem>
-                                <SelectItem value="pedido pre enviado">Pedido Pré Enviado</SelectItem>
-                                <SelectItem value="pedido enviado">Pedido Enviado</SelectItem>
-                                <SelectItem value="pedido entregue">Pedido Entregue</SelectItem>
-                              </>
-                            ) : (
-                  <>
-                                <SelectItem value="pendente">Pendente</SelectItem>
-                                <SelectItem value="pre enviado">Pré Enviado</SelectItem>
-                                <SelectItem value="funil enviado">Funil Enviado</SelectItem>
-                                <SelectItem value="funil a retirar">Funil A Retirar</SelectItem>
-                                <SelectItem value="funil retirado">Funil Retirado</SelectItem>
-                                <SelectItem value="1-follow (a retirar)">1-Follow (A Retirar)</SelectItem>
-                                <SelectItem value="2-follow (a retirar)">2-Follow (A Retirar)</SelectItem>
-                                <SelectItem value="3-follow (a retirar)">3-Follow (A Retirar)</SelectItem>
-                                <SelectItem value="4-follow (a retirar)">4-Follow (A Retirar)</SelectItem>
-                                <SelectItem value="1-recobrança (a retirar)">1-Recobrança (A Retirar)</SelectItem>
-                                <SelectItem value="2-recobrança (a retirar)">2-Recobrança (A Retirar)</SelectItem>
-                                <SelectItem value="3-recobrança (a retirar)">3-Recobrança (A Retirar)</SelectItem>
-                                <SelectItem value="1-follow (retirado)">1-Follow (Retirado)</SelectItem>
-                                <SelectItem value="2-follow (retirado)">2-Follow (Retirado)</SelectItem>
-                                <SelectItem value="3-follow (retirado)">3-Follow (Retirado)</SelectItem>
-                                <SelectItem value="4-follow (retirado)">4-Follow (Retirado)</SelectItem>
-                                <SelectItem value="1-recobrança (retirado)">1-Recobrança (Retirado)</SelectItem>
-                                <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="secondary" className={cn("text-xs font-bold", statusCobrancaConfig[p.status_cobranca || "pendente"]?.className)}>
-                          {statusCobrancaConfig[p.status_cobranca || "pendente"]?.label ?? p.status_cobranca}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <ImageUploadCell
-                          url={p.comprovante_url}
-                          label="Comprovante de Pagamento"
-                          onChange={(url) => handleAttachmentChange(p.id, "comprovante_url", url || null)}
-                        />
-                        {p.data_pagamento && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {formatDate(p.data_pagamento)} {p.hora_pagamento}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    {country === "UY" && (
-                      <TableCell>
-                        <ImageUploadCell
-                          url={p.etiqueta_envio_url}
-                          label="Etiqueta de Envio"
-                          onChange={(url) => handleAttachmentChange(p.id, "etiqueta_envio_url", url || null)}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <WppCobrancaCell pedidoId={p.id} initialValue={p.wpp_cobranca || ""} />
-                    </TableCell>
-                    {country === "UY" && (
-                      <TableCell>
-                        <Select value={p.conta_usada || ""} onValueChange={(v) => handleContaUsadaChange(p.id, v)}>
-                          <SelectTrigger className="h-8 text-xs font-bold border-2 w-28 rounded-xl shadow-sm">
-                            <SelectValue placeholder="Selecionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {contasUY.filter((c) => c.ativo || c.nome === p.conta_usada).map((c) => (
-                              <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    )}
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
-                        onClick={() => handleDeleteOrder(p.id, p.nome)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  {expandedRows.has(p.id) && (
-                    <TableRow className="bg-muted/30 hover:bg-muted/40">
-                      <TableCell colSpan={20} className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 text-sm">
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Nome Completo</p>
-                            <p className="font-medium">{p.nome}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Telefone</p>
-                            <p className="font-medium">{p.telefone}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Cédula</p>
-                            <p className="font-medium font-mono">{p.cedula}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Email</p>
-                            <p className="font-medium">{p.email || "—"}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Produto</p>
-                            <p className="font-medium">{p.produto} (Qtd: {p.quantidade})</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Valor</p>
-                            <p className="font-medium">{formatCurrency(p.valor)}</p>
-                          </div>
-                          {p.valor_frete > 0 && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Frete</p>
-                              <p className="font-medium">{formatCurrency(p.valor_frete)}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Cidade / Departamento</p>
-                            <p className="font-medium">{p.cidade} — {p.departamento}</p>
-                          </div>
-                          {(p.rua || p.cep) && (
-                            <div className="col-span-2">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Endereço</p>
-                              <p className="font-medium">
-                                {[p.rua, p.numero, p.complemento, p.bairro].filter(Boolean).join(", ")}
-                                {p.cep && ` — CEP: ${p.cep}`}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data de Entrada</p>
-                            <p className="font-medium">{formatDate(p.data_entrada)}</p>
-                          </div>
-                          {p.data_envio && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data de Envio</p>
-                              <p className="font-medium">{formatDate(p.data_envio)}</p>
-                            </div>
-                          )}
-                          {p.data_pagamento && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Data Pagamento</p>
-                              <p className="font-medium">{formatDate(p.data_pagamento)} {p.hora_pagamento}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Rastreamento</p>
-                            <p className="font-medium font-mono">{p.codigo_rastreamento || "—"}</p>
-                          </div>
-                          {p.plataforma && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Plataforma</p>
-                              <p className="font-medium">{p.plataforma}</p>
-                            </div>
-                          )}
-                          {p.plataforma === "SHOPEE" && p.conta_shopee && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Conta Shopee</p>
-                              <p className="font-medium font-mono">{p.conta_shopee}</p>
-                            </div>
-                          )}
-                          {p.codigo_conta && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Código da Conta</p>
-                              <p className="font-medium font-mono">{p.codigo_conta}</p>
-                            </div>
-                          )}
-                          {p.vendedor && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Vendedor</p>
-                              <p className="font-medium">{p.vendedor}</p>
-                            </div>
-                          )}
-                          {p.criativo && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Criativo</p>
-                              <p className="font-medium">{p.criativo}</p>
-                            </div>
-                          )}
-                          {p.observacoes && (
-                            <div className="col-span-2">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observações</p>
-                              <p className="font-medium">{p.observacoes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  </React.Fragment>
-                );
-              })}
+              {visibleRows.map((p) => (
+                <PedidoRow
+                  key={p.id}
+                  p={p}
+                  country={country}
+                  isAdmin={isAdmin}
+                  expanded={expandedRows.has(p.id)}
+                  overdue={overdueSet.has(p.id)}
+                  contasUY={contasUY}
+                  onToggleExpand={toggleExpand}
+                  onStatusPag={handleStatusPagChange}
+                  onStatusEnv={handleStatusEnvChange}
+                  onStatusCob={handleStatusCobChange}
+                  onFormaPag={handleFormaPagamentoChange}
+                  onPlataforma={handlePlataformaChange}
+                  onContaUsada={handleContaUsadaChange}
+                  onCodigoConta={handleCodigoContaChange}
+                  onTracking={handleTrackingChange}
+                  onAttachment={handleAttachmentChange}
+                  onDelete={handleDeleteOrder}
+                />
+              ))}
+
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={20} className="text-center py-12 text-muted-foreground">
