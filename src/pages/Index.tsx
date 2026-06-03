@@ -8,8 +8,11 @@ import { OwnerFilter, OwnerFilterValue } from "@/components/OwnerFilter";
 import {
   CheckCircle2, Truck, Send, AlertTriangle, DollarSign, Wallet,
   CalendarClock, CalendarIcon, Loader2, CreditCard, QrCode, FileText,
-  PackageCheck, ShoppingBag,
+  PackageCheck, ShoppingBag, Package,
 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { FinanceCard } from "@/components/dashboard/FinanceCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
@@ -42,6 +45,7 @@ const Dashboard = () => {
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [produtoFilter, setProdutoFilter] = useState<string>("todos");
   const [dateField, setDateField] = useState<DateField>("data_entrada");
 
   useEffect(() => { setActivePais(country); }, [country]);
@@ -108,6 +112,12 @@ const Dashboard = () => {
     load();
   }, [country]);
 
+  const produtosUnicos = useMemo(() => {
+    const set = new Set<string>();
+    allPedidos.forEach((p) => { if (p.produto) set.add(p.produto); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [allPedidos]);
+
   const filteredPedidos = useMemo(() => {
     let list = allPedidos.filter((p) => p.pais === country);
 
@@ -121,6 +131,10 @@ const Dashboard = () => {
       } else if (ownerFilter === "afiliados") {
         list = list.filter((p) => !!p.afiliado_id && p.afiliado_id !== "" && p.afiliado_id !== user?.id);
       }
+    }
+
+    if (produtoFilter !== "todos") {
+      list = list.filter((p) => (p.produto || "") === produtoFilter);
     }
 
     // Usa parseLocalDate para suportar qualquer formato (DATE ou TIMESTAMP) retornado pelo Supabase.
@@ -161,7 +175,7 @@ const Dashboard = () => {
     const tomorrowSP = subtractDays(todaySP, -1);
 
     return list.filter((p) => { const d = getDate(p); return !!d && d >= spDate(startStr, "start") && d <= spDate(tomorrowSP, "end"); });
-  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField]);
+  }, [activeFilter, customStart, customEnd, allPedidos, country, isAdmin, ownerFilter, user, dateField, produtoFilter]);
 
   const total = filteredPedidos.length;
   const pagos = filteredPedidos.filter((p) => p.status_pagamento === "pago");
@@ -221,6 +235,18 @@ const Dashboard = () => {
             </Button>
           </div>
           <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
+          <Select value={produtoFilter} onValueChange={setProdutoFilter}>
+            <SelectTrigger className="w-40 h-9 text-xs">
+              <Package className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="Produto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os produtos</SelectItem>
+              {produtosUnicos.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {(["hoje", "ontem", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}
