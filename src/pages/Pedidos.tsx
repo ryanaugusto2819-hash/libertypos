@@ -1191,6 +1191,17 @@ const Pedidos = () => {
             </TableBody>
           </table>
         </div>
+        {visibleRows.length < filtered.length && (
+          <div className="flex justify-center py-4">
+            <Button
+              variant="outline"
+              onClick={() => setDisplayLimit((n) => n + 100)}
+              className="border-primary/30 hover:bg-primary/10"
+            >
+              Carregar mais ({filtered.length - visibleRows.length} restantes)
+            </Button>
+          </div>
+        )}
       </div>
       )}
 
