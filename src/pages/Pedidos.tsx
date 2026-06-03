@@ -550,10 +550,16 @@ const Pedidos = () => {
       : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
-  const totalPedidos = filtered.length;
-  const totalPagos = filtered.filter((p) => p.status_pagamento === "pago").length;
-  const totalPendentes = filtered.filter((p) => p.status_pagamento === "pendente").length;
-  const totalValor = filtered.reduce((sum, p) => sum + p.valor, 0);
+  const { totalPedidos, totalPagos, totalPendentes, totalValor } = useMemo(() => {
+    let pagos = 0, pendentes = 0, valor = 0;
+    for (const p of filtered) {
+      if (p.status_pagamento === "pago") pagos++;
+      else if (p.status_pagamento === "pendente") pendentes++;
+      valor += p.valor;
+    }
+    return { totalPedidos: filtered.length, totalPagos: pagos, totalPendentes: pendentes, totalValor: valor };
+  }, [filtered]);
+
 
   return (
     <div className="space-y-6">
