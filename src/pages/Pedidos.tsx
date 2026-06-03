@@ -269,6 +269,7 @@ const Pedidos = () => {
       if (statusFilter !== "todos" && p.status_pagamento !== statusFilter) return false;
       if (envioFilter !== "todos" && p.status_envio !== envioFilter) return false;
       if (cobrancaFilter !== "todos" && (p.status_cobranca || "pendente") !== cobrancaFilter) return false;
+      if (produtoFilter !== "todos" && (p.produto || "") !== produtoFilter) return false;
 
       if (!isAdmin) {
         if (p.afiliado_id !== user?.id) return false;
