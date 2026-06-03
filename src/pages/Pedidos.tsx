@@ -137,14 +137,15 @@ const Pedidos = () => {
     });
   }, [country]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
+
   useEffect(() => { setActivePais(country); }, [country]);
 
   useEffect(() => {
