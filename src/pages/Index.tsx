@@ -235,6 +235,18 @@ const Dashboard = () => {
             </Button>
           </div>
           <OwnerFilter value={ownerFilter} onChange={setOwnerFilter} />
+          <Select value={produtoFilter} onValueChange={setProdutoFilter}>
+            <SelectTrigger className="w-40 h-9 text-xs">
+              <Package className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="Produto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os produtos</SelectItem>
+              {produtosUnicos.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {(["hoje", "ontem", "7", "15", "30"] as FilterOption[]).map((opt) => (
             <Button
               key={opt}
