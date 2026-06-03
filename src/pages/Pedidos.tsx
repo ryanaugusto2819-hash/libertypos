@@ -215,14 +215,15 @@ const Pedidos = () => {
 
   const filtered = useMemo(() => {
     const normalize = (s: string) => s.replace(/[\s\-\+\(\)]/g, "");
+    const searchLower = debouncedSearch.toLowerCase();
+    const searchNorm = normalize(debouncedSearch);
+    const hasSearch = !!debouncedSearch;
     const result = pedidos.filter((p) => {
-      const matchCountry = p.pais === country;
-      const searchLower = search.toLowerCase();
       const matchSearch =
-        !search ||
+        !hasSearch ||
         p.nome.toLowerCase().includes(searchLower) ||
-        normalize(p.telefone).includes(normalize(search)) ||
-        p.cedula.includes(search) ||
+        normalize(p.telefone).includes(searchNorm) ||
+        p.cedula.includes(debouncedSearch) ||
         p.codigo_rastreamento.toLowerCase().includes(searchLower) ||
         p.cidade.toLowerCase().includes(searchLower) ||
         (p.rua || "").toLowerCase().includes(searchLower) ||
@@ -230,7 +231,7 @@ const Pedidos = () => {
         (p.numero || "").toLowerCase().includes(searchLower) ||
         (p.complemento || "").toLowerCase().includes(searchLower) ||
         (p.departamento || "").toLowerCase().includes(searchLower) ||
-        normalize(p.cep || "").includes(normalize(search));
+        normalize(p.cep || "").includes(searchNorm);
       const matchStatus =
         statusFilter === "todos" || p.status_pagamento === statusFilter;
       const matchEnvio =
@@ -280,7 +281,7 @@ const Pedidos = () => {
         }
       }
 
-      return matchCountry && matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
+      return matchSearch && matchStatus && matchEnvio && matchCobranca && matchOwner && matchDate;
     });
 
     if (sortField) {
@@ -292,7 +293,14 @@ const Pedidos = () => {
     }
 
     return result;
-  }, [pedidos, search, statusFilter, envioFilter, cobrancaFilter, country, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+
+  // Reset render limit when filters change
+  useEffect(() => {
+    setDisplayLimit(100);
+  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
+
+  const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
 
   const handleCreateOrder = async (newOrder: Omit<Pedido, "id">) => {
     try {
