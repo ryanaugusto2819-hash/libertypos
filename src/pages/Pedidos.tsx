@@ -778,7 +778,7 @@ const Pedidos = () => {
               const dx = ev.clientX - startX;
               if (Math.abs(dx) > 3) moved = true;
               el.scrollLeft = startScroll - dx;
-              updateScrollMetrics();
+              updateThumb();
             };
             const onUp = () => {
               document.body.style.userSelect = previousUserSelect;
