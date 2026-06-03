@@ -45,6 +45,7 @@ const Dashboard = () => {
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilterValue>("todos");
+  const [produtoFilter, setProdutoFilter] = useState<string>("todos");
   const [dateField, setDateField] = useState<DateField>("data_entrada");
 
   useEffect(() => { setActivePais(country); }, [country]);
