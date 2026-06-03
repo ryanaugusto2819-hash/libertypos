@@ -297,12 +297,12 @@ const Pedidos = () => {
     }
 
     return result;
-  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, produtoFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
 
   // Reset render limit when filters change
   useEffect(() => {
     setDisplayLimit(100);
-  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
+  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, produtoFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
 
   const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
 
