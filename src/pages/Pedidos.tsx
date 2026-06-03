@@ -42,6 +42,7 @@ const Pedidos = () => {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [envioFilter, setEnvioFilter] = useState<string>("todos");
   const [cobrancaFilter, setCobrancaFilter] = useState<string>("todos");
+  const [produtoFilter, setProdutoFilter] = useState<string>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<{ id: string; nome: string } | null>(null);
@@ -268,6 +269,7 @@ const Pedidos = () => {
       if (statusFilter !== "todos" && p.status_pagamento !== statusFilter) return false;
       if (envioFilter !== "todos" && p.status_envio !== envioFilter) return false;
       if (cobrancaFilter !== "todos" && (p.status_cobranca || "pendente") !== cobrancaFilter) return false;
+      if (produtoFilter !== "todos" && (p.produto || "") !== produtoFilter) return false;
 
       if (!isAdmin) {
         if (p.afiliado_id !== user?.id) return false;
@@ -295,14 +297,20 @@ const Pedidos = () => {
     }
 
     return result;
-  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
+  }, [pedidos, debouncedSearch, statusFilter, envioFilter, cobrancaFilter, produtoFilter, isAdmin, ownerFilter, user, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir]);
 
   // Reset render limit when filters change
   useEffect(() => {
     setDisplayLimit(100);
-  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
+  }, [debouncedSearch, statusFilter, envioFilter, cobrancaFilter, produtoFilter, ownerFilter, dateField, dateFilter, customDateFrom, customDateTo, sortField, sortDir, country]);
 
   const visibleRows = useMemo(() => filtered.slice(0, displayLimit), [filtered, displayLimit]);
+
+  const produtosUnicos = useMemo(() => {
+    const set = new Set<string>();
+    pedidos.forEach((p) => { if (p.produto) set.add(p.produto); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pedidos]);
 
   // Precompute overdue set so isOverdue is O(1) and stable per render of filtered
   const overdueSet = useMemo(() => {
@@ -678,6 +686,18 @@ const Pedidos = () => {
             <SelectItem value="4-follow (retirado)">4-Follow (Retirado)</SelectItem>
             <SelectItem value="1-recobrança (retirado)">1-Recobrança (Retirado)</SelectItem>
             <SelectItem value="2-recobrança (retirado)">2-Recobrança (Retirado)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={produtoFilter} onValueChange={setProdutoFilter}>
+          <SelectTrigger className="w-full sm:w-52">
+            <Package className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Produto: Todos</SelectItem>
+            {produtosUnicos.map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1.5 flex-wrap">
