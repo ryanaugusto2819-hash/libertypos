@@ -75,6 +75,32 @@ Deno.serve(async (req) => {
       data_entrada: new Date().toISOString().split("T")[0],
     };
 
+    // Dedup: evita criar pedido duplicado (mesmo telefone + data_entrada) nas últimas 24h
+    if (pedidoData.telefone) {
+      const { data: existing } = await supabase
+        .from("pedidos")
+        .select("id, nome")
+        .eq("telefone", pedidoData.telefone)
+        .eq("data_entrada", pedidoData.data_entrada)
+        .eq("pais", pedidoData.pais)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        console.log(`Pedido duplicado ignorado: ${existing.nome} (${existing.id})`);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            duplicate: true,
+            pedido_id: existing.id,
+            nome: existing.nome,
+            message: "Pedido já existe (duplicado ignorado)",
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const { data: newPedido, error: insertError } = await supabase
       .from("pedidos")
       .insert(pedidoData)
