@@ -3,5 +3,3 @@ project_id = "gwvhvvmghkpgtiofnivo"
 [functions.sync-google-sheets]
 verify_jwt = false
 
-[functions.admin-reset-passwords]
-verify_jwt = false
