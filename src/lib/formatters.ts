@@ -112,6 +112,7 @@ export function formatDate(date: string | null): string {
 export const statusPagamentoConfig: Record<StatusPagamento, { label: string; className: string }> = {
   pago: { label: "Pago", className: "status-paid" },
   pendente: { label: "Pendente", className: "status-pending" },
+  inadimplente: { label: "Inadimplente", className: "status-overdue" },
 };
 
 export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: string }> = {

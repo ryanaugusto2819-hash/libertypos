@@ -1,4 +1,4 @@
-export type StatusPagamento = "pago" | "pendente";
+export type StatusPagamento = "pago" | "pendente" | "inadimplente";
 export type StatusEnvio = 
   | "não enviado" | "enviado" | "a retirar" | "retirado"
   | "a enviar" | "saldo de expedição insuficiente" | "em separação" 
