@@ -3,3 +3,7 @@ project_id = "gwvhvvmghkpgtiofnivo"
 [functions.sync-google-sheets]
 verify_jwt = false
 
+[functions.admin-logout-all]
+verify_jwt = false
+
+
