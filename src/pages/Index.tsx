@@ -183,7 +183,7 @@ const Dashboard = () => {
   const retirados = filteredPedidos.filter((p) => p.status_envio === "retirado");
   const aRetirar = filteredPedidos.filter((p) => p.status_envio === "a retirar");
   const enviados = filteredPedidos.filter((p) => p.status_envio === "enviado");
-  const aEnviar = filteredPedidos.filter((p) => p.status_envio === "a enviar");
+  const aEnviar = filteredPedidos.filter((p) => p.status_envio === "não enviado");
 
   const totalRecebido = pagos.reduce((sum, p) => sum + p.valor, 0);
   const totalAReceber = pendentes.reduce((sum, p) => sum + p.valor, 0);
