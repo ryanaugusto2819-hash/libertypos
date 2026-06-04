@@ -130,7 +130,7 @@ export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: 
   "aguardando retirada": { label: "Aguardando Retirada", className: "status-pending" },
 };
 
-export const statusEnvioUY: StatusEnvio[] = ["não enviado", "enviado", "a retirar", "retirado"];
+export const statusEnvioUY: StatusEnvio[] = ["não enviado", "enviado", "a retirar", "retirado", "devolvido"];
 export const statusEnvioBR: StatusEnvio[] = ["a enviar", "saldo de expedição insuficiente", "em separação", "enviado", "entregue", "em devolução", "devolvido", "sem estoque", "aguardando retirada"];
 
 export const statusCobrancaConfig: Record<StatusCobranca, { label: string; className: string }> = {
