@@ -647,6 +647,7 @@ const Pedidos = () => {
             <SelectItem value="todos">Pagamento: Todos</SelectItem>
             <SelectItem value="pago">Pago</SelectItem>
             <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="inadimplente">Inadimplente</SelectItem>
           </SelectContent>
         </Select>
         <Select value={envioFilter} onValueChange={setEnvioFilter}>
