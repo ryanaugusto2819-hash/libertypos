@@ -75,13 +75,12 @@ Deno.serve(async (req) => {
       data_entrada: new Date().toISOString().split("T")[0],
     };
 
-    // Dedup: evita criar pedido duplicado (mesmo telefone + data_entrada) nas últimas 24h
+    // Dedup: evita criar pedido duplicado (mesmo telefone + país), independente de data
     if (pedidoData.telefone) {
       const { data: existing } = await supabase
         .from("pedidos")
         .select("id, nome")
         .eq("telefone", pedidoData.telefone)
-        .eq("data_entrada", pedidoData.data_entrada)
         .eq("pais", pedidoData.pais)
         .limit(1)
         .maybeSingle();
