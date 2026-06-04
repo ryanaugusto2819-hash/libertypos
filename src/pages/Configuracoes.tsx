@@ -253,7 +253,7 @@ export default function Configuracoes() {
             <div>
               <CardTitle className="text-lg">Webhook de Atendimento</CardTitle>
               <CardDescription>
-                Dispara automaticamente um webhook para sua plataforma de atendimento quando o status de envio mudar para: <strong>A Enviar</strong>, <strong>Enviado</strong> ou <strong>Entregue</strong>.
+                Dispara automaticamente um webhook para sua plataforma de atendimento quando o status de envio mudar para: <strong>Não Enviado</strong>, <strong>Enviado</strong> ou <strong>Entregue</strong>.
               </CardDescription>
             </div>
           </div>
