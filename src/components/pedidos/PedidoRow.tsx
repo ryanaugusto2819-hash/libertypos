@@ -107,6 +107,7 @@ function PedidoRowBase({
               <SelectContent>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="pago">Pago</SelectItem>
+                <SelectItem value="inadimplente">Inadimplente</SelectItem>
               </SelectContent>
             </Select>
           ) : (
