@@ -286,7 +286,7 @@ const Dashboard = () => {
         <KpiCard title="Pedidos Pagos" value={pagos.length} percentage={total ? Math.round((pagos.length / total) * 100) : 0} icon={CheckCircle2} variant="success" trend="up" delay={0} />
         <KpiCard title="Pedidos Retirados" value={retirados.length} percentage={total ? Math.round((retirados.length / total) * 100) : 0} icon={Truck} variant="warning" trend="neutral" delay={100} />
         <KpiCard title="Pedidos Enviados" value={enviados.length} percentage={total ? Math.round((enviados.length / total) * 100) : 0} icon={Send} variant="info" trend="up" delay={200} />
-        <KpiCard title="A Enviar" value={aEnviar.length} percentage={total ? Math.round((aEnviar.length / total) * 100) : 0} icon={PackageCheck} variant="info" trend="neutral" delay={250} />
+        <KpiCard title="Não Enviado" value={aEnviar.length} percentage={total ? Math.round((aEnviar.length / total) * 100) : 0} icon={PackageCheck} variant="info" trend="neutral" delay={250} />
         <KpiCard title="A Retirar" value={aRetirar.length} percentage={total ? Math.round((aRetirar.length / total) * 100) : 0} icon={AlertTriangle} variant="danger" trend="down" delay={300} />
       </div>
 

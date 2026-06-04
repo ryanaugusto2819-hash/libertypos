@@ -120,7 +120,7 @@ export const statusEnvioConfig: Record<StatusEnvio, { label: string; className: 
   "a retirar": { label: "A Retirar", className: "status-pending" },
   retirado: { label: "Retirado", className: "status-paid" },
   // BR (LogZZ) statuses
-  "a enviar": { label: "A Enviar", className: "status-overdue" },
+  "a enviar": { label: "Não Enviado", className: "status-overdue" },
   "saldo de expedição insuficiente": { label: "Saldo Insuficiente", className: "status-overdue" },
   "em separação": { label: "Em Separação", className: "status-pending" },
   "entregue": { label: "Entregue", className: "status-paid" },
