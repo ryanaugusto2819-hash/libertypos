@@ -45,6 +45,7 @@ const produtos = [
   "Gota Emagrecimento",
   "Gota Diabtes",
   "MEGAFIT",
+  "CAPSULA DOR",
 ];
 
 const departamentosPorPais: Record<string, string[]> = {
